@@ -96,18 +96,18 @@ const drawMap = () => {
     })
 }
 
-// Helper function to wrap text
-function wrap(text: d3.Selection<any, any, any, any>, width: number) {
-    text.each(function () {
-        const text = d3.select(this)
-        const words = text.text().split(/\s+/).reverse()
-        let word
+// Helper function to wrap text with proper typing
+function wrap(text: d3.Selection<d3.BaseType, unknown, d3.BaseType, unknown>, width: number) {
+    text.each(function (this: d3.BaseType) {
+        const textElement = d3.select(this)
+        const words = textElement.text().split(/\s+/).reverse()
+        let word: string | undefined
         let line: string[] = []
         let lineNumber = 0
         const lineHeight = 1.1
-        const y = text.attr('y')
-        const dy = parseFloat(text.attr('dy'))
-        let tspan = text.text(null).append('tspan')
+        const y = textElement.attr('y')
+        const dy = parseFloat(textElement.attr('dy') || '0')
+        let tspan = textElement.text('').append('tspan')
             .attr('x', 0)
             .attr('y', y)
             .attr('dy', dy + 'em')
@@ -115,11 +115,12 @@ function wrap(text: d3.Selection<any, any, any, any>, width: number) {
         while (word = words.pop()) {
             line.push(word)
             tspan.text(line.join(' '))
-            if (tspan.node()?.getComputedTextLength() > width) {
+            const node = tspan.node()
+            if (node && node.getComputedTextLength() > width) {
                 line.pop()
                 tspan.text(line.join(' '))
                 line = [word]
-                tspan = text.append('tspan')
+                tspan = textElement.append('tspan')
                     .attr('x', 0)
                     .attr('y', y)
                     .attr('dy', ++lineNumber * lineHeight + dy + 'em')
