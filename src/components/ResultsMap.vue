@@ -9,16 +9,16 @@ const props = defineProps<{
 
 const svgRef = ref<SVGElement | null>(null)
 const width = 1000
-const height = 800
+const height = 1000
 const centerX = width / 2
-const centerY = height / 2
+const centerY = height / 2 + 0
 
 // Define track boundaries with inner and outer radii
 const tracks = {
-    mission: { outer: 150, inner: 60 },      // Pink (innermost)
-    strategic: { outer: 250, inner: 160 },   // Green
-    process: { outer: 350, inner: 260 },     // Blue
-    operational: { outer: 450, inner: 360 }  // Orange (outermost)
+    mission: { outer: 140, inner: 50 },      // Pink (innermost)
+    strategic: { outer: 240, inner: 150 },   // Green
+    process: { outer: 340, inner: 250 },     // Blue
+    operational: { outer: 440, inner: 350 }  // Orange (outermost)
 }
 
 // Calculate the middle radius for bubble positioning
