@@ -13,12 +13,20 @@ const height = 800
 const centerX = width / 2
 const centerY = height / 2
 
-// Layer radiuses
+// Define track boundaries with inner and outer radii
+const tracks = {
+    mission: { outer: 150, inner: 60 },      // Pink (innermost)
+    strategic: { outer: 250, inner: 160 },   // Green
+    process: { outer: 350, inner: 260 },     // Blue
+    operational: { outer: 450, inner: 360 }  // Orange (outermost)
+}
+
+// Calculate the middle radius for bubble positioning
 const layerRadii = {
-    mission: 150,    // Pink (innermost)
-    strategic: 250,  // Green
-    process: 350,    // Blue
-    operational: 450 // Orange (outermost)
+    mission: (tracks.mission.outer + tracks.mission.inner) / 2,
+    strategic: (tracks.strategic.outer + tracks.strategic.inner) / 2,
+    process: (tracks.process.outer + tracks.process.inner) / 2,
+    operational: (tracks.operational.outer + tracks.operational.inner) / 2
 }
 
 // Layer colors
@@ -36,16 +44,17 @@ const drawMap = () => {
     svg.selectAll('*').remove()
 
     // Draw layers (concentric circles)
-    Object.entries(layerRadii).reverse().forEach(([layer, radius]) => {
+    Object.entries(tracks).reverse().forEach(([layer, radii]) => {
+        // Draw outer circle
         svg.append('circle')
             .attr('cx', centerX)
             .attr('cy', centerY)
-            .attr('r', radius)
+            .attr('r', radii.outer)
             .attr('fill', layerColors[layer as keyof typeof layerColors])
             .attr('opacity', 0.3)
     })
 
-    // Position bubbles along their orbits
+    // Position bubbles along their orbits at the middle of each track
     props.data.bubbles.forEach((bubble, i) => {
         const radius = layerRadii[bubble.layer]
         const angle = (i * (2 * Math.PI)) / props.data.bubbles.length
