@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, watch } from 'vue'
 import * as d3 from 'd3'
-import type { ResultsMapData, Bubble, Relationship } from '@/types/ResultsMap'
+import type { ResultsMapData, Bubble, Relationship, Group } from '@/types/ResultsMap'
 
 const props = defineProps<{
     data: ResultsMapData
@@ -37,15 +37,59 @@ const layerColors = {
     operational: '#ffe0b2' // Orange
 }
 
+// Add function to calculate group angles
+function calculateGroupAngles(groups: Group[], bubbles: Bubble[]) {
+    const totalAngle = 2 * Math.PI
+    const groupedBubbles = bubbles.filter(b => b.groupId !== '')
+    const ungroupedBubbles = bubbles.filter(b => b.groupId === '')
+
+    // Calculate angles for groups
+    let currentAngle = 0
+    groups.forEach(group => {
+        const groupBubbles = groupedBubbles.filter(b => b.groupId === group.id)
+        const angleShare = (groupBubbles.length / bubbles.length) * totalAngle
+        group.startAngle = currentAngle
+        group.endAngle = currentAngle + angleShare
+        currentAngle += angleShare
+    })
+
+    return groups
+}
+
+// Add function to draw group dividers
+function drawGroupDividers(svg: d3.Selection<SVGElement | null, unknown, null, undefined>, groups: Group[]) {
+    if (groups.length <= 1) return
+
+    const dividerGroup = svg.append('g').attr('class', 'group-dividers')
+
+    groups.forEach(group => {
+        if (group.startAngle !== undefined && group.endAngle !== undefined) {
+            // Draw line from center to outer edge
+            const startX = centerX + Math.cos(group.startAngle) * tracks.operational.outer
+            const startY = centerY + Math.sin(group.startAngle) * tracks.operational.outer
+
+            dividerGroup.append('line')
+                .attr('x1', centerX)
+                .attr('y1', centerY)
+                .attr('x2', startX)
+                .attr('y2', startY)
+                .attr('stroke', 'white')
+                .attr('stroke-width', 2)
+        }
+    })
+}
+
 const drawMap = () => {
     if (!svgRef.value) return
 
     const svg = d3.select(svgRef.value)
     svg.selectAll('*').remove()
 
+    // Calculate group angles
+    const updatedGroups = calculateGroupAngles(props.data.groups, props.data.bubbles)
+
     // Draw layers (concentric circles)
     Object.entries(tracks).reverse().forEach(([layer, radii]) => {
-        // Draw outer circle
         svg.append('circle')
             .attr('cx', centerX)
             .attr('cy', centerY)
@@ -54,10 +98,30 @@ const drawMap = () => {
             .attr('opacity', 0.3)
     })
 
-    // Position bubbles along their orbits at the middle of each track
+    // Draw group dividers
+    drawGroupDividers(svg, updatedGroups)
+
+    // Position bubbles along their orbits
     props.data.bubbles.forEach((bubble, i) => {
+        let angle: number
+
+        if (bubble.groupId) {
+            // Find bubble's group
+            const group = updatedGroups.find(g => g.id === bubble.groupId)
+            if (group && group.startAngle !== undefined && group.endAngle !== undefined) {
+                // Position bubble within its group's angle range
+                const groupBubbles = props.data.bubbles.filter(b => b.groupId === group.id)
+                const bubbleIndex = groupBubbles.findIndex(b => b.id === bubble.id)
+                const angleStep = (group.endAngle - group.startAngle) / groupBubbles.length
+                angle = group.startAngle + angleStep * bubbleIndex + angleStep / 2
+            } else {
+                angle = (i * (2 * Math.PI)) / props.data.bubbles.length
+            }
+        } else {
+            angle = (i * (2 * Math.PI)) / props.data.bubbles.length
+        }
+
         const radius = layerRadii[bubble.layer]
-        const angle = (i * (2 * Math.PI)) / props.data.bubbles.length
         bubble.x = centerX + radius * Math.cos(angle)
         bubble.y = centerY + radius * Math.sin(angle)
     })

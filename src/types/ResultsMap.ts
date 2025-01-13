@@ -1,13 +1,20 @@
 export type LayerType = 'mission' | 'strategic' | 'process' | 'operational'
 
-export type RelationType = 'cause-effect' | 'companion' | 'conflict'
+export interface Group {
+    id: string
+    name: string
+    layers: LayerType[]
+    startAngle?: number
+    endAngle?: number
+}
 
 export interface Bubble {
-  id: string
-  text: string
-  layer: LayerType
-  x?: number
-  y?: number
+    id: string
+    text: string
+    layer: LayerType
+    groupId: string
+    x?: number
+    y?: number
 }
 
 export interface Relationship {
@@ -20,4 +27,5 @@ export interface Relationship {
 export interface ResultsMapData {
   bubbles: Bubble[]
   relationships: Relationship[]
+  groups: Group[]
 } 

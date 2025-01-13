@@ -1,15 +1,23 @@
 <script setup lang="ts">
 import { ref } from 'vue'
-import type { LayerType, RelationType, Bubble, Relationship } from '@/types/ResultsMap'
+import type { LayerType, RelationType, Bubble, Relationship, Group } from '@/types/ResultsMap'
 
 const props = defineProps<{
     onAddBubble: (bubble: Omit<Bubble, 'id'>) => void
     onAddRelationship: (relationship: Omit<Relationship, 'id'>) => void
+    onAddGroup: (group: Omit<Group, 'id'>) => void
+    groups: Group[]
 }>()
 
 const newBubble = ref({
     text: '',
-    layer: 'process' as LayerType
+    layer: 'process' as LayerType,
+    groupId: ''
+})
+
+const newGroup = ref({
+    name: '',
+    layers: [] as LayerType[]
 })
 
 const newRelationship = ref({
@@ -25,9 +33,21 @@ const handleAddBubble = () => {
     if (newBubble.value.text.trim()) {
         props.onAddBubble({
             text: newBubble.value.text,
-            layer: newBubble.value.layer
+            layer: newBubble.value.layer,
+            groupId: newBubble.value.groupId
         })
         newBubble.value.text = ''
+    }
+}
+
+const handleAddGroup = () => {
+    if (newGroup.value.name && newGroup.value.layers.length > 0) {
+        props.onAddGroup({
+            name: newGroup.value.name,
+            layers: newGroup.value.layers
+        })
+        newGroup.value.name = ''
+        newGroup.value.layers = []
     }
 }
 
@@ -47,12 +67,31 @@ const handleAddRelationship = () => {
 <template>
     <div class="controls-panel">
         <div class="control-section">
+            <h3>Add New Group</h3>
+            <div class="form-group">
+                <input v-model="newGroup.name" placeholder="Group name" />
+                <select v-model="newGroup.layers" multiple>
+                    <option v-for="layer in layerOptions.slice(1)" :key="layer" :value="layer">
+                        {{ layer }}
+                    </option>
+                </select>
+                <button @click="handleAddGroup">Add Group</button>
+            </div>
+        </div>
+
+        <div class="control-section">
             <h3>Add New Bubble</h3>
             <div class="form-group">
                 <input v-model="newBubble.text" placeholder="Bubble text" />
                 <select v-model="newBubble.layer">
                     <option v-for="layer in layerOptions" :key="layer" :value="layer">
                         {{ layer }}
+                    </option>
+                </select>
+                <select v-model="newBubble.groupId" v-if="props.groups.length">
+                    <option value="">No Group</option>
+                    <option v-for="group in props.groups" :key="group.id" :value="group.id">
+                        {{ group.name }}
                     </option>
                 </select>
                 <button @click="handleAddBubble">Add Bubble</button>
@@ -111,5 +150,9 @@ button {
 
 button:hover {
     background: #45a049;
+}
+
+select[multiple] {
+    height: 100px;
 }
 </style>
