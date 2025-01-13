@@ -85,6 +85,10 @@ const drawMap = () => {
         }
     })
 
+    // Constants for bubble sizing
+    const BUBBLE_RADIUS = 45
+    const TEXT_WIDTH = 60  // Reduced from 70 to give more padding
+
     // Draw bubbles
     const bubbleGroup = svg.append('g')
     props.data.bubbles.forEach(bubble => {
@@ -92,16 +96,16 @@ const drawMap = () => {
             .attr('transform', `translate(${bubble.x},${bubble.y})`)
 
         g.append('circle')
-            .attr('r', 40)
+            .attr('r', BUBBLE_RADIUS)
             .attr('fill', layerColors[bubble.layer])
             .attr('stroke', '#666')
 
         g.append('text')
             .attr('text-anchor', 'middle')
-            .attr('dy', '0.3em')
-            .attr('font-size', '12px')
+            .attr('dominant-baseline', 'middle')
+            .attr('font-size', '11px')
             .text(bubble.text)
-            .call(wrap, 70)
+            .call(wrap, TEXT_WIDTH)
     })
 }
 
@@ -110,32 +114,40 @@ function wrap(text: d3.Selection<d3.BaseType, unknown, d3.BaseType, unknown>, wi
     text.each(function (this: d3.BaseType) {
         const textElement = d3.select(this)
         const words = textElement.text().split(/\s+/).reverse()
-        let word: string | undefined
-        let line: string[] = []
-        let lineNumber = 0
-        const lineHeight = 1.1
-        const y = textElement.attr('y')
-        const dy = parseFloat(textElement.attr('dy') || '0')
-        let tspan = textElement.text('').append('tspan')
-            .attr('x', 0)
-            .attr('y', y)
-            .attr('dy', dy + 'em')
+        const lines: string[] = []
 
-        while (word = words.pop()) {
-            line.push(word)
-            tspan.text(line.join(' '))
-            const node = tspan.node()
-            if (node && node.getComputedTextLength() > width) {
-                line.pop()
-                tspan.text(line.join(' '))
-                line = [word]
-                tspan = textElement.append('tspan')
-                    .attr('x', 0)
-                    .attr('y', y)
-                    .attr('dy', ++lineNumber * lineHeight + dy + 'em')
-                    .text(word)
+        // First, calculate how many lines we'll need
+        let currentLine: string[] = []
+        const tempSpan = textElement.append('tspan').style('visibility', 'hidden')
+
+        words.slice().reverse().forEach(word => {
+            currentLine.push(word)
+            tempSpan.text(currentLine.join(' '))
+            if (tempSpan.node()?.getComputedTextLength() > width) {
+                currentLine.pop()
+                if (currentLine.length) lines.push(currentLine.join(' '))
+                currentLine = [word]
             }
-        }
+        })
+        if (currentLine.length) lines.push(currentLine.join(' '))
+        tempSpan.remove()
+
+        // Calculate starting position
+        const lineHeight = 1.2
+        const totalHeight = lines.length * lineHeight
+        const startY = -totalHeight / 2 + lineHeight / 2
+
+        // Clear existing text
+        textElement.text('')
+
+        // Add lines with proper spacing
+        lines.forEach((line, i) => {
+            textElement.append('tspan')
+                .attr('x', 0)
+                .attr('y', 0)
+                .attr('dy', `${startY + i * lineHeight}em`)
+                .text(line)
+        })
     })
 }
 
