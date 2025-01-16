@@ -6,16 +6,20 @@ import type { ResultsMapData, Bubble, Relationship, Group } from '@/types/Result
 
 const mapData = ref<ResultsMapData>({
   bubbles: [
-    { id: '1', text: 'fires are prevented', layer: 'strategic', groupId: '' },
-    { id: '2', text: 'less injury from fire incidents', layer: 'mission', groupId: '' },
-    { id: '3', text: 'crews arrive at emergencies quickly', layer: 'process', groupId: '' },
-    { id: '4', text: 'transit without bottlenecks', layer: 'operational', groupId: '' },
+    { id: '1', text: 'fires are prevented', layer: 'strategic', groupId: '1' },
+    { id: '2', text: 'less injury from fire incidents', layer: 'mission', groupId: '1' },
+    { id: '3', text: 'crews arrive at emergencies quickly', layer: 'process', groupId: '2' },
+    { id: '4', text: 'transit without bottlenecks', layer: 'operational', groupId: '3' },
   ],
   relationships: [
-    { id: '1', source: '1', target: '2', type: 'cause-effect' },
-    { id: '2', source: '3', target: '4', type: 'companion' },
+    // { id: '1', source: '1', target: '2', type: 'cause-effect' },
+    // { id: '2', source: '3', target: '4', type: 'companion' },
   ],
-  groups: []
+  groups: [
+    {id: "1", name: "G1", startAngle: 0, endAngle: 2, layers: ["process"]},
+    {id: "2", name: "G2", startAngle: 2, endAngle: 4, layers: ["process"]},
+    {id: "3", name: "GROUP3 WITH A LONG NAME", startAngle: 4, endAngle: 6, layers: ["process"]},
+  ]
 })
 
 const addBubble = (bubble: Omit<Bubble, 'id'>) => {

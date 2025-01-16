@@ -28,4 +28,4 @@ export interface ResultsMapData {
   bubbles: Bubble[]
   relationships: Relationship[]
   groups: Group[]
-} 
+}

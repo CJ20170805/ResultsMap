@@ -79,7 +79,30 @@ function drawGroupDividers(svg: d3.Selection<SVGElement | null, unknown, null, u
     })
 }
 
+// Function to add group names
+function addGroupNames(svg: d3.Selection<SVGElement | null, unknown, null, undefined>, groups: Group[]) {
+    groups.forEach((group) => {
+        if (group.startAngle !== undefined && group.endAngle !== undefined) {
+            const angle = (group.startAngle + group.endAngle) / 2
+            const radius = tracks["operational"].outer + 20 // Offset
+            const x = centerX + radius * Math.cos(angle)
+            const y = centerY + radius * Math.sin(angle)
+
+            svg.append('text')
+                .attr('x', x)
+                .attr('y', y)
+                .attr('text-anchor', 'middle')
+                .attr('alignment-baseline', 'middle')
+                .text(group.name)
+                .style('font-weight', 'bold')
+                .style('font-size', '14px')
+                .style('fill', '#000')
+        }
+    })
+}
+
 const drawMap = () => {
+  console.log("Map Data", props.data);
     if (!svgRef.value) return
 
     const svg = d3.select(svgRef.value)
@@ -100,6 +123,9 @@ const drawMap = () => {
 
     // Draw group dividers
     drawGroupDividers(svg, updatedGroups)
+
+    // Call the function to add group names after positioning bubbles
+    addGroupNames(svg, updatedGroups)
 
     // Position bubbles along their orbits
     props.data.bubbles.forEach((bubble, i) => {
@@ -151,7 +177,7 @@ const drawMap = () => {
 
     // Constants for bubble sizing
     const BUBBLE_RADIUS = 45
-    const TEXT_WIDTH = 60  // Reduced from 70 to give more padding
+    const TEXT_WIDTH = 90  // Reduced from 70 to give more padding
 
     // Draw bubbles
     const bubbleGroup = svg.append('g')
@@ -171,6 +197,7 @@ const drawMap = () => {
             .text(bubble.text)
             .call(wrap, TEXT_WIDTH)
     })
+
 }
 
 // Helper function to wrap text with proper typing
@@ -184,7 +211,7 @@ function wrap(text: d3.Selection<d3.BaseType, unknown, d3.BaseType, unknown>, wi
         let currentLine: string[] = []
         const tempSpan = textElement.append('tspan').style('visibility', 'hidden')
 
-        words.slice().reverse().forEach(word => {
+        words.slice().reverse().forEach((word: string) => {
             currentLine.push(word)
             tempSpan.text(currentLine.join(' '))
             if (tempSpan.node()?.getComputedTextLength() > width) {
