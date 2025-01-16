@@ -122,8 +122,6 @@ function addGroupNames(
 
 const drawMap = () => {
   console.log('Map Data', props.data)
-  console.log()
-
   if (!svgRef.value) return
 
   const svg = d3.select(svgRef.value)
@@ -160,7 +158,35 @@ const drawMap = () => {
     .attr('r', '3')
     .attr('fill', '#666')
 
-  console.log('SSSS', svg)
+  // Define start arrow marker for conflict
+  svg
+    .append('defs')
+    .append('marker')
+    .attr('id', 'start-arrow')
+    .attr('viewBox', '0 0 10 10')
+    .attr('refX', '5')
+    .attr('refY', '5')
+    .attr('markerWidth', '6')
+    .attr('markerHeight', '6')
+    .attr('orient', 'auto-start-reverse')
+    .append('path')
+    .attr('d', 'M 0 0 L 10 5 L 0 10 z')
+    .attr('fill', '#666')
+
+  // Define end arrow marker for conflict
+  svg
+    .append('defs')
+    .append('marker')
+    .attr('id', 'end-arrow')
+    .attr('viewBox', '0 0 10 10')
+    .attr('refX', '5')
+    .attr('refY', '5')
+    .attr('markerWidth', '6')
+    .attr('markerHeight', '6')
+    .attr('orient', 'auto')
+    .append('path')
+    .attr('d', 'M 0 0 L 10 5 L 0 10 z')
+    .attr('fill', '#666')
 
   // Calculate group angles
   const updatedGroups = calculateGroupAngles(props.data.groups, props.data.bubbles)
@@ -200,7 +226,6 @@ const drawMap = () => {
     } else {
       angle = (i * (2 * Math.PI)) / props.data.bubbles.length
     }
-
     const radius = layerRadii[bubble.layer]
     bubble.x = centerX + radius * Math.cos(angle)
     bubble.y = centerY + radius * Math.sin(angle)
@@ -211,9 +236,8 @@ const drawMap = () => {
 
   // Constants for bubble sizing
   const BUBBLE_RADIUS = 45
-  const TEXT_WIDTH = 90 // Reduced from 70 to give more padding
-
-  const OFFSET = 2 // Adjust this value to control how far outside the bubbles the lines should start/end
+  const OFFSET = 3 // Adjust this value to control how far outside the bubbles the lines should start/end
+  const TEXT_WIDTH = 90
 
   // Draw relationships
   const linkGroup = svg.append('g')
@@ -224,7 +248,13 @@ const drawMap = () => {
     if (!source || !target) return
 
     // Calculate direction vector
-    if (target.x === undefined || source.x === undefined || target.y === undefined || source.y === undefined) return
+    if (
+      target.x === undefined ||
+      source.x === undefined ||
+      target.y === undefined ||
+      source.y === undefined
+    )
+      return
 
     const dx = target.x - source.x
     const dy = target.y - source.y
@@ -244,12 +274,17 @@ const drawMap = () => {
       .attr('stroke', '#666')
       .attr('stroke-width', 1.5)
 
+    console.log('rel.type', rel.type)
+
     if (rel.type === 'cause-effect') {
       // Add arrow marker
       line.attr('marker-end', 'url(#arrow)')
     } else if (rel.type === 'companion') {
       // Add circles at both ends
       line.attr('marker-start', 'url(#dot)').attr('marker-end', 'url(#dot)')
+    } else if (rel.type === 'conflict') {
+      // Add double arrow marker
+      line.attr('marker-start', 'url(#start-arrow)').attr('marker-end', 'url(#end-arrow)')
     }
   })
 
@@ -260,13 +295,15 @@ const drawMap = () => {
 
     g.append('circle')
       .attr('r', BUBBLE_RADIUS)
-      .attr('fill', layerColors[bubble.layer])
-      .attr('stroke', '#666')
+      .attr('fill', layerColors[bubble.layer as keyof typeof layerColors])
+      .attr('opacity', 0.8)
 
     g.append('text')
       .attr('text-anchor', 'middle')
-      .attr('dominant-baseline', 'middle')
-      .attr('font-size', '11px')
+      .attr('alignment-baseline', 'middle')
+      .attr('fill', '#000')
+      .attr('font-size', '12px')
+      .attr('font-weight', 'bold')
       .text(bubble.text)
       .call(wrap, TEXT_WIDTH)
   })

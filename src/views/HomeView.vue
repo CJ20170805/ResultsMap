@@ -14,6 +14,7 @@ const mapData = ref<ResultsMapData>({
   relationships: [
     { id: '1', source: '1', target: '2', type: 'cause-effect' },
     { id: '2', source: '3', target: '4', type: 'companion' },
+    { id: '3', source: '1', target: '4', type: 'conflict' },
   ],
   groups: [
     {id: "1", name: "G1", startAngle: 0, endAngle: 2, layers: ["process"]},
