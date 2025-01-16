@@ -1,12 +1,15 @@
 <script setup lang="ts">
 import { ref } from 'vue'
-import type { LayerType, RelationType, Bubble, Relationship, Group } from '@/types/ResultsMap'
+import type { LayerType, RelationType, Bubble, Relationship, Group, ResultsMapData } from '@/types/ResultsMap'
+import { mapActions } from 'pinia';
 
 const props = defineProps<{
     onAddBubble: (bubble: Omit<Bubble, 'id'>) => void
     onAddRelationship: (relationship: Omit<Relationship, 'id'>) => void
     onAddGroup: (group: Omit<Group, 'id'>) => void
-    groups: Group[]
+    onChangeGroupLevel: (groupLevel: LayerType) => void
+    groups: Group[],
+    mapData: ResultsMapData,
 }>()
 
 const newBubble = ref({
@@ -14,6 +17,8 @@ const newBubble = ref({
     layer: 'process' as LayerType,
     groupId: ''
 })
+
+const groupLevel = ref(props.mapData.groupLevel)
 
 const newGroup = ref({
     name: '',
@@ -62,6 +67,11 @@ const handleAddRelationship = () => {
         newRelationship.value.target = ''
     }
 }
+
+const handleGroupLayerChange = () => {
+  console.log('EEEEE', groupLevel.value);
+  props.onChangeGroupLevel(groupLevel.value);
+}
 </script>
 
 <template>
@@ -70,12 +80,13 @@ const handleAddRelationship = () => {
             <h3>Add New Group</h3>
             <div class="form-group">
                 <input v-model="newGroup.name" placeholder="Group name" />
-                <select v-model="newGroup.layers" multiple>
-                    <option v-for="layer in layerOptions.slice(1)" :key="layer" :value="layer">
+                <button @click="handleAddGroup">Add Group</button>
+                <span>Group Level: </span>
+                <select @change="handleGroupLayerChange" v-model="groupLevel">
+                    <option v-for="layer in layerOptions" :key="layer" :value="layer">
                         {{ layer }}
                     </option>
                 </select>
-                <button @click="handleAddGroup">Add Group</button>
             </div>
         </div>
 
@@ -101,8 +112,20 @@ const handleAddRelationship = () => {
         <div class="control-section">
             <h3>Add New Relationship</h3>
             <div class="form-group">
-                <input v-model="newRelationship.source" placeholder="Source bubble ID" />
-                <input v-model="newRelationship.target" placeholder="Target bubble ID" />
+                <!-- <input v-model="newRelationship.source" placeholder="Source bubble ID" /> -->
+                 <span>From: </span>
+                <select v-model="newRelationship.source">
+                    <option v-for="bubble in mapData.bubbles" :key="bubble.id" :value="bubble.id">
+                        {{ bubble.text }}
+                    </option>
+                </select>
+                <!-- <input v-model="newRelationship.target" placeholder="Target bubble ID" /> -->
+                <span>To: </span>
+                <select v-model="newRelationship.target">
+                    <option v-for="bubble in mapData.bubbles" :key="bubble.id" :value="bubble.id">
+                        {{ bubble.text }}
+                    </option>
+                </select>
                 <select v-model="newRelationship.type">
                     <option v-for="type in relationTypes" :key="type" :value="type">
                         {{ type }}
@@ -130,6 +153,10 @@ const handleAddRelationship = () => {
     display: flex;
     gap: 0.5rem;
     margin-top: 0.5rem;
+}
+span{
+ display: inline-block;
+ line-height: 40px;
 }
 
 input,

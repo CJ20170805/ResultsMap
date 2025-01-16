@@ -2,7 +2,7 @@
 import { ref } from 'vue'
 import ResultsMap from '@/components/ResultsMap.vue'
 import ResultsMapControls from '@/components/ResultsMapControls.vue'
-import type { ResultsMapData, Bubble, Relationship, Group } from '@/types/ResultsMap'
+import type { ResultsMapData, Bubble, Relationship, Group, LayerType } from '@/types/ResultsMap'
 
 const mapData = ref<ResultsMapData>({
   bubbles: [
@@ -20,7 +20,8 @@ const mapData = ref<ResultsMapData>({
     {id: "1", name: "G1", startAngle: 0, endAngle: 2, layers: ["process"]},
     {id: "2", name: "G2", startAngle: 2, endAngle: 4, layers: ["process"]},
     {id: "3", name: "GROUP3 WITH A LONG NAME", startAngle: 4, endAngle: 6, layers: ["process"]},
-  ]
+  ],
+  groupLevel: "process"
 })
 
 const addBubble = (bubble: Omit<Bubble, 'id'>) => {
@@ -46,12 +47,18 @@ const addGroup = (group: Omit<Group, 'id'>) => {
     id: newId
   })
 }
+
+const changeGroupLevel = (groupLevel: LayerType) => {
+  mapData.value.groupLevel = groupLevel;
+  console.log("changeGroupLevel", groupLevel);
+
+}
 </script>
 
 <template>
   <main>
-    <ResultsMapControls :onAddBubble="addBubble" :onAddRelationship="addRelationship" :onAddGroup="addGroup"
-      :groups="mapData.groups" />
+    <ResultsMapControls :mapData="mapData" :onAddBubble="addBubble" :onAddRelationship="addRelationship" :onAddGroup="addGroup"
+      :groups="mapData.groups" :onChangeGroupLevel="changeGroupLevel" />
     <ResultsMap :data="mapData" />
   </main>
 </template>

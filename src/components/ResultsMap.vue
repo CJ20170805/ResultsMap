@@ -205,7 +205,7 @@ const drawMap = () => {
     })
 
   // Draw group dividers with configurable starting layer
-  drawGroupDividers(svg, updatedGroups, 'mission') // Start from the center if the startLayer is mission
+  drawGroupDividers(svg, updatedGroups, props.data.groupLevel) // Start from the center if the startLayer is mission
 
   // Position bubbles along their orbits
   props.data.bubbles.forEach((bubble, i) => {
