@@ -12,8 +12,8 @@ const mapData = ref<ResultsMapData>({
     { id: '4', text: 'transit without bottlenecks', layer: 'operational', groupId: '3' },
   ],
   relationships: [
-    // { id: '1', source: '1', target: '2', type: 'cause-effect' },
-    // { id: '2', source: '3', target: '4', type: 'companion' },
+    { id: '1', source: '1', target: '2', type: 'cause-effect' },
+    { id: '2', source: '3', target: '4', type: 'companion' },
   ],
   groups: [
     {id: "1", name: "G1", startAngle: 0, endAngle: 2, layers: ["process"]},

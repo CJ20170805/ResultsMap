@@ -60,17 +60,17 @@ function calculateGroupAngles(groups: Group[], bubbles: Bubble[]) {
 function drawGroupDividers(
   svg: d3.Selection<SVGElement | null, unknown, null, undefined>,
   groups: Group[],
+  startLayer: LayerType = 'process' as LayerType,
 ) {
   if (groups.length <= 1) return
 
   const dividerGroup = svg.append('g').attr('class', 'group-dividers')
-  const startLayer: LayerType = 'process' as LayerType
 
   groups.forEach((group) => {
     if (group.startAngle !== undefined && group.endAngle !== undefined) {
       let startX, startY
 
-      if (startLayer === "mission") {
+      if (startLayer === 'mission') {
         // Start from the center if the startLayer is mission
         startX = centerX
         startY = centerY
@@ -122,10 +122,45 @@ function addGroupNames(
 
 const drawMap = () => {
   console.log('Map Data', props.data)
+  console.log()
+
   if (!svgRef.value) return
 
   const svg = d3.select(svgRef.value)
   svg.selectAll('*').remove()
+
+  // Define arrow marker
+  svg
+    .append('defs')
+    .append('marker')
+    .attr('id', 'arrow')
+    .attr('viewBox', '0 0 10 10')
+    .attr('refX', '5')
+    .attr('refY', '5')
+    .attr('markerWidth', '6')
+    .attr('markerHeight', '6')
+    .attr('orient', 'auto-start-reverse')
+    .append('path')
+    .attr('d', 'M 0 0 L 10 5 L 0 10 z')
+    .attr('fill', '#666')
+
+  // Define dot marker
+  svg
+    .append('defs')
+    .append('marker')
+    .attr('id', 'dot')
+    .attr('viewBox', '0 0 10 10')
+    .attr('refX', '5')
+    .attr('refY', '5')
+    .attr('markerWidth', '6')
+    .attr('markerHeight', '6')
+    .append('circle')
+    .attr('cx', '5')
+    .attr('cy', '5')
+    .attr('r', '3')
+    .attr('fill', '#666')
+
+  console.log('SSSS', svg)
 
   // Calculate group angles
   const updatedGroups = calculateGroupAngles(props.data.groups, props.data.bubbles)
@@ -143,11 +178,8 @@ const drawMap = () => {
         .attr('opacity', 0.3)
     })
 
-  // Draw group dividers
-  drawGroupDividers(svg, updatedGroups)
-
-  // Call the function to add group names after positioning bubbles
-  addGroupNames(svg, updatedGroups)
+  // Draw group dividers with configurable starting layer
+  drawGroupDividers(svg, updatedGroups, 'mission') // Start from the center if the startLayer is mission
 
   // Position bubbles along their orbits
   props.data.bubbles.forEach((bubble, i) => {
@@ -174,6 +206,15 @@ const drawMap = () => {
     bubble.y = centerY + radius * Math.sin(angle)
   })
 
+  // Add group names
+  addGroupNames(svg, updatedGroups)
+
+  // Constants for bubble sizing
+  const BUBBLE_RADIUS = 45
+  const TEXT_WIDTH = 90 // Reduced from 70 to give more padding
+
+  const OFFSET = 2 // Adjust this value to control how far outside the bubbles the lines should start/end
+
   // Draw relationships
   const linkGroup = svg.append('g')
   props.data.relationships.forEach((rel) => {
@@ -182,9 +223,24 @@ const drawMap = () => {
 
     if (!source || !target) return
 
+    // Calculate direction vector
+    if (target.x === undefined || source.x === undefined || target.y === undefined || source.y === undefined) return
+
+    const dx = target.x - source.x
+    const dy = target.y - source.y
+    const distance = Math.sqrt(dx * dx + dy * dy)
+    const unitX = dx / distance
+    const unitY = dy / distance
+
+    // Adjust start and end points based on bubble radius and offset
+    const startX = source.x + unitX * (BUBBLE_RADIUS + OFFSET)
+    const startY = source.y + unitY * (BUBBLE_RADIUS + OFFSET)
+    const endX = target.x - unitX * (BUBBLE_RADIUS + OFFSET)
+    const endY = target.y - unitY * (BUBBLE_RADIUS + OFFSET)
+
     const line = linkGroup
       .append('path')
-      .attr('d', `M ${source.x} ${source.y} L ${target.x} ${target.y}`)
+      .attr('d', `M ${startX} ${startY} L ${endX} ${endY}`)
       .attr('stroke', '#666')
       .attr('stroke-width', 1.5)
 
@@ -196,10 +252,6 @@ const drawMap = () => {
       line.attr('marker-start', 'url(#dot)').attr('marker-end', 'url(#dot)')
     }
   })
-
-  // Constants for bubble sizing
-  const BUBBLE_RADIUS = 45
-  const TEXT_WIDTH = 90 // Reduced from 70 to give more padding
 
   // Draw bubbles
   const bubbleGroup = svg.append('g')
