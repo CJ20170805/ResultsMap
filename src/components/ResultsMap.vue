@@ -63,7 +63,7 @@ function drawGroupDividers(
   startLayer: LayerType = 'process' as LayerType,
 ) {
   if (groups.length <= 1) return
-
+  const yScale = 0.9;
   const dividerGroup = svg.append('g').attr('class', 'group-dividers')
 
   groups.forEach((group) => {
@@ -77,10 +77,10 @@ function drawGroupDividers(
       } else {
         // Start from the middle of the specified startLayer
         startX = centerX + Math.cos(group.startAngle) * tracks[startLayer].inner
-        startY = centerY + Math.sin(group.startAngle) * tracks[startLayer].inner
+        startY = centerY + Math.sin(group.startAngle) * tracks[startLayer].inner  * yScale
       }
       const endX = centerX + Math.cos(group.startAngle) * tracks.operational.outer
-      const endY = centerY + Math.sin(group.startAngle) * tracks.operational.outer
+      const endY = centerY + Math.sin(group.startAngle) * tracks.operational.outer  * yScale
 
       dividerGroup
         .append('line')
@@ -188,18 +188,30 @@ const drawMap = () => {
     .attr('d', 'M 0 0 L 10 5 L 0 10 z')
     .attr('fill', '#666')
 
+  // Add title at the top of the map
+    svg.append('text')
+    .attr('x', '50%')
+    .attr('y', 60)
+    .attr('text-anchor', 'middle')
+    .attr('alignment-baseline', 'middle')
+    .text('Results Map')
+    .style('font-weight', 'bold')
+    .style('font-size', '24px')
+    .style('fill', '#000');
+
   // Calculate group angles
   const updatedGroups = calculateGroupAngles(props.data.groups, props.data.bubbles)
-
+  const yScale = 0.9;
   // Draw layers (concentric circles)
   Object.entries(tracks)
     .reverse()
     .forEach(([layer, radii]) => {
       svg
-        .append('circle')
+        .append('ellipse')
         .attr('cx', centerX)
         .attr('cy', centerY)
-        .attr('r', radii.outer)
+        .attr('rx', radii.outer)
+        .attr('ry', radii.outer * yScale)
         .attr('fill', layerColors[layer as keyof typeof layerColors])
         .attr('opacity', 0.3)
     })
@@ -228,7 +240,7 @@ const drawMap = () => {
     }
     const radius = layerRadii[bubble.layer]
     bubble.x = centerX + radius * Math.cos(angle)
-    bubble.y = centerY + radius * Math.sin(angle)
+    bubble.y = centerY + radius * Math.sin(angle) * yScale
   })
 
   // Add group names
@@ -236,8 +248,10 @@ const drawMap = () => {
 
   // Constants for bubble sizing
   const BUBBLE_RADIUS = 45
+  const BUBBLE_RADIUS_X = 45;
+  const BUBBLE_RADIUS_Y = 40
   const OFFSET = 3 // Adjust this value to control how far outside the bubbles the lines should start/end
-  const TEXT_WIDTH = 90
+  const TEXT_WIDTH = 80
 
   // Draw relationships
   const linkGroup = svg.append('g')
@@ -264,9 +278,9 @@ const drawMap = () => {
 
     // Adjust start and end points based on bubble radius and offset
     const startX = source.x + unitX * (BUBBLE_RADIUS + OFFSET)
-    const startY = source.y + unitY * (BUBBLE_RADIUS + OFFSET)
+    const startY = source.y + unitY * (BUBBLE_RADIUS + OFFSET) * yScale
     const endX = target.x - unitX * (BUBBLE_RADIUS + OFFSET)
-    const endY = target.y - unitY * (BUBBLE_RADIUS + OFFSET)
+    const endY = target.y - unitY * (BUBBLE_RADIUS + OFFSET) * yScale
 
     // Calculate control point for quadratic Bézier curve
     const controlX = (startX + endX) / 2 + unitY * 50 // Adjust 50 for curve intensity
@@ -298,10 +312,11 @@ const drawMap = () => {
   props.data.bubbles.forEach((bubble) => {
     const g = bubbleGroup.append('g').attr('transform', `translate(${bubble.x},${bubble.y})`)
 
-    g.append('circle')
-      .attr('r', BUBBLE_RADIUS)
+    g.append('ellipse')
+      .attr('rx', BUBBLE_RADIUS_X)
+      .attr('ry', BUBBLE_RADIUS_Y) // Apply vertical scaling
       .attr('fill', layerColors[bubble.layer as keyof typeof layerColors])
-      .attr('opacity', 0.8)
+      .attr('opacity', 0.8);
 
     g.append('text')
       .attr('text-anchor', 'middle')
@@ -310,7 +325,9 @@ const drawMap = () => {
       .attr('font-size', '12px')
       .attr('font-weight', 'bold')
       .text(bubble.text)
-      .call(wrap, TEXT_WIDTH)
+      .attr('width', TEXT_WIDTH)
+      .call(wrap, TEXT_WIDTH);
+
   })
 }
 
@@ -369,7 +386,7 @@ watch(() => props.data, drawMap, { deep: true })
 
 <template>
   <svg ref="svgRef" :width="width" :height="height">
-    <defs>
+    <!-- <defs>
       <marker
         id="arrow"
         viewBox="0 0 10 10"
@@ -384,6 +401,6 @@ watch(() => props.data, drawMap, { deep: true })
       <marker id="dot" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="6" markerHeight="6">
         <circle cx="5" cy="5" r="4" fill="#666" />
       </marker>
-    </defs>
+    </defs> -->
   </svg>
 </template>
