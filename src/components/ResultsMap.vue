@@ -268,11 +268,16 @@ const drawMap = () => {
     const endX = target.x - unitX * (BUBBLE_RADIUS + OFFSET)
     const endY = target.y - unitY * (BUBBLE_RADIUS + OFFSET)
 
+    // Calculate control point for quadratic Bézier curve
+    const controlX = (startX + endX) / 2 + unitY * 50 // Adjust 50 for curve intensity
+    const controlY = (startY + endY) / 2 - unitX * 50 // Adjust 50 for curve intensity
+
     const line = linkGroup
       .append('path')
-      .attr('d', `M ${startX} ${startY} L ${endX} ${endY}`)
+      .attr('d', `M ${startX} ${startY} Q ${controlX} ${controlY} ${endX} ${endY}`)
       .attr('stroke', '#666')
       .attr('stroke-width', 1.5)
+      .attr('fill', 'none')
 
     console.log('rel.type', rel.type)
 
