@@ -247,9 +247,9 @@ const drawMap = () => {
   addGroupNames(svg, updatedGroups)
 
   // Constants for bubble sizing
-  const BUBBLE_RADIUS = 45
-  const BUBBLE_RADIUS_X = 45;
-  const BUBBLE_RADIUS_Y = 40
+  const BUBBLE_RADIUS = 55
+  const BUBBLE_RADIUS_X = 55;
+  const BUBBLE_RADIUS_Y = 45
   const OFFSET = 3 // Adjust this value to control how far outside the bubbles the lines should start/end
   const TEXT_WIDTH = 80
 
