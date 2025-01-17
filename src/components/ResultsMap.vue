@@ -12,13 +12,14 @@ const width = 1000
 const height = 1000
 const centerX = width / 2
 const centerY = height / 2 + 0
+const yScale = 0.9;
 
 // Define track boundaries with inner and outer radii
 const tracks = {
-  mission: { outer: 140, inner: 40 }, // Pink (innermost)
-  strategic: { outer: 240, inner: 140 }, // Green
-  process: { outer: 340, inner: 240 }, // Blue
-  operational: { outer: 440, inner: 340 }, // Orange (outermost)
+  mission: { outer: 110, inner: 0 }, // Pink (innermost)
+  strategic: { outer: 240, inner: 110 }, // Green
+  process: { outer: 370, inner: 240 }, // Blue
+  operational: { outer: 490, inner: 370 }, // Orange (outermost)
 }
 
 // Calculate the middle radius for bubble positioning
@@ -63,7 +64,6 @@ function drawGroupDividers(
   startLayer: LayerType = 'process' as LayerType,
 ) {
   if (groups.length <= 1) return
-  const yScale = 0.9;
   const dividerGroup = svg.append('g').attr('class', 'group-dividers')
 
   groups.forEach((group) => {
@@ -104,7 +104,7 @@ function addGroupNames(
       const angle = (group.startAngle + group.endAngle) / 2
       const radius = tracks['operational'].outer + 40 // Offset
       const x = centerX + radius * Math.cos(angle)
-      const y = centerY + radius * Math.sin(angle)
+      const y = centerY + radius * Math.sin(angle) * yScale
 
       svg
         .append('text')
@@ -191,7 +191,7 @@ const drawMap = () => {
   // Add title at the top of the map
     svg.append('text')
     .attr('x', '50%')
-    .attr('y', 60)
+    .attr('y', 30)
     .attr('text-anchor', 'middle')
     .attr('alignment-baseline', 'middle')
     .text('Results Map')
@@ -201,7 +201,6 @@ const drawMap = () => {
 
   // Calculate group angles
   const updatedGroups = calculateGroupAngles(props.data.groups, props.data.bubbles)
-  const yScale = 0.9;
   // Draw layers (concentric circles)
   Object.entries(tracks)
     .reverse()
