@@ -2,7 +2,7 @@
 import { ref } from 'vue'
 import ResultsMap from '@/components/ResultsMap.vue'
 import ResultsMapControls from '@/components/ResultsMapControls.vue'
-import type { ResultsMapData, Bubble, Relationship, Group, LayerType } from '@/types/ResultsMap'
+import type { ResultsMapData, Bubble, Relationship, Group, LayerType, MapConfig } from '@/types/ResultsMap'
 import type { DrawerProps } from 'element-plus'
 import {
   ArrowLeft,
@@ -10,9 +10,12 @@ import {
 } from '@element-plus/icons-vue'
 
 const showAside = ref(true)
-const direction = ref<DrawerProps['direction']>('rtl')
 
 const mapData = ref<ResultsMapData>({
+  mapConfig:{
+    title: 'Results Map',
+    fontSize: 28
+  },
   bubbles: [
     { id: '1', text: 'fires are prevented', layer: 'strategic', groupId: '1' },
     { id: '2', text: 'less injury from fire incidents', layer: 'mission', groupId: '1' },
@@ -64,6 +67,7 @@ const changeGroupLevel = (groupLevel: LayerType) => {
 const toggleAside = () => {
   showAside.value = !showAside.value
 }
+
 </script>
 
 <template>

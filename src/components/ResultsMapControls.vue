@@ -12,6 +12,9 @@ const props = defineProps<{
     mapData: ResultsMapData,
 }>()
 
+
+const mapConfig = ref(props.mapData.mapConfig);
+
 const newBubble = ref({
     text: '',
     layer: 'process' as LayerType,
@@ -72,10 +75,28 @@ const handleGroupLayerChange = () => {
   console.log('EEEEE', groupLevel.value);
   props.onChangeGroupLevel(groupLevel.value)
 }
+
 </script>
 
 <template>
   <div class="controls-panel">
+    <el-row :gutter="20">
+      <el-col :span="24">
+        <div class="control-section">
+          <h3>Map Title</h3>
+          <el-form>
+            <el-form-item>
+              <el-input v-model="mapConfig.title" placeholder="Map Title"></el-input>
+            </el-form-item>
+            <el-form-item>
+              <label style="margin: 0 20px 0 0;">Font size:  </label>
+              <el-input-number v-model="mapConfig.fontSize" :min="10" :max="50" label="Font Size"></el-input-number>
+            </el-form-item>
+          </el-form>
+        </div>
+      </el-col>
+    </el-row>
+
     <el-row :gutter="20">
       <el-col :span="24">
         <div class="control-section">
@@ -174,6 +195,10 @@ const handleGroupLayerChange = () => {
 
 .control-section {
     margin-bottom: 1rem;
+}
+
+.el-row{
+  margin: 0 0 20px 0;
 }
 
 .form-group {

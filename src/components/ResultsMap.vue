@@ -9,10 +9,11 @@ const props = defineProps<{
 
 const svgRef = ref<SVGElement | null>(null)
 const width = 1000
-const height = 1000
+const height = 1100
 const centerX = width / 2
 const centerY = height / 2 + 0
 const yScale = 0.9;
+const yOffset = 50;
 
 // Define track boundaries with inner and outer radii
 const tracks = {
@@ -77,10 +78,10 @@ function drawGroupDividers(
       } else {
         // Start from the middle of the specified startLayer
         startX = centerX + Math.cos(group.startAngle) * tracks[startLayer].inner
-        startY = centerY + Math.sin(group.startAngle) * tracks[startLayer].inner  * yScale
+        startY = centerY + yOffset + Math.sin(group.startAngle) * tracks[startLayer].inner  * yScale
       }
       const endX = centerX + Math.cos(group.startAngle) * tracks.operational.outer
-      const endY = centerY + Math.sin(group.startAngle) * tracks.operational.outer  * yScale
+      const endY = centerY + yOffset + Math.sin(group.startAngle) * tracks.operational.outer  * yScale
 
       dividerGroup
         .append('line')
@@ -102,9 +103,9 @@ function addGroupNames(
   groups.forEach((group) => {
     if (group.startAngle !== undefined && group.endAngle !== undefined) {
       const angle = (group.startAngle + group.endAngle) / 2
-      const radius = tracks['operational'].outer + 40 // Offset
+      const radius = tracks['operational'].outer + 20 // Offset
       const x = centerX + radius * Math.cos(angle)
-      const y = centerY + radius * Math.sin(angle) * yScale
+      const y = centerY + yOffset + radius * Math.sin(angle) * yScale
 
       svg
         .append('text')
@@ -191,12 +192,12 @@ const drawMap = () => {
   // Add title at the top of the map
     svg.append('text')
     .attr('x', '50%')
-    .attr('y', 30)
+    .attr('y', 100)
     .attr('text-anchor', 'middle')
     .attr('alignment-baseline', 'middle')
-    .text('Results Map')
+    .text(props.data.mapConfig.title)
     .style('font-weight', 'bold')
-    .style('font-size', '24px')
+    .style('font-size', `${props.data.mapConfig.fontSize}px`)
     .style('fill', '#000');
 
   // Calculate group angles
@@ -208,7 +209,7 @@ const drawMap = () => {
       svg
         .append('ellipse')
         .attr('cx', centerX)
-        .attr('cy', centerY)
+        .attr('cy', centerY + yOffset)
         .attr('rx', radii.outer)
         .attr('ry', radii.outer * yScale)
         .attr('fill', layerColors[layer as keyof typeof layerColors])
@@ -239,7 +240,7 @@ const drawMap = () => {
     }
     const radius = layerRadii[bubble.layer]
     bubble.x = centerX + radius * Math.cos(angle)
-    bubble.y = centerY + radius * Math.sin(angle) * yScale
+    bubble.y = centerY + + yOffset + radius * Math.sin(angle) * yScale
   })
 
   // Add group names

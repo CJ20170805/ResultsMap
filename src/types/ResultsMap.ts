@@ -1,6 +1,11 @@
 export type LayerType = 'mission' | 'strategic' | 'process' | 'operational'
 export type RelationType = 'cause-effect' | 'companion' | 'conflict'
 
+export interface MapConfig {
+  title: string,
+  fontSize: number
+}
+
 export interface Group {
     id: string
     name: string
@@ -26,6 +31,7 @@ export interface Relationship {
 }
 
 export interface ResultsMapData {
+  mapConfig: MapConfig,
   bubbles: Bubble[]
   relationships: Relationship[]
   groups: Group[]
