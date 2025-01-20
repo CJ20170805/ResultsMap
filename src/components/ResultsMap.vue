@@ -329,7 +329,99 @@ const drawMap = () => {
       .call(wrap, TEXT_WIDTH);
 
   })
+
+
+   // Add legend to the bottom-left corner
+  const legendGroup = svg.append('g')
+    .attr('class', 'legend')
+    .attr('transform', `translate(20, ${height - 400})`); // Adjust the position as needed
+
+  // Add background rectangle for legend
+  legendGroup.append('rect')
+    .attr('x', -40)
+    .attr('y', -20)
+    .attr('width', 100)
+    .attr('height', 300)
+    .attr('fill', '#ececec')
+    .attr('stroke', '#000')
+    .attr('stroke-width', 0);
+
+  // Add "Legend" text at the top
+  legendGroup.append('text')
+    .attr('x', 40)
+    .attr('y', -10)
+    .attr('text-anchor', 'middle')
+    .attr('alignment-baseline', 'middle')
+    .text('Legend')
+    .style('font-size', '14px')
+    .style('font-weight', 'bold')
+    .style('fill', '#000');
+
+  // Add legend bubbles
+  const legendBubbles = [
+    { cx: 20, cy: 230, rx: 40, ry: 30, color: layerColors.operational, text: 'Operational' },
+    { cx: 20, cy: 160, rx: 40, ry: 30, color: layerColors.process, text: 'Process' },
+    { cx: 20, cy: 90, rx: 40, ry: 30, color: layerColors.strategic, text: 'Strategic' },
+    { cx: 20, cy: 20, rx: 40, ry: 30, color: layerColors.mission, text: 'Mission' }
+  ];
+
+  legendBubbles.forEach((bubble, index) => {
+    legendGroup.append('ellipse')
+      .attr('cx', bubble.cx)
+      .attr('cy', bubble.cy)
+      .attr('rx', bubble.rx)
+      .attr('ry', bubble.ry)
+      .attr('fill', bubble.color);
+
+    legendGroup.append('text')
+      .attr('x', bubble.cx)
+      .attr('y', bubble.cy)
+      .attr('text-anchor', 'middle')
+      .attr('alignment-baseline', 'middle')
+      .text(bubble.text)
+      .style('font-size', '10px')
+      .style('fill', '#000');
+
+    if (index < legendBubbles.length - 1) {
+      legendGroup.append('line')
+        .attr('x1', bubble.cx)
+        .attr('y1', bubble.cy - bubble.ry)
+        .attr('x2', bubble.cx)
+        .attr('y2', legendBubbles[index + 1].cy + legendBubbles[index + 1].ry + 1)
+        .attr('stroke', '#000')
+        .attr('stroke-width', 1.5)
+        .attr('marker-end', 'url(#arrow)');
+    }
+  });
+
+
+   // Add vertical legend lines with text at the top
+   const legendLines = [
+    { x: 20, y: 300, length: 30, color: '#666', text: 'Cause-Effect' },
+    { x: 20, y: 330, length: 30, color: '#666', text: 'Companion' },
+    { x: 20, y: 360, length: 30, color: '#666', text: 'Conflict' }
+  ];
+
+  legendLines.forEach((line) => {
+    legendGroup.append('text')
+      .attr('x', line.x)
+      .attr('y', line.y)
+      .attr('text-anchor', 'middle')
+      .attr('alignment-baseline', 'middle')
+      .text(line.text)
+      .style('font-size', '12px')
+      .style('fill', '#000');
+
+    legendGroup.append('line')
+      .attr('x1', line.x - line.length)
+      .attr('y1', line.y + 14)
+      .attr('x2', line.x + line.length)
+      .attr('y2', line.y + 14)
+      .attr('stroke', line.color)
+      .attr('stroke-width', 1.5);
+  });
 }
+
 
 // Helper function to wrap text with proper typing
 function wrap(text: d3.Selection<d3.BaseType, unknown, d3.BaseType, unknown>, width: number) {
