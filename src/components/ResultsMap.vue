@@ -8,9 +8,9 @@ const props = defineProps<{
 }>()
 
 const svgRef = ref<SVGElement | null>(null)
-const width = 1000
+const width = 1200
 const height = 1100
-const centerX = width / 2
+const centerX = width / 2 + 50
 const centerY = height / 2 + 0
 const yScale = 0.9;
 const yOffset = 50;
@@ -189,6 +189,36 @@ const drawMap = () => {
     .attr('d', 'M 0 0 L 10 5 L 0 10 z')
     .attr('fill', '#666')
 
+ // Define start line arrow marker
+svg.append('defs').append('marker')
+  .attr('id', 'start-line-arrow')
+  .attr('viewBox', '0 0 10 10')
+  .attr('refX', '4')
+  .attr('refY', '5')
+  .attr('markerWidth', '6')
+  .attr('markerHeight', '6')
+  .attr('orient', 'auto')
+  .append('path')
+  .attr('d', 'M 0 5 L 10 5 M 5 0 L 0 5 L 5 10')
+  .attr('fill', 'none')
+  .attr('stroke', '#666')
+  .attr('stroke-width', 1.5);
+
+// Define end line arrow marker
+svg.append('defs').append('marker')
+  .attr('id', 'end-line-arrow')
+  .attr('viewBox', '0 0 10 10')
+  .attr('refX', '5')
+  .attr('refY', '5')
+  .attr('markerWidth', '6')
+  .attr('markerHeight', '6')
+  .attr('orient', 'auto')
+  .append('path')
+  .attr('d', 'M 0 5 L 10 5 M 5 0 L 10 5 L 5 10')
+  .attr('fill', 'none')
+  .attr('stroke', '#666')
+  .attr('stroke-width', 1.5);
+
   // Add title at the top of the map
     svg.append('text')
     .attr('x', '50%')
@@ -303,7 +333,10 @@ const drawMap = () => {
       line.attr('marker-start', 'url(#dot)').attr('marker-end', 'url(#dot)')
     } else if (rel.type === 'conflict') {
       // Add double arrow marker
-      line.attr('marker-start', 'url(#start-arrow)').attr('marker-end', 'url(#end-arrow)')
+      line.attr('marker-start', 'url(#start-line-arrow)').attr('marker-end', 'url(#end-line-arrow)')
+    } else if (line.text === 'Lead-Lag') {
+      // Add double arrow marker
+      line.attr('marker-end', 'url(#end-line-arrow)');
     }
   })
 
@@ -334,35 +367,35 @@ const drawMap = () => {
    // Add legend to the bottom-left corner
   const legendGroup = svg.append('g')
     .attr('class', 'legend')
-    .attr('transform', `translate(20, ${height - 400})`); // Adjust the position as needed
+    .attr('transform', `translate(20, ${height - 500})`); // Adjust the position as needed
 
   // Add background rectangle for legend
   legendGroup.append('rect')
-    .attr('x', -40)
+    .attr('x', -20)
     .attr('y', -20)
     .attr('width', 100)
-    .attr('height', 300)
-    .attr('fill', '#ececec')
+    .attr('height', 460)
+    .attr('fill', '#f8f8f8')
     .attr('stroke', '#000')
     .attr('stroke-width', 0);
 
   // Add "Legend" text at the top
   legendGroup.append('text')
-    .attr('x', 40)
-    .attr('y', -10)
+    .attr('x', 30)
+    .attr('y', -4)
     .attr('text-anchor', 'middle')
     .attr('alignment-baseline', 'middle')
     .text('Legend')
-    .style('font-size', '14px')
+    .style('font-size', '13px')
     .style('font-weight', 'bold')
     .style('fill', '#000');
 
   // Add legend bubbles
   const legendBubbles = [
-    { cx: 20, cy: 230, rx: 40, ry: 30, color: layerColors.operational, text: 'Operational' },
-    { cx: 20, cy: 160, rx: 40, ry: 30, color: layerColors.process, text: 'Process' },
-    { cx: 20, cy: 90, rx: 40, ry: 30, color: layerColors.strategic, text: 'Strategic' },
-    { cx: 20, cy: 20, rx: 40, ry: 30, color: layerColors.mission, text: 'Mission' }
+    { cx: 30, cy: 250, rx: 40, ry: 30, color: layerColors.operational, text: 'Operational' },
+    { cx: 30, cy: 180, rx: 40, ry: 30, color: layerColors.process, text: 'Process' },
+    { cx: 30, cy: 110, rx: 40, ry: 30, color: layerColors.strategic, text: 'Strategic' },
+    { cx: 30, cy: 40, rx: 40, ry: 30, color: layerColors.mission, text: 'Mission' }
   ];
 
   legendBubbles.forEach((bubble, index) => {
@@ -379,7 +412,7 @@ const drawMap = () => {
       .attr('text-anchor', 'middle')
       .attr('alignment-baseline', 'middle')
       .text(bubble.text)
-      .style('font-size', '10px')
+      .style('font-size', '11px')
       .style('fill', '#000');
 
     if (index < legendBubbles.length - 1) {
@@ -397,9 +430,10 @@ const drawMap = () => {
 
    // Add vertical legend lines with text at the top
    const legendLines = [
-    { x: 20, y: 300, length: 30, color: '#666', text: 'Cause-Effect' },
-    { x: 20, y: 330, length: 30, color: '#666', text: 'Companion' },
-    { x: 20, y: 360, length: 30, color: '#666', text: 'Conflict' }
+    { x: 30, y: 310, length: 30, color: '#666', text: 'Cause-Effect' },
+    { x: 30, y: 344, length: 30, color: '#666', text: 'Conflict' },
+    { x: 30, y: 378, length: 30, color: '#666', text: 'Companion' },
+    { x: 30, y: 412, length: 30, color: '#666', text: 'Lead-Lag' },
   ];
 
   legendLines.forEach((line) => {
@@ -412,13 +446,29 @@ const drawMap = () => {
       .style('font-size', '12px')
       .style('fill', '#000');
 
-    legendGroup.append('line')
+      const legendLine = legendGroup.append('line')
       .attr('x1', line.x - line.length)
-      .attr('y1', line.y + 14)
+      .attr('y1', line.y + 12)
       .attr('x2', line.x + line.length)
-      .attr('y2', line.y + 14)
+      .attr('y2', line.y + 12)
       .attr('stroke', line.color)
       .attr('stroke-width', 1.5);
+
+
+
+      if (line.text === 'Cause-Effect') {
+      // Add arrow marker
+      legendLine.attr('marker-end', 'url(#arrow)');
+    } else if (line.text === 'Companion') {
+      // Add circles at both ends
+      legendLine.attr('marker-start', 'url(#dot)').attr('marker-end', 'url(#dot)');
+    } else if (line.text === 'Conflict') {
+      // Add double arrow marker
+      legendLine.attr('marker-start', 'url(#start-line-arrow)').attr('marker-end', 'url(#end-line-arrow)');
+    } else if (line.text === 'Lead-Lag') {
+      // Add double arrow marker
+      legendLine.attr('marker-end', 'url(#end-line-arrow)');
+    }
   });
 }
 
