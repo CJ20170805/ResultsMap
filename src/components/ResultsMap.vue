@@ -1,26 +1,32 @@
 <script setup lang="ts">
-import { ref, onMounted, watch } from 'vue'
+import { ref, onMounted, onBeforeUnmount, watch } from 'vue'
 import * as d3 from 'd3'
 import type { ResultsMapData, Bubble, Relationship, Group, LayerType } from '@/types/ResultsMap'
+import {
+  Plus,
+  Minus
+} from '@element-plus/icons-vue'
 
 const props = defineProps<{
   data: ResultsMapData
 }>()
 
 const svgRef = ref<SVGElement | null>(null)
+const containerRef = ref<HTMLDivElement | null>(null)
 const width = 1200
 const height = 1100
 const centerX = width / 2 + 50
 const centerY = height / 2 + 0
 const yScale = 0.9;
 const yOffset = 50;
+const scale = ref(1)
 
 // Define track boundaries with inner and outer radii
 const tracks = {
-  mission: { outer: 110, inner: 0 }, // Pink (innermost)
-  strategic: { outer: 240, inner: 110 }, // Green
-  process: { outer: 370, inner: 240 }, // Blue
-  operational: { outer: 490, inner: 370 }, // Orange (outermost)
+  mission: { outer: 140, inner: 0 }, // Pink (innermost)
+  strategic: { outer: 270, inner: 140 }, // Green
+  process: { outer: 400, inner: 270 }, // Blue
+  operational: { outer: 530, inner: 400 }, // Orange (outermost)
 }
 
 // Calculate the middle radius for bubble positioning
@@ -128,6 +134,9 @@ const drawMap = () => {
   const svg = d3.select(svgRef.value)
   svg.selectAll('*').remove()
 
+   // Apply scale transformation
+   svg.attr('transform', `scale(${scale.value})`)
+
   // Define arrow marker
   svg
     .append('defs')
@@ -221,8 +230,8 @@ svg.append('defs').append('marker')
 
   // Add title at the top of the map
     svg.append('text')
-    .attr('x', '50%')
-    .attr('y', 100)
+    .attr('x', '55%')
+    .attr('y', 80)
     .attr('text-anchor', 'middle')
     .attr('alignment-baseline', 'middle')
     .text(props.data.mapConfig.title)
@@ -367,7 +376,7 @@ svg.append('defs').append('marker')
    // Add legend to the bottom-left corner
   const legendGroup = svg.append('g')
     .attr('class', 'legend')
-    .attr('transform', `translate(20, ${height - 500})`); // Adjust the position as needed
+    .attr('transform', `translate(-100, ${height - 500})`); // Adjust the position as needed
 
   // Add background rectangle for legend
   legendGroup.append('rect')
@@ -472,6 +481,23 @@ svg.append('defs').append('marker')
   });
 }
 
+const zoomIn = () => {
+  scale.value += 0.1
+  drawMap()
+}
+
+const zoomOut = () => {
+  scale.value = Math.max(0.1, scale.value - 0.1) // Prevent scale from going below 0.1
+  drawMap()
+}
+
+onMounted(() => {
+  drawMap()
+})
+
+
+watch(() => props.data, drawMap, { deep: true })
+
 
 // Helper function to wrap text with proper typing
 function wrap(text: d3.Selection<d3.BaseType, unknown, d3.BaseType, unknown>, width: number) {
@@ -518,31 +544,45 @@ function wrap(text: d3.Selection<d3.BaseType, unknown, d3.BaseType, unknown>, wi
     })
   })
 }
-
-onMounted(() => {
-  drawMap()
-})
-
-watch(() => props.data, drawMap, { deep: true })
 </script>
 
 <template>
-  <svg ref="svgRef" :width="width" :height="height">
-    <!-- <defs>
-      <marker
-        id="arrow"
-        viewBox="0 0 10 10"
-        refX="5"
-        refY="5"
-        markerWidth="6"
-        markerHeight="6"
-        orient="auto-start-reverse"
-      >
-        <path d="M 0 0 L 10 5 L 0 10 z" fill="#666" />
-      </marker>
-      <marker id="dot" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="6" markerHeight="6">
-        <circle cx="5" cy="5" r="4" fill="#666" />
-      </marker>
-    </defs> -->
-  </svg>
+  <div ref="containerRef" class="svg-container">
+    <svg ref="svgRef" :viewBox="`0 0 ${width} ${height}`" preserveAspectRatio="xMidYMid meet">
+      <!-- SVG content goes here -->
+    </svg>
+
+    <div class="zoom-controls">
+      <el-button @click="zoomIn" icon="Plus"></el-button>
+      <el-button @click="zoomOut" icon="Minus"></el-button>
+    </div>
+  </div>
 </template>
+
+<style scoped>
+.svg-container {
+  width: 100%;
+  height: 100%;
+}
+
+svg {
+  width: 100%;
+  height: 100%;
+}
+
+.zoom-controls {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  display: flex;
+  flex-direction: column;
+}
+
+.zoom-controls button {
+  background-color: #fff;
+  border: 1px solid #ccc;
+  padding: 5px;
+  margin: 2px 0;
+  cursor: pointer;
+}
+</style>
