@@ -2,10 +2,7 @@
 import { ref, onMounted, onBeforeUnmount, watch } from 'vue'
 import * as d3 from 'd3'
 import type { ResultsMapData, Bubble, Relationship, Group, LayerType } from '@/types/ResultsMap'
-import {
-  Plus,
-  Minus
-} from '@element-plus/icons-vue'
+import { Plus, Minus } from '@element-plus/icons-vue'
 
 const props = defineProps<{
   data: ResultsMapData
@@ -17,8 +14,8 @@ const width = 1200
 const height = 1100
 const centerX = width / 2 + 50
 const centerY = height / 2 - 40
-const yScale = 0.9;
-const yOffset = 50;
+const yScale = 0.9
+const yOffset = 50
 const scale = ref(1)
 
 const contextMenuVisible = ref(false)
@@ -47,9 +44,15 @@ const updateBubbleText = () => {
   }
 }
 
+const confirmRemoveBubble = () => {
+  //if (confirm('Are you sure you want to remove this bubble?')) {
+    removeBubble()
+  //}
+}
+
 const removeBubble = () => {
   if (selectedBubble.value) {
-    const index = props.data.bubbles.findIndex(b => b.id === selectedBubble.value!.id)
+    const index = props.data.bubbles.findIndex((b) => b.id === selectedBubble.value!.id)
     if (index !== -1) {
       props.data.bubbles.splice(index, 1)
       drawMap()
@@ -121,10 +124,11 @@ function drawGroupDividers(
       } else {
         // Start from the middle of the specified startLayer
         startX = centerX + Math.cos(group.startAngle) * tracks[startLayer].inner
-        startY = centerY + yOffset + Math.sin(group.startAngle) * tracks[startLayer].inner  * yScale
+        startY = centerY + yOffset + Math.sin(group.startAngle) * tracks[startLayer].inner * yScale
       }
       const endX = centerX + Math.cos(group.startAngle) * tracks.operational.outer
-      const endY = centerY + yOffset + Math.sin(group.startAngle) * tracks.operational.outer  * yScale
+      const endY =
+        centerY + yOffset + Math.sin(group.startAngle) * tracks.operational.outer * yScale
 
       dividerGroup
         .append('line')
@@ -171,8 +175,8 @@ const drawMap = () => {
   const svg = d3.select(svgRef.value)
   svg.selectAll('*').remove()
 
-   // Apply scale transformation
-   svg.attr('transform', `scale(${scale.value})`)
+  // Apply scale transformation
+  svg.attr('transform', `scale(${scale.value})`)
 
   // Define arrow marker
   svg
@@ -235,38 +239,43 @@ const drawMap = () => {
     .attr('d', 'M 0 0 L 10 5 L 0 10 z')
     .attr('fill', '#666')
 
- // Define start line arrow marker
-svg.append('defs').append('marker')
-  .attr('id', 'start-line-arrow')
-  .attr('viewBox', '0 0 10 10')
-  .attr('refX', '4')
-  .attr('refY', '5')
-  .attr('markerWidth', '6')
-  .attr('markerHeight', '6')
-  .attr('orient', 'auto')
-  .append('path')
-  .attr('d', 'M 0 5 L 10 5 M 5 0 L 0 5 L 5 10')
-  .attr('fill', 'none')
-  .attr('stroke', '#666')
-  .attr('stroke-width', 1.5);
+  // Define start line arrow marker
+  svg
+    .append('defs')
+    .append('marker')
+    .attr('id', 'start-line-arrow')
+    .attr('viewBox', '0 0 10 10')
+    .attr('refX', '4')
+    .attr('refY', '5')
+    .attr('markerWidth', '6')
+    .attr('markerHeight', '6')
+    .attr('orient', 'auto')
+    .append('path')
+    .attr('d', 'M 0 5 L 10 5 M 5 0 L 0 5 L 5 10')
+    .attr('fill', 'none')
+    .attr('stroke', '#666')
+    .attr('stroke-width', 1.5)
 
-// Define end line arrow marker
-svg.append('defs').append('marker')
-  .attr('id', 'end-line-arrow')
-  .attr('viewBox', '0 0 10 10')
-  .attr('refX', '5')
-  .attr('refY', '5')
-  .attr('markerWidth', '6')
-  .attr('markerHeight', '6')
-  .attr('orient', 'auto')
-  .append('path')
-  .attr('d', 'M 0 5 L 10 5 M 5 0 L 10 5 L 5 10')
-  .attr('fill', 'none')
-  .attr('stroke', '#666')
-  .attr('stroke-width', 1.5);
+  // Define end line arrow marker
+  svg
+    .append('defs')
+    .append('marker')
+    .attr('id', 'end-line-arrow')
+    .attr('viewBox', '0 0 10 10')
+    .attr('refX', '5')
+    .attr('refY', '5')
+    .attr('markerWidth', '6')
+    .attr('markerHeight', '6')
+    .attr('orient', 'auto')
+    .append('path')
+    .attr('d', 'M 0 5 L 10 5 M 5 0 L 10 5 L 5 10')
+    .attr('fill', 'none')
+    .attr('stroke', '#666')
+    .attr('stroke-width', 1.5)
 
   // Add title at the top of the map
-    svg.append('text')
+  svg
+    .append('text')
     .attr('x', '55%')
     .attr('y', 30)
     .attr('text-anchor', 'middle')
@@ -274,7 +283,7 @@ svg.append('defs').append('marker')
     .text(props.data.mapConfig.title)
     .style('font-weight', 'bold')
     .style('font-size', `${props.data.mapConfig.fontSize}px`)
-    .style('fill', '#000');
+    .style('fill', '#000')
 
   // Calculate group angles
   const updatedGroups = calculateGroupAngles(props.data.groups, props.data.bubbles)
@@ -316,7 +325,7 @@ svg.append('defs').append('marker')
     }
     const radius = layerRadii[bubble.layer]
     bubble.x = centerX + radius * Math.cos(angle)
-    bubble.y = centerY + + yOffset + radius * Math.sin(angle) * yScale
+    bubble.y = centerY + +yOffset + radius * Math.sin(angle) * yScale
   })
 
   // Add group names
@@ -324,7 +333,7 @@ svg.append('defs').append('marker')
 
   // Constants for bubble sizing
   const BUBBLE_RADIUS = 55
-  const BUBBLE_RADIUS_X = 55;
+  const BUBBLE_RADIUS_X = 55
   const BUBBLE_RADIUS_Y = 45
   const OFFSET = 3 // Adjust this value to control how far outside the bubbles the lines should start/end
   const TEXT_WIDTH = 80
@@ -382,14 +391,15 @@ svg.append('defs').append('marker')
       line.attr('marker-start', 'url(#start-line-arrow)').attr('marker-end', 'url(#end-line-arrow)')
     } else if (line.text === 'Lead-Lag') {
       // Add double arrow marker
-      line.attr('marker-end', 'url(#end-line-arrow)');
+      line.attr('marker-end', 'url(#end-line-arrow)')
     }
   })
 
   // Draw bubbles
   const bubbleGroup = svg.append('g')
   props.data.bubbles.forEach((bubble) => {
-    const g = bubbleGroup.append('g')
+    const g = bubbleGroup
+      .append('g')
       .attr('transform', `translate(${bubble.x},${bubble.y})`)
       .on('contextmenu', (event) => showContextMenu(event, bubble)) // Add right-click event
 
@@ -397,7 +407,7 @@ svg.append('defs').append('marker')
       .attr('rx', BUBBLE_RADIUS_X)
       .attr('ry', BUBBLE_RADIUS_Y) // Apply vertical scaling
       .attr('fill', layerColors[bubble.layer as keyof typeof layerColors])
-      .attr('opacity', 0.8);
+      .attr('opacity', 0.8)
 
     g.append('text')
       .attr('text-anchor', 'middle')
@@ -407,28 +417,29 @@ svg.append('defs').append('marker')
       .attr('font-weight', 'bold')
       .text(bubble.text)
       .attr('width', TEXT_WIDTH)
-      .call(wrap, TEXT_WIDTH);
-
+      .call(wrap, TEXT_WIDTH)
   })
 
-
-   // Add legend to the bottom-left corner
-  const legendGroup = svg.append('g')
+  // Add legend to the bottom-left corner
+  const legendGroup = svg
+    .append('g')
     .attr('class', 'legend')
-    .attr('transform', `translate(-100, ${height - 500})`); // Adjust the position as needed
+    .attr('transform', `translate(-100, ${height - 500})`) // Adjust the position as needed
 
   // Add background rectangle for legend
-  legendGroup.append('rect')
+  legendGroup
+    .append('rect')
     .attr('x', -20)
     .attr('y', -20)
     .attr('width', 100)
     .attr('height', 460)
     .attr('fill', '#f8f8f8')
     .attr('stroke', '#000')
-    .attr('stroke-width', 0);
+    .attr('stroke-width', 0)
 
   // Add "Legend" text at the top
-  legendGroup.append('text')
+  legendGroup
+    .append('text')
     .attr('x', 30)
     .attr('y', -4)
     .attr('text-anchor', 'middle')
@@ -436,88 +447,92 @@ svg.append('defs').append('marker')
     .text('Legend')
     .style('font-size', '14px')
     .style('font-weight', 'bold')
-    .style('fill', '#000');
+    .style('fill', '#000')
 
   // Add legend bubbles
   const legendBubbles = [
     { cx: 30, cy: 250, rx: 40, ry: 30, color: layerColors.operational, text: 'Operational' },
     { cx: 30, cy: 180, rx: 40, ry: 30, color: layerColors.process, text: 'Process' },
     { cx: 30, cy: 110, rx: 40, ry: 30, color: layerColors.strategic, text: 'Strategic' },
-    { cx: 30, cy: 40, rx: 40, ry: 30, color: layerColors.mission, text: 'Mission' }
-  ];
+    { cx: 30, cy: 40, rx: 40, ry: 30, color: layerColors.mission, text: 'Mission' },
+  ]
 
   legendBubbles.forEach((bubble, index) => {
-    legendGroup.append('ellipse')
+    legendGroup
+      .append('ellipse')
       .attr('cx', bubble.cx)
       .attr('cy', bubble.cy)
       .attr('rx', bubble.rx)
       .attr('ry', bubble.ry)
-      .attr('fill', bubble.color);
+      .attr('fill', bubble.color)
 
-    legendGroup.append('text')
+    legendGroup
+      .append('text')
       .attr('x', bubble.cx)
       .attr('y', bubble.cy)
       .attr('text-anchor', 'middle')
       .attr('alignment-baseline', 'middle')
       .text(bubble.text)
       .style('font-size', '12px')
-      .style('fill', '#000');
+      .style('fill', '#000')
 
     if (index < legendBubbles.length - 1) {
-      legendGroup.append('line')
+      legendGroup
+        .append('line')
         .attr('x1', bubble.cx)
         .attr('y1', bubble.cy - bubble.ry)
         .attr('x2', bubble.cx)
         .attr('y2', legendBubbles[index + 1].cy + legendBubbles[index + 1].ry + 1)
         .attr('stroke', '#000')
         .attr('stroke-width', 1.5)
-        .attr('marker-end', 'url(#arrow)');
+        .attr('marker-end', 'url(#arrow)')
     }
-  });
+  })
 
-
-   // Add vertical legend lines with text at the top
-   const legendLines = [
+  // Add vertical legend lines with text at the top
+  const legendLines = [
     { x: 30, y: 310, length: 30, color: '#666', text: 'Cause-Effect' },
     { x: 30, y: 344, length: 30, color: '#666', text: 'Conflict' },
     { x: 30, y: 378, length: 30, color: '#666', text: 'Companion' },
     { x: 30, y: 412, length: 30, color: '#666', text: 'Lead-Lag' },
-  ];
+  ]
 
   legendLines.forEach((line) => {
-    legendGroup.append('text')
+    legendGroup
+      .append('text')
       .attr('x', line.x)
       .attr('y', line.y)
       .attr('text-anchor', 'middle')
       .attr('alignment-baseline', 'middle')
       .text(line.text)
       .style('font-size', '12px')
-      .style('fill', '#000');
+      .style('fill', '#000')
 
-      const legendLine = legendGroup.append('line')
+    const legendLine = legendGroup
+      .append('line')
       .attr('x1', line.x - line.length)
       .attr('y1', line.y + 12)
       .attr('x2', line.x + line.length)
       .attr('y2', line.y + 12)
       .attr('stroke', line.color)
-      .attr('stroke-width', 1.5);
+      .attr('stroke-width', 1.5)
 
-
-
-      if (line.text === 'Cause-Effect') {
+    if (line.text === 'Cause-Effect') {
       // Add arrow marker
-      legendLine.attr('marker-end', 'url(#arrow)');
+      legendLine.attr('marker-end', 'url(#arrow)')
     } else if (line.text === 'Companion') {
       // Add circles at both ends
-      legendLine.attr('marker-start', 'url(#dot)').attr('marker-end', 'url(#dot)');
+      legendLine.attr('marker-start', 'url(#dot)').attr('marker-end', 'url(#dot)')
     } else if (line.text === 'Conflict') {
       // Add double arrow marker
-      legendLine.attr('marker-start', 'url(#start-line-arrow)').attr('marker-end', 'url(#end-line-arrow)');
+      legendLine
+        .attr('marker-start', 'url(#start-line-arrow)')
+        .attr('marker-end', 'url(#end-line-arrow)')
     } else if (line.text === 'Lead-Lag') {
       // Add double arrow marker
-      legendLine.attr('marker-end', 'url(#end-line-arrow)');
+      legendLine.attr('marker-end', 'url(#end-line-arrow)')
     }
-  });
+  })
 }
 
 const zoomIn = () => {
@@ -547,7 +562,6 @@ onBeforeUnmount(() => {
 })
 
 watch(() => props.data, drawMap, { deep: true })
-
 
 // Helper function to wrap text with proper typing
 function wrap(text: d3.Selection<d3.BaseType, unknown, d3.BaseType, unknown>, width: number) {
@@ -608,27 +622,37 @@ function wrap(text: d3.Selection<d3.BaseType, unknown, d3.BaseType, unknown>, wi
     </div>
   </div>
 
-  <div v-if="contextMenuVisible" :style="{ top: `${contextMenuPosition.y}px`, left: `${contextMenuPosition.x}px` }" class="context-menu">
+  <div
+    v-if="contextMenuVisible"
+    :style="{ top: `${contextMenuPosition.y}px`, left: `${contextMenuPosition.x}px` }"
+    class="context-menu"
+  >
     <el-form @submit.prevent="updateBubbleText">
       <el-form-item label="Text">
         <el-input v-model="newText" type="text" />
       </el-form-item>
       <el-form-item>
         <el-button type="primary" @click="updateBubbleText">Update</el-button>
-        <el-button type="danger" @click="removeBubble">Remove</el-button>
+        <el-popconfirm title="Are you sure to remove this?" @confirm="confirmRemoveBubble">
+          <template #reference>
+            <el-button type="danger">Remove</el-button>
+          </template>
+        </el-popconfirm>
       </el-form-item>
     </el-form>
-
   </div>
 </template>
-
+<style>
+.el-popper{
+  width: 228px!important;
+}
+</style>
 <style scoped>
 .svg-container {
   width: 100%;
   height: 100%;
   overflow: auto;
   position: relative;
-
 }
 
 svg {
