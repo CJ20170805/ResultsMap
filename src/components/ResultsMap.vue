@@ -23,6 +23,21 @@ const contextMenuPosition = ref({ x: 0, y: 0 })
 const selectedBubble = ref<Bubble | null>(null)
 const newText = ref('')
 
+const relationshipTypes = ['cause-effect', 'companion', 'conflict', 'lead-lag']
+
+const updateRelationshipType = (relationship: Relationship, newType: string) => {
+  relationship.type = newType as Relationship['type']
+  drawMap()
+}
+
+const removeRelationship = (relationship: Relationship) => {
+  const index = props.data.relationships.findIndex((rel) => rel.id === relationship.id)
+  if (index !== -1) {
+    props.data.relationships.splice(index, 1)
+    drawMap()
+  }
+}
+
 const showContextMenu = (event: MouseEvent, bubble: Bubble) => {
   event.preventDefault()
   selectedBubble.value = bubble
@@ -389,8 +404,8 @@ const drawMap = () => {
     } else if (rel.type === 'conflict') {
       // Add double arrow marker
       line.attr('marker-start', 'url(#start-line-arrow)').attr('marker-end', 'url(#end-line-arrow)')
-    } else if (line.text === 'Lead-Lag') {
-      // Add double arrow marker
+    } else if (rel.type === 'lead-lag') {
+      // Add single arrow marker
       line.attr('marker-end', 'url(#end-line-arrow)')
     }
   })
@@ -627,6 +642,7 @@ function wrap(text: d3.Selection<d3.BaseType, unknown, d3.BaseType, unknown>, wi
     :style="{ top: `${contextMenuPosition.y}px`, left: `${contextMenuPosition.x}px` }"
     class="context-menu"
   >
+    <!-- <h4>Bubble</h4> -->
     <el-form @submit.prevent="updateBubbleText">
       <el-form-item label="Text">
         <el-input v-model="newText" type="text" />
@@ -640,11 +656,23 @@ function wrap(text: d3.Selection<d3.BaseType, unknown, d3.BaseType, unknown>, wi
         </el-popconfirm>
       </el-form-item>
     </el-form>
+    <div v-if="selectedBubble">
+      <h4 v-if="props.data.relationships.filter(rel => rel.source === selectedBubble.id || rel.target === selectedBubble.id).length">Relationships</h4>
+      <ul>
+        <li v-for="relationship in props.data.relationships.filter(rel => rel.source === selectedBubble.id || rel.target === selectedBubble.id)" :key="relationship.id">
+          <span>[ {{ (props.data.bubbles.find(b => b.id === relationship.target)?.text || '') }} ]</span>
+          <el-select v-model="relationship.type" placeholder="Select" @change="newType => updateRelationshipType(relationship, newType)">
+            <el-option v-for="type in relationshipTypes" :key="type" :label="type" :value="type"></el-option>
+          </el-select>
+          <el-button type="danger" @click="() => removeRelationship(relationship)">Delete</el-button>
+        </li>
+      </ul>
+    </div>
   </div>
 </template>
 <style>
 .el-popper{
-  width: 228px!important;
+  /* width: 228px!important; */
 }
 </style>
 <style scoped>
@@ -682,7 +710,7 @@ svg {
   border: 1px solid #ccc;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
   z-index: 1000;
-  padding: 10px;
+  padding: 20px 10px 10px;
 }
 
 .context-menu ul {

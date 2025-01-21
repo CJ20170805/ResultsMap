@@ -35,7 +35,7 @@ const newRelationship = ref({
 })
 
 const layerOptions: LayerType[] = ['mission', 'strategic', 'process', 'operational']
-const relationTypes: RelationType[] = ['cause-effect', 'companion', 'conflict']
+const relationTypes: RelationType[] = ['cause-effect', 'companion', 'conflict', 'lead-lag']
 
 const handleAddBubble = () => {
     if (newBubble.value.text.trim()) {

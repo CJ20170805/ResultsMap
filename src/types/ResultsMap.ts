@@ -1,5 +1,5 @@
 export type LayerType = 'mission' | 'strategic' | 'process' | 'operational'
-export type RelationType = 'cause-effect' | 'companion' | 'conflict'
+export type RelationType = 'cause-effect' | 'companion' | 'conflict' | 'lead-lag'
 
 export interface MapConfig {
   title: string,
