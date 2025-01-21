@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import type { LayerType, RelationType, Bubble, Relationship, Group, ResultsMapData } from '@/types/ResultsMap'
-import { mapActions } from 'pinia';
+//import { mapActions } from 'pinia';
 
 const props = defineProps<{
     onAddBubble: (bubble: Omit<Bubble, 'id'>) => void
@@ -100,8 +100,9 @@ const handleGroupLayerChange = () => {
     <el-row :gutter="20">
       <el-col :span="24">
         <div class="control-section">
-          <h3>Group Level</h3>
+          <h3>Group Divider Level</h3>
           <el-select v-model="groupLevel" placeholder="Select Group Level" @change="handleGroupLayerChange">
+            <el-option label="None" value="None"></el-option>
             <el-option v-for="layer in layerOptions" :key="layer" :label="layer" :value="layer"></el-option>
           </el-select>
         </div>

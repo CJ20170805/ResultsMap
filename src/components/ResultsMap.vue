@@ -123,7 +123,7 @@ function calculateGroupAngles(groups: Group[], bubbles: Bubble[]) {
 function drawGroupDividers(
   svg: d3.Selection<SVGElement | null, unknown, null, undefined>,
   groups: Group[],
-  startLayer: LayerType = 'process' as LayerType,
+  startLayer: LayerType = 'None' as LayerType,
 ) {
   if (groups.length <= 1) return
   const dividerGroup = svg.append('g').attr('class', 'group-dividers')
@@ -131,6 +131,8 @@ function drawGroupDividers(
   groups.forEach((group) => {
     if (group.startAngle !== undefined && group.endAngle !== undefined) {
       let startX, startY
+
+      if (startLayer === 'None' as LayerType) return; // Skip drawing dividers if startLayer is None
 
       if (startLayer === 'mission') {
         // Start from the center if the startLayer is mission

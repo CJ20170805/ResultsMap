@@ -32,7 +32,7 @@ const mapData = ref<ResultsMapData>({
     { id: '2', name: 'G2', startAngle: 2, endAngle: 4, layers: ['process'] },
     { id: '3', name: 'GROUP3 WITH A LONG NAME', startAngle: 4, endAngle: 6, layers: ['process'] },
   ],
-  groupLevel: 'process',
+  groupLevel: 'strategic',
 })
 
 const addBubble = (bubble: Omit<Bubble, 'id'>) => {
