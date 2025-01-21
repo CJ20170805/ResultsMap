@@ -16,17 +16,17 @@ const containerRef = ref<HTMLDivElement | null>(null)
 const width = 1200
 const height = 1100
 const centerX = width / 2 + 50
-const centerY = height / 2 + 0
+const centerY = height / 2 - 40
 const yScale = 0.9;
 const yOffset = 50;
 const scale = ref(1)
 
 // Define track boundaries with inner and outer radii
 const tracks = {
-  mission: { outer: 140, inner: 0 }, // Pink (innermost)
-  strategic: { outer: 270, inner: 140 }, // Green
-  process: { outer: 400, inner: 270 }, // Blue
-  operational: { outer: 530, inner: 400 }, // Orange (outermost)
+  mission: { outer: 150, inner: 0 }, // Pink (innermost)
+  strategic: { outer: 280, inner: 150 }, // Green
+  process: { outer: 410, inner: 280 }, // Blue
+  operational: { outer: 540, inner: 410 }, // Orange (outermost)
 }
 
 // Calculate the middle radius for bubble positioning
@@ -231,7 +231,7 @@ svg.append('defs').append('marker')
   // Add title at the top of the map
     svg.append('text')
     .attr('x', '55%')
-    .attr('y', 80)
+    .attr('y', 30)
     .attr('text-anchor', 'middle')
     .attr('alignment-baseline', 'middle')
     .text(props.data.mapConfig.title)
@@ -395,7 +395,7 @@ svg.append('defs').append('marker')
     .attr('text-anchor', 'middle')
     .attr('alignment-baseline', 'middle')
     .text('Legend')
-    .style('font-size', '13px')
+    .style('font-size', '14px')
     .style('font-weight', 'bold')
     .style('fill', '#000');
 
@@ -421,7 +421,7 @@ svg.append('defs').append('marker')
       .attr('text-anchor', 'middle')
       .attr('alignment-baseline', 'middle')
       .text(bubble.text)
-      .style('font-size', '11px')
+      .style('font-size', '12px')
       .style('fill', '#000');
 
     if (index < legendBubbles.length - 1) {
@@ -490,6 +490,7 @@ const zoomOut = () => {
   scale.value = Math.max(0.1, scale.value - 0.1) // Prevent scale from going below 0.1
   drawMap()
 }
+
 
 onMounted(() => {
   drawMap()
@@ -563,6 +564,9 @@ function wrap(text: d3.Selection<d3.BaseType, unknown, d3.BaseType, unknown>, wi
 .svg-container {
   width: 100%;
   height: 100%;
+  overflow: auto;
+  position: relative;
+
 }
 
 svg {
@@ -571,9 +575,9 @@ svg {
 }
 
 .zoom-controls {
-  position: absolute;
-  top: 10px;
-  right: 10px;
+  position: fixed;
+  top: 20px;
+  right: 40px;
   display: flex;
   flex-direction: column;
 }
