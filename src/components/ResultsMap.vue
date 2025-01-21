@@ -21,6 +21,43 @@ const yScale = 0.9;
 const yOffset = 50;
 const scale = ref(1)
 
+const contextMenuVisible = ref(false)
+const contextMenuPosition = ref({ x: 0, y: 0 })
+const selectedBubble = ref<Bubble | null>(null)
+const newText = ref('')
+
+const showContextMenu = (event: MouseEvent, bubble: Bubble) => {
+  event.preventDefault()
+  selectedBubble.value = bubble
+  newText.value = bubble.text
+  contextMenuPosition.value = { x: event.clientX, y: event.clientY }
+  contextMenuVisible.value = true
+}
+
+const hideContextMenu = () => {
+  contextMenuVisible.value = false
+  selectedBubble.value = null
+}
+
+const updateBubbleText = () => {
+  if (selectedBubble.value) {
+    selectedBubble.value.text = newText.value
+    drawMap()
+    hideContextMenu()
+  }
+}
+
+const removeBubble = () => {
+  if (selectedBubble.value) {
+    const index = props.data.bubbles.findIndex(b => b.id === selectedBubble.value!.id)
+    if (index !== -1) {
+      props.data.bubbles.splice(index, 1)
+      drawMap()
+      hideContextMenu()
+    }
+  }
+}
+
 // Define track boundaries with inner and outer radii
 const tracks = {
   mission: { outer: 150, inner: 0 }, // Pink (innermost)
@@ -352,7 +389,9 @@ svg.append('defs').append('marker')
   // Draw bubbles
   const bubbleGroup = svg.append('g')
   props.data.bubbles.forEach((bubble) => {
-    const g = bubbleGroup.append('g').attr('transform', `translate(${bubble.x},${bubble.y})`)
+    const g = bubbleGroup.append('g')
+      .attr('transform', `translate(${bubble.x},${bubble.y})`)
+      .on('contextmenu', (event) => showContextMenu(event, bubble)) // Add right-click event
 
     g.append('ellipse')
       .attr('rx', BUBBLE_RADIUS_X)
@@ -491,11 +530,21 @@ const zoomOut = () => {
   drawMap()
 }
 
+const handleClickOutside = (event: MouseEvent) => {
+  const contextMenuElement = document.querySelector('.context-menu')
+  if (contextMenuElement && !contextMenuElement.contains(event.target as Node)) {
+    hideContextMenu()
+  }
+}
 
 onMounted(() => {
   drawMap()
+  document.addEventListener('click', handleClickOutside)
 })
 
+onBeforeUnmount(() => {
+  document.removeEventListener('click', handleClickOutside)
+})
 
 watch(() => props.data, drawMap, { deep: true })
 
@@ -558,6 +607,19 @@ function wrap(text: d3.Selection<d3.BaseType, unknown, d3.BaseType, unknown>, wi
       <el-button @click="zoomOut" icon="Minus"></el-button>
     </div>
   </div>
+
+  <div v-if="contextMenuVisible" :style="{ top: `${contextMenuPosition.y}px`, left: `${contextMenuPosition.x}px` }" class="context-menu">
+    <el-form @submit.prevent="updateBubbleText">
+      <el-form-item label="Text">
+        <el-input v-model="newText" type="text" />
+      </el-form-item>
+      <el-form-item>
+        <el-button type="primary" @click="updateBubbleText">Update</el-button>
+        <el-button type="danger" @click="removeBubble">Remove</el-button>
+      </el-form-item>
+    </el-form>
+
+  </div>
 </template>
 
 <style scoped>
@@ -588,5 +650,42 @@ svg {
   padding: 5px;
   margin: 2px 0;
   cursor: pointer;
+}
+
+.context-menu {
+  position: absolute;
+  background-color: white;
+  border: 1px solid #ccc;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+  z-index: 1000;
+  padding: 10px;
+}
+
+.context-menu ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.context-menu li {
+  padding: 8px 12px;
+  cursor: pointer;
+}
+
+.context-menu li:hover {
+  background-color: #f0f0f0;
+}
+
+.context-menu form {
+  display: flex;
+  flex-direction: column;
+}
+
+.context-menu label {
+  margin-bottom: 10px;
+}
+
+.context-menu button {
+  margin-top: 5px;
 }
 </style>
