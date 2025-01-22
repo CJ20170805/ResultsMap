@@ -53,7 +53,8 @@ export interface LegendLines {
   length: number,
   color: string,
   type: string,
-  text: string
+  text: string,
+  visible: boolean,
 }
 
 export interface Legends {

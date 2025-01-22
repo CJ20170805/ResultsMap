@@ -21,6 +21,7 @@ const props = defineProps<{
 }>()
 
 const mapConfig = ref(props.mapData.mapConfig)
+const legends = ref(props.mapData.legends)
 
 const newBubble = ref({
   text: '',
@@ -106,7 +107,7 @@ const deleteGroup = (groupId: string) => {
                   <el-input v-model="mapConfig.title" placeholder="Map Title"></el-input>
                 </el-form-item>
                 <el-form-item>
-                  <label style="margin: 0 20px 0 0">Font size: </label>
+                  <label style="margin: 0 20px 0 0">Title font size: </label>
                   <el-input-number
                     v-model="mapConfig.titleFontSize"
                     :min="10"
@@ -285,7 +286,37 @@ const deleteGroup = (groupId: string) => {
           </el-col>
         </el-row>
       </el-tab-pane>
-      <el-tab-pane label="Legend"> </el-tab-pane>
+      <el-tab-pane label="Legend">
+        <el-row :gutter="20">
+          <el-col :span="24">
+            <div class="control-section">
+              <h3>Bubbles</h3>
+              <el-form>
+                <el-form-item v-for="legend in legends.legendBubbles" :key="legend.track">
+                  <el-input v-model="legend.text" placeholder="Legend Text"></el-input>
+                </el-form-item>
+              </el-form>
+            </div>
+          </el-col>
+        </el-row>
+        <el-row :gutter="20">
+          <el-col :span="24">
+            <div class="control-section">
+              <h3>Lines</h3>
+              <el-form>
+                <el-form-item v-for="legend in legends.legendLines" :key="legend.type">
+                    <el-col :span="20">
+                      <el-input v-model="legend.text" placeholder="Legend Text"></el-input>
+                    </el-col>
+                    <el-col :span="4">
+                      <el-switch v-model="legend.visible"></el-switch>
+                    </el-col>
+                </el-form-item>
+              </el-form>
+            </div>
+          </el-col>
+        </el-row>
+      </el-tab-pane>
     </el-tabs>
   </div>
 </template>

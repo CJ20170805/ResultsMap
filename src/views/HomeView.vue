@@ -51,10 +51,10 @@ const mapData = ref<ResultsMapData>({
       { cx: 30, cy: 40, rx: 40, ry: 30, track: 'mission', text: 'Mission' },
     ],
     legendLines: [
-      { x: 30, y: 310, length: 30, color: '#666', type: 'Cause-Effect', text: 'Cause-Effect' },
-      { x: 30, y: 344, length: 30, color: '#666', type: 'Conflict', text: 'Conflict' },
-      { x: 30, y: 378, length: 30, color: '#666', type: 'Companion', text: 'Companion' },
-      { x: 30, y: 412, length: 30, color: '#666', type: 'Lead-Lag', text: 'Lead-Lag' },
+      { x: 30, y: 310, length: 30, color: '#666', type: 'Cause-Effect', text: 'Cause-Effect', visible: true },
+      { x: 30, y: 344, length: 30, color: '#666', type: 'Conflict', text: 'Conflict', visible: true },
+      { x: 30, y: 378, length: 30, color: '#666', type: 'Companion', text: 'Companion', visible: true },
+      { x: 30, y: 412, length: 30, color: '#666', type: 'Lead-Lag', text: 'Lead-Lag', visible: true },
     ],
   },
 })

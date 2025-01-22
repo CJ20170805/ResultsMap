@@ -513,12 +513,13 @@ const drawMap = () => {
   //   { x: 30, y: 378, length: 30, color: '#666', text: 'Companion' },
   //   { x: 30, y: 412, length: 30, color: '#666', text: 'Lead-Lag' },
   // ]
-
+  let currentY = 0;
   props.data.legends.legendLines.forEach((line) => {
-    legendGroup
+    if (line.visible){
+      legendGroup
       .append('text')
       .attr('x', line.x)
-      .attr('y', line.y)
+      .attr('y', line.y - currentY)
       .attr('text-anchor', 'middle')
       .attr('alignment-baseline', 'middle')
       .text(line.text)
@@ -528,9 +529,9 @@ const drawMap = () => {
     const legendLine = legendGroup
       .append('line')
       .attr('x1', line.x - line.length)
-      .attr('y1', line.y + 12)
+      .attr('y1', line.y + 12 - currentY)
       .attr('x2', line.x + line.length)
-      .attr('y2', line.y + 12)
+      .attr('y2', line.y + 12 - currentY)
       .attr('stroke', line.color)
       .attr('stroke-width', 1.5)
 
@@ -549,6 +550,10 @@ const drawMap = () => {
       // Add double arrow marker
       legendLine.attr('marker-end', 'url(#end-line-arrow)')
     }
+    } else {
+      currentY += 34;
+    }
+
   })
 }
 
