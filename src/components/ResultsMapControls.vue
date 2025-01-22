@@ -124,7 +124,7 @@ const deleteGroup = (groupId: string) => {
           <el-col :span="24">
             <div class="control-section">
               <h3>Layer Colors</h3>
-              <el-form>
+              <el-form class="color-form">
                 <el-form-item v-for="(color, layer) in mapConfig.layerColors" :key="layer">
                   <label class="color-label" :for="layer">{{ layer }}</label>
                   <el-color-picker v-model="mapConfig.layerColors[layer]" />
@@ -324,6 +324,9 @@ const deleteGroup = (groupId: string) => {
 <style>
 .control-tabs > .el-tabs__content {
   padding: 2px 12px;
+}
+.el-form-item{
+  margin-bottom: 10px;
 }
 </style>
 
