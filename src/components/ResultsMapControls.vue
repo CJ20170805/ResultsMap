@@ -14,6 +14,7 @@ const props = defineProps<{
   onAddBubble: (bubble: Omit<Bubble, 'id'>) => void
   onAddRelationship: (relationship: Omit<Relationship, 'id'>) => void
   onAddGroup: (group: Omit<Group, 'id'>) => void
+  onDeleteGroup: (index: number) => void
   onChangeGroupLevel: (groupLevel: LayerType) => void
   groups: Group[]
   mapData: ResultsMapData
@@ -82,17 +83,11 @@ const handleGroupLayerChange = () => {
   props.onChangeGroupLevel(groupLevel.value)
 }
 
-const updateGroupName = (groupId: string) => {
-  const group = props.groups.find((g) => g.id === groupId)
-  if (group) {
-    console.log(`Updated group name to: ${group.name}`)
-  }
-}
 
 const deleteGroup = (groupId: string) => {
   const index = props.mapData.groups.findIndex((g) => g.id === groupId)
   if (index !== -1) {
-    props.mapData.groups.splice(index, 1)
+    props.onDeleteGroup(index);
     console.log(`Deleted group with ID: ${groupId}`)
   }
 }

@@ -59,6 +59,10 @@ const addGroup = (group: Omit<Group, 'id'>) => {
   })
 }
 
+const deleteGroup = (index: number) => {
+  mapData.value.groups.splice(index, 1);
+}
+
 const changeGroupLevel = (groupLevel: LayerType) => {
   mapData.value.groupLevel = groupLevel
   console.log('changeGroupLevel', groupLevel)
@@ -89,6 +93,7 @@ const toggleAside = () => {
             :onAddBubble="addBubble"
             :onAddRelationship="addRelationship"
             :onAddGroup="addGroup"
+            :onDeleteGroup="deleteGroup"
             :groups="mapData.groups"
             :onChangeGroupLevel="changeGroupLevel"
           />

@@ -2,7 +2,7 @@
 import { ref, onMounted, onBeforeUnmount, watch } from 'vue'
 import * as d3 from 'd3'
 import type { ResultsMapData, Bubble, Relationship, Group, LayerType } from '@/types/ResultsMap'
-import { Plus, Minus } from '@element-plus/icons-vue'
+// import { Plus, Minus } from '@element-plus/icons-vue'
 
 const props = defineProps<{
   data: ResultsMapData
@@ -418,7 +418,7 @@ const drawMap = () => {
     const g = bubbleGroup
       .append('g')
       .attr('transform', `translate(${bubble.x},${bubble.y})`)
-      .on('contextmenu', (event) => showContextMenu(event, bubble)) // Add right-click event
+      .on('contextmenu', (event: MouseEvent) => showContextMenu(event, bubble)) // Add right-click event
 
     g.append('ellipse')
       .attr('rx', BUBBLE_RADIUS_X)
@@ -672,11 +672,6 @@ function wrap(text: d3.Selection<d3.BaseType, unknown, d3.BaseType, unknown>, wi
     </div>
   </div>
 </template>
-<style>
-.el-popper{
-  /* width: 228px!important; */
-}
-</style>
 <style scoped>
 .svg-container {
   width: 100%;
