@@ -28,9 +28,9 @@ const mapData = ref<ResultsMapData>({
     { id: '3', source: '1', target: '4', type: 'conflict' },
   ],
   groups: [
-    { id: '1', name: 'G1', startAngle: 0, endAngle: 2, layers: ['process'] },
-    { id: '2', name: 'G2', startAngle: 2, endAngle: 4, layers: ['process'] },
-    { id: '3', name: 'GROUP3 WITH A LONG NAME', startAngle: 4, endAngle: 6, layers: ['process'] },
+    { id: '1', name: 'G1', startAngle: 0, endAngle: 2 },
+    { id: '2', name: 'G2', startAngle: 2, endAngle: 4 },
+    { id: '3', name: 'GROUP3 WITH A LONG NAME', startAngle: 4, endAngle: 6 },
   ],
   groupLevel: 'strategic',
 })

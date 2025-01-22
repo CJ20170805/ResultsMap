@@ -9,7 +9,7 @@ export interface MapConfig {
 export interface Group {
     id: string
     name: string
-    layers: LayerType[]
+    // layers: LayerType[]
     startAngle?: number
     endAngle?: number
 }
