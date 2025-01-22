@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, onBeforeUnmount, watch } from 'vue'
 import * as d3 from 'd3'
-import type { ResultsMapData, Bubble, Relationship, Group, LayerType } from '@/types/ResultsMap'
+import type { ResultsMapData, Bubble, Relationship, Group, LayerType, LayerColors } from '@/types/ResultsMap'
 // import { Plus, Minus } from '@element-plus/icons-vue'
 
 const props = defineProps<{
@@ -93,12 +93,12 @@ const layerRadii = {
 }
 
 // Layer colors
-const layerColors = {
-  mission: '#ffcdd2', // Pink
-  strategic: '#c8e6c9', // Green
-  process: '#bbdefb', // Blue
-  operational: '#ffe0b2', // Orange
-}
+// const layerColors = {
+//   mission: '#ffcdd2', // Pink
+//   strategic: '#c8e6c9', // Green
+//   process: '#bbdefb', // Blue
+//   operational: '#ffe0b2', // Orange
+// }
 
 // Add function to calculate group angles
 function calculateGroupAngles(groups: Group[], bubbles: Bubble[]) {
@@ -299,7 +299,7 @@ const drawMap = () => {
     .attr('alignment-baseline', 'middle')
     .text(props.data.mapConfig.title)
     .style('font-weight', 'bold')
-    .style('font-size', `${props.data.mapConfig.fontSize}px`)
+    .style('font-size', `${props.data.mapConfig.titleFontSize}px`)
     .style('fill', '#000')
 
   // Calculate group angles
@@ -314,7 +314,7 @@ const drawMap = () => {
         .attr('cy', centerY + yOffset)
         .attr('rx', radii.outer)
         .attr('ry', radii.outer * yScale)
-        .attr('fill', layerColors[layer as keyof typeof layerColors])
+        .attr('fill', props.data.mapConfig.layerColors[layer as keyof LayerColors])
         .attr('opacity', 0.3)
     })
 
@@ -423,7 +423,7 @@ const drawMap = () => {
     g.append('ellipse')
       .attr('rx', BUBBLE_RADIUS_X)
       .attr('ry', BUBBLE_RADIUS_Y) // Apply vertical scaling
-      .attr('fill', layerColors[bubble.layer as keyof typeof layerColors])
+      .attr('fill', props.data.mapConfig.layerColors[bubble.layer as keyof LayerColors])
       .attr('opacity', 0.8)
 
     g.append('text')
@@ -467,21 +467,21 @@ const drawMap = () => {
     .style('fill', '#000')
 
   // Add legend bubbles
-  const legendBubbles = [
-    { cx: 30, cy: 250, rx: 40, ry: 30, color: layerColors.operational, text: 'Operational' },
-    { cx: 30, cy: 180, rx: 40, ry: 30, color: layerColors.process, text: 'Process' },
-    { cx: 30, cy: 110, rx: 40, ry: 30, color: layerColors.strategic, text: 'Strategic' },
-    { cx: 30, cy: 40, rx: 40, ry: 30, color: layerColors.mission, text: 'Mission' },
-  ]
+  // const legendBubbles = [
+  //   { cx: 30, cy: 250, rx: 40, ry: 30, track: 'operational', text: 'Operational' },
+  //   { cx: 30, cy: 180, rx: 40, ry: 30, track: 'process', text: 'Process' },
+  //   { cx: 30, cy: 110, rx: 40, ry: 30, track: 'strategic', text: 'Strategic' },
+  //   { cx: 30, cy: 40, rx: 40, ry: 30, track: 'mission', text: 'Mission' },
+  // ]
 
-  legendBubbles.forEach((bubble, index) => {
+  props.data.legends.legendBubbles.forEach((bubble, index) => {
     legendGroup
       .append('ellipse')
       .attr('cx', bubble.cx)
       .attr('cy', bubble.cy)
       .attr('rx', bubble.rx)
       .attr('ry', bubble.ry)
-      .attr('fill', bubble.color)
+      .attr('fill', props.data.mapConfig.layerColors[bubble.track as keyof LayerColors])
 
     legendGroup
       .append('text')
@@ -493,13 +493,13 @@ const drawMap = () => {
       .style('font-size', '12px')
       .style('fill', '#000')
 
-    if (index < legendBubbles.length - 1) {
+    if (index < props.data.legends.legendBubbles.length - 1) {
       legendGroup
         .append('line')
         .attr('x1', bubble.cx)
         .attr('y1', bubble.cy - bubble.ry)
         .attr('x2', bubble.cx)
-        .attr('y2', legendBubbles[index + 1].cy + legendBubbles[index + 1].ry + 1)
+        .attr('y2', props.data.legends.legendBubbles[index + 1].cy + props.data.legends.legendBubbles[index + 1].ry + 1)
         .attr('stroke', '#000')
         .attr('stroke-width', 1.5)
         .attr('marker-end', 'url(#arrow)')
@@ -507,14 +507,14 @@ const drawMap = () => {
   })
 
   // Add vertical legend lines with text at the top
-  const legendLines = [
-    { x: 30, y: 310, length: 30, color: '#666', text: 'Cause-Effect' },
-    { x: 30, y: 344, length: 30, color: '#666', text: 'Conflict' },
-    { x: 30, y: 378, length: 30, color: '#666', text: 'Companion' },
-    { x: 30, y: 412, length: 30, color: '#666', text: 'Lead-Lag' },
-  ]
+  // const legendLines = [
+  //   { x: 30, y: 310, length: 30, color: '#666', text: 'Cause-Effect' },
+  //   { x: 30, y: 344, length: 30, color: '#666', text: 'Conflict' },
+  //   { x: 30, y: 378, length: 30, color: '#666', text: 'Companion' },
+  //   { x: 30, y: 412, length: 30, color: '#666', text: 'Lead-Lag' },
+  // ]
 
-  legendLines.forEach((line) => {
+  props.data.legends.legendLines.forEach((line) => {
     legendGroup
       .append('text')
       .attr('x', line.x)
@@ -534,18 +534,18 @@ const drawMap = () => {
       .attr('stroke', line.color)
       .attr('stroke-width', 1.5)
 
-    if (line.text === 'Cause-Effect') {
+    if (line.type === 'Cause-Effect') {
       // Add arrow marker
       legendLine.attr('marker-end', 'url(#arrow)')
-    } else if (line.text === 'Companion') {
+    } else if (line.type === 'Companion') {
       // Add circles at both ends
       legendLine.attr('marker-start', 'url(#dot)').attr('marker-end', 'url(#dot)')
-    } else if (line.text === 'Conflict') {
+    } else if (line.type === 'Conflict') {
       // Add double arrow marker
       legendLine
         .attr('marker-start', 'url(#start-line-arrow)')
         .attr('marker-end', 'url(#end-line-arrow)')
-    } else if (line.text === 'Lead-Lag') {
+    } else if (line.type === 'Lead-Lag') {
       // Add double arrow marker
       legendLine.attr('marker-end', 'url(#end-line-arrow)')
     }

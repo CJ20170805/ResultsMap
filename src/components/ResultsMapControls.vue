@@ -108,11 +108,25 @@ const deleteGroup = (groupId: string) => {
                 <el-form-item>
                   <label style="margin: 0 20px 0 0">Font size: </label>
                   <el-input-number
-                    v-model="mapConfig.fontSize"
+                    v-model="mapConfig.titleFontSize"
                     :min="10"
                     :max="50"
                     label="Font Size"
                   ></el-input-number>
+                </el-form-item>
+              </el-form>
+            </div>
+          </el-col>
+        </el-row>
+
+        <el-row :gutter="20">
+          <el-col :span="24">
+            <div class="control-section">
+              <h3>Layer Colors</h3>
+              <el-form>
+                <el-form-item v-for="(color, layer) in mapConfig.layerColors" :key="layer">
+                  <label class="color-label" :for="layer">{{ layer }}</label>
+                  <el-color-picker v-model="mapConfig.layerColors[layer]" />
                 </el-form-item>
               </el-form>
             </div>
@@ -290,7 +304,7 @@ const deleteGroup = (groupId: string) => {
 }
 
 .controls-panel h3 {
-  margin: 0 0 4px 0;
+  margin: 0 0 10px 0;
 }
 
 .control-section {
@@ -313,5 +327,10 @@ span {
 
 select[multiple] {
   height: 100px;
+}
+
+.color-label{
+  text-transform: capitalize;
+  margin: 0 10px 0 0px;
 }
 </style>
