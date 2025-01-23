@@ -45,16 +45,16 @@ const mapData = ref<ResultsMapData>({
   groupLevel: 'strategic',
   legends: {
     legendBubbles: [
-      { cx: 30, cy: 250, rx: 40, ry: 30, track: 'operational', text: 'Operational' },
-      { cx: 30, cy: 180, rx: 40, ry: 30, track: 'process', text: 'Process' },
-      { cx: 30, cy: 110, rx: 40, ry: 30, track: 'strategic', text: 'Strategic' },
-      { cx: 30, cy: 40, rx: 40, ry: 30, track: 'mission', text: 'Mission' },
+      { cx: 30, cy: 250, rx: 40, ry: 34, track: 'operational', text: 'Operational' },
+      { cx: 30, cy: 170, rx: 40, ry: 34, track: 'process', text: 'Process' },
+      { cx: 30, cy: 90, rx: 40, ry: 34, track: 'strategic', text: 'Strategic' },
+      { cx: 30, cy: 10, rx: 40, ry: 34, track: 'mission', text: 'Mission' },
     ],
     legendLines: [
-      { x: 30, y: 310, length: 30, color: '#666', type: 'Cause-Effect', text: 'Cause-Effect', visible: true },
-      { x: 30, y: 344, length: 30, color: '#666', type: 'Conflict', text: 'Conflict', visible: true },
-      { x: 30, y: 378, length: 30, color: '#666', type: 'Companion', text: 'Companion', visible: true },
-      { x: 30, y: 412, length: 30, color: '#666', type: 'Lead-Lag', text: 'Lead-Lag', visible: true },
+      { x: 30, y: 310, length: 32, color: '#666', type: 'Cause-Effect', text: 'Cause-Effect', visible: true },
+      { x: 30, y: 344, length: 32, color: '#666', type: 'Conflict', text: 'Conflict', visible: true },
+      { x: 30, y: 378, length: 32, color: '#666', type: 'Companion', text: 'Companion', visible: true },
+      { x: 30, y: 412, length: 32, color: '#666', type: 'Lead-Lag', text: 'Lead-Lag', visible: true },
     ],
   },
 })

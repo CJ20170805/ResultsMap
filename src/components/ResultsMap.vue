@@ -479,9 +479,9 @@ const drawMap = () => {
   legendGroup
     .append('rect')
     .attr('x', -20)
-    .attr('y', -20)
+    .attr('y', -60)
     .attr('width', 100)
-    .attr('height', 460)
+    .attr('height', 500)
     .attr('fill', '#f8f8f8')
     .attr('stroke', '#000')
     .attr('stroke-width', 0)
@@ -490,7 +490,7 @@ const drawMap = () => {
   legendGroup
     .append('text')
     .attr('x', 30)
-    .attr('y', -4)
+    .attr('y', -44)
     .attr('text-anchor', 'middle')
     .attr('alignment-baseline', 'middle')
     .text('Legend')
@@ -513,17 +513,49 @@ const drawMap = () => {
       .attr('cy', bubble.cy)
       .attr('rx', bubble.rx)
       .attr('ry', bubble.ry)
-      .attr('fill', props.data.mapConfig.layerColors[bubble.track as keyof LayerColors])
+      .attr('fill', props.data.mapConfig.layerColors[bubble.track as keyof typeof props.data.mapConfig.layerColors]);
 
-    legendGroup
+      const textElement = legendGroup
       .append('text')
       .attr('x', bubble.cx)
-      .attr('y', bubble.cy)
       .attr('text-anchor', 'middle')
       .attr('alignment-baseline', 'middle')
-      .text(bubble.text)
       .style('font-size', '12px')
-      .style('fill', '#000')
+      .style('fill', '#000');
+
+    const words = bubble.text.split(' ').filter(word => word.trim() !== '');
+    const lineHeight = 1.1; // Adjust line height as needed
+    const fontSize = 12; // Font size in pixels
+    const totalHeight = lineHeight * (words.length - 1) * fontSize; // Total height of the text
+
+    // Ensure the total height does not exceed the bubble's height
+    const maxHeight = bubble.ry * 2;
+    const adjustedLineHeight = totalHeight > maxHeight ? maxHeight / (words.length - 1) : lineHeight * fontSize;
+
+    let initialY = bubble.cy - (adjustedLineHeight * (words.length - 1)) / 2;
+
+    switch (words.length) {
+      case 1:
+        break;
+      case 2:
+        initialY += 6;
+        break;
+      case 3:
+        initialY += 8;
+        break;
+      default:
+      initialY += 6;
+        break;
+    }
+
+    words.forEach((word, i) => {
+      textElement
+        .append('tspan')
+        .attr('x', bubble.cx)
+        .attr('y', initialY + i * adjustedLineHeight)
+        .text(word);
+    });
+
 
     if (index < props.data.legends.legendBubbles.length - 1) {
       legendGroup
@@ -535,13 +567,13 @@ const drawMap = () => {
           'y2',
           props.data.legends.legendBubbles[index + 1].cy +
             props.data.legends.legendBubbles[index + 1].ry +
-            1,
+            3,
         )
         .attr('stroke', '#000')
         .attr('stroke-width', 1.5)
-        .attr('marker-end', 'url(#arrow)')
+        .attr('marker-end', 'url(#arrow)');
     }
-  })
+  });
 
   // Add vertical legend lines with text at the top
   // const legendLines = [
