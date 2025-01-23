@@ -1,7 +1,14 @@
 <script setup lang="ts">
 import { ref, onMounted, onBeforeUnmount, watch } from 'vue'
 import * as d3 from 'd3'
-import type { ResultsMapData, Bubble, Relationship, Group, LayerType, LayerColors } from '@/types/ResultsMap'
+import type {
+  ResultsMapData,
+  Bubble,
+  Relationship,
+  Group,
+  LayerType,
+  LayerColors,
+} from '@/types/ResultsMap'
 // import { Plus, Minus } from '@element-plus/icons-vue'
 
 const props = defineProps<{
@@ -61,7 +68,7 @@ const updateBubbleText = () => {
 
 const confirmRemoveBubble = () => {
   //if (confirm('Are you sure you want to remove this bubble?')) {
-    removeBubble()
+  removeBubble()
   //}
 }
 
@@ -132,7 +139,7 @@ function drawGroupDividers(
     if (group.startAngle !== undefined && group.endAngle !== undefined) {
       let startX, startY
 
-      if (startLayer === 'None' as LayerType) return; // Skip drawing dividers if startLayer is None
+      if (startLayer === ('None' as LayerType)) return // Skip drawing dividers if startLayer is None
 
       if (startLayer === 'mission') {
         // Start from the center if the startLayer is mission
@@ -349,11 +356,56 @@ const drawMap = () => {
   addGroupNames(svg, updatedGroups)
 
   // Constants for bubble sizing
-  const BUBBLE_RADIUS = 55
+  let BUBBLE_RADIUS = 15
   const BUBBLE_RADIUS_X = 55
   const BUBBLE_RADIUS_Y = 45
   const OFFSET = 3 // Adjust this value to control how far outside the bubbles the lines should start/end
-  const TEXT_WIDTH = 80
+  const TEXT_WIDTH = 120
+  const BUBBLE_PADDING_X = 20 // Horizontal padding around the text inside the bubble
+  const BUBBLE_PADDING_Y = 25
+
+  // Draw bubbles
+  const bubbleGroup = svg.append('g')
+  const bubbleRadii = new Map<string, { rx: number; ry: number }>()
+  props.data.bubbles.forEach((bubble) => {
+    const g = bubbleGroup
+      .append('g')
+      .attr('transform', `translate(${bubble.x},${bubble.y})`)
+      .on('contextmenu', (event: MouseEvent) => showContextMenu(event, bubble)) // Add right-click event
+
+    const textElement = g
+      .append('text')
+      .attr('text-anchor', 'middle')
+      .attr('alignment-baseline', 'middle')
+      .attr('fill', '#000')
+      .attr('font-size', '12px')
+      .attr('font-weight', 'bold')
+      .text(bubble.text)
+      .call(wrap, TEXT_WIDTH)
+
+    // Measure the text dimensions
+    const textBBox = textElement.node().getBBox()
+    const textWidth = textBBox.width
+    const textHeight = textBBox.height
+
+    // Adjust the bubble size based on the text dimensions
+    const bubbleRadiusX = textWidth / 2 + BUBBLE_PADDING_X
+    const bubbleRadiusY = textHeight / 2 + BUBBLE_PADDING_Y
+
+    bubbleRadii.set(bubble.id, { rx: bubbleRadiusX, ry: bubbleRadiusY })
+
+    g.append('ellipse')
+      .attr('rx', bubbleRadiusX)
+      .attr('ry', bubbleRadiusY)
+      .attr(
+        'fill',
+        props.data.mapConfig.layerColors[
+          bubble.layer as keyof typeof props.data.mapConfig.layerColors
+        ],
+      )
+      .attr('opacity', 0.8)
+      .lower()
+  })
 
   // Draw relationships
   const linkGroup = svg.append('g')
@@ -378,15 +430,20 @@ const drawMap = () => {
     const unitX = dx / distance
     const unitY = dy / distance
 
+    const sourceRadius = bubbleRadii.get(source.id);
+    const targetRadius = bubbleRadii.get(target.id);
+
+    if (!sourceRadius || !targetRadius) return;
+
     // Adjust start and end points based on bubble radius and offset
-    const startX = source.x + unitX * (BUBBLE_RADIUS + OFFSET)
-    const startY = source.y + unitY * (BUBBLE_RADIUS + OFFSET) * yScale
-    const endX = target.x - unitX * (BUBBLE_RADIUS + OFFSET)
-    const endY = target.y - unitY * (BUBBLE_RADIUS + OFFSET) * yScale
+    const startX = source.x + unitX * (sourceRadius.rx + OFFSET);
+    const startY = source.y + unitY * (sourceRadius.ry + OFFSET);
+    const endX = target.x - unitX * (targetRadius.rx + OFFSET);
+    const endY = target.y - unitY * (targetRadius.ry + OFFSET);
 
     // Calculate control point for quadratic Bézier curve
-    const controlX = (startX + endX) / 2 + unitY * 50 // Adjust 50 for curve intensity
-    const controlY = (startY + endY) / 2 - unitX * 50 // Adjust 50 for curve intensity
+    const controlX = (startX + endX) / 2 + unitY * 50; // Adjust 50 for curve intensity
+    const controlY = (startY + endY) / 2 - unitX * 50; // Adjust 50 for curve intensity
 
     const line = linkGroup
       .append('path')
@@ -410,31 +467,6 @@ const drawMap = () => {
       // Add single arrow marker
       line.attr('marker-end', 'url(#end-line-arrow)')
     }
-  })
-
-  // Draw bubbles
-  const bubbleGroup = svg.append('g')
-  props.data.bubbles.forEach((bubble) => {
-    const g = bubbleGroup
-      .append('g')
-      .attr('transform', `translate(${bubble.x},${bubble.y})`)
-      .on('contextmenu', (event: MouseEvent) => showContextMenu(event, bubble)) // Add right-click event
-
-    g.append('ellipse')
-      .attr('rx', BUBBLE_RADIUS_X)
-      .attr('ry', BUBBLE_RADIUS_Y) // Apply vertical scaling
-      .attr('fill', props.data.mapConfig.layerColors[bubble.layer as keyof LayerColors])
-      .attr('opacity', 0.8)
-
-    g.append('text')
-      .attr('text-anchor', 'middle')
-      .attr('alignment-baseline', 'middle')
-      .attr('fill', '#000')
-      .attr('font-size', '12px')
-      .attr('font-weight', 'bold')
-      .text(bubble.text)
-      .attr('width', TEXT_WIDTH)
-      .call(wrap, TEXT_WIDTH)
   })
 
   // Add legend to the bottom-left corner
@@ -499,7 +531,12 @@ const drawMap = () => {
         .attr('x1', bubble.cx)
         .attr('y1', bubble.cy - bubble.ry)
         .attr('x2', bubble.cx)
-        .attr('y2', props.data.legends.legendBubbles[index + 1].cy + props.data.legends.legendBubbles[index + 1].ry + 1)
+        .attr(
+          'y2',
+          props.data.legends.legendBubbles[index + 1].cy +
+            props.data.legends.legendBubbles[index + 1].ry +
+            1,
+        )
         .attr('stroke', '#000')
         .attr('stroke-width', 1.5)
         .attr('marker-end', 'url(#arrow)')
@@ -513,47 +550,46 @@ const drawMap = () => {
   //   { x: 30, y: 378, length: 30, color: '#666', text: 'Companion' },
   //   { x: 30, y: 412, length: 30, color: '#666', text: 'Lead-Lag' },
   // ]
-  let currentY = 0;
+  let currentY = 0
   props.data.legends.legendLines.forEach((line) => {
-    if (line.visible){
+    if (line.visible) {
       legendGroup
-      .append('text')
-      .attr('x', line.x)
-      .attr('y', line.y - currentY)
-      .attr('text-anchor', 'middle')
-      .attr('alignment-baseline', 'middle')
-      .text(line.text)
-      .style('font-size', '12px')
-      .style('fill', '#000')
+        .append('text')
+        .attr('x', line.x)
+        .attr('y', line.y - currentY)
+        .attr('text-anchor', 'middle')
+        .attr('alignment-baseline', 'middle')
+        .text(line.text)
+        .style('font-size', '12px')
+        .style('fill', '#000')
 
-    const legendLine = legendGroup
-      .append('line')
-      .attr('x1', line.x - line.length)
-      .attr('y1', line.y + 12 - currentY)
-      .attr('x2', line.x + line.length)
-      .attr('y2', line.y + 12 - currentY)
-      .attr('stroke', line.color)
-      .attr('stroke-width', 1.5)
+      const legendLine = legendGroup
+        .append('line')
+        .attr('x1', line.x - line.length)
+        .attr('y1', line.y + 12 - currentY)
+        .attr('x2', line.x + line.length)
+        .attr('y2', line.y + 12 - currentY)
+        .attr('stroke', line.color)
+        .attr('stroke-width', 1.5)
 
-    if (line.type === 'Cause-Effect') {
-      // Add arrow marker
-      legendLine.attr('marker-end', 'url(#arrow)')
-    } else if (line.type === 'Companion') {
-      // Add circles at both ends
-      legendLine.attr('marker-start', 'url(#dot)').attr('marker-end', 'url(#dot)')
-    } else if (line.type === 'Conflict') {
-      // Add double arrow marker
-      legendLine
-        .attr('marker-start', 'url(#start-line-arrow)')
-        .attr('marker-end', 'url(#end-line-arrow)')
-    } else if (line.type === 'Lead-Lag') {
-      // Add double arrow marker
-      legendLine.attr('marker-end', 'url(#end-line-arrow)')
-    }
+      if (line.type === 'Cause-Effect') {
+        // Add arrow marker
+        legendLine.attr('marker-end', 'url(#arrow)')
+      } else if (line.type === 'Companion') {
+        // Add circles at both ends
+        legendLine.attr('marker-start', 'url(#dot)').attr('marker-end', 'url(#dot)')
+      } else if (line.type === 'Conflict') {
+        // Add double arrow marker
+        legendLine
+          .attr('marker-start', 'url(#start-line-arrow)')
+          .attr('marker-end', 'url(#end-line-arrow)')
+      } else if (line.type === 'Lead-Lag') {
+        // Add double arrow marker
+        legendLine.attr('marker-end', 'url(#end-line-arrow)')
+      }
     } else {
-      currentY += 34;
+      currentY += 34
     }
-
   })
 }
 
@@ -591,6 +627,11 @@ function wrap(text: d3.Selection<d3.BaseType, unknown, d3.BaseType, unknown>, wi
     const textElement = d3.select(this)
     const words = textElement.text().split(/\s+/).reverse()
     const lines: string[] = []
+
+    if (words.length < 8) {
+      width = 80;
+    }
+
 
     // First, calculate how many lines we'll need
     let currentLine: string[] = []
@@ -664,14 +705,41 @@ function wrap(text: d3.Selection<d3.BaseType, unknown, d3.BaseType, unknown>, wi
       </el-form-item>
     </el-form>
     <div v-if="selectedBubble">
-      <h4 v-if="props.data.relationships.filter(rel => rel.source === selectedBubble.id || rel.target === selectedBubble.id).length">Relationships</h4>
+      <h4
+        v-if="
+          props.data.relationships.filter(
+            (rel) => rel.source === selectedBubble.id || rel.target === selectedBubble.id,
+          ).length
+        "
+      >
+        Relationships
+      </h4>
       <ul>
-        <li v-for="relationship in props.data.relationships.filter(rel => rel.source === selectedBubble.id || rel.target === selectedBubble.id)" :key="relationship.id">
-          <span>[ {{ (props.data.bubbles.find(b => b.id === relationship.target)?.text || '') }} ]</span>
-          <el-select v-model="relationship.type" placeholder="Select" @change="newType => updateRelationshipType(relationship, newType)">
-            <el-option v-for="type in relationshipTypes" :key="type" :label="type" :value="type"></el-option>
+        <li
+          v-for="relationship in props.data.relationships.filter(
+            (rel) => rel.source === selectedBubble.id || rel.target === selectedBubble.id,
+          )"
+          :key="relationship.id"
+        >
+          <span
+            >[
+            {{ props.data.bubbles.find((b) => b.id === relationship.target)?.text || '' }} ]</span
+          >
+          <el-select
+            v-model="relationship.type"
+            placeholder="Select"
+            @change="(newType) => updateRelationshipType(relationship, newType)"
+          >
+            <el-option
+              v-for="type in relationshipTypes"
+              :key="type"
+              :label="type"
+              :value="type"
+            ></el-option>
           </el-select>
-          <el-button type="danger" @click="() => removeRelationship(relationship)">Delete</el-button>
+          <el-button type="danger" @click="() => removeRelationship(relationship)"
+            >Delete</el-button
+          >
         </li>
       </ul>
     </div>
