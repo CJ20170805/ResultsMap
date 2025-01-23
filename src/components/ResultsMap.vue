@@ -171,10 +171,23 @@ function addGroupNames(
   svg: d3.Selection<SVGElement | null, unknown, null, undefined>,
   groups: Group[],
 ) {
+  const drag = d3.drag()
+    .on('start', function (event) {
+      d3.select(this).raise().attr('stroke', 'black');
+    })
+    .on('drag', function (event) {
+      d3.select(this)
+        .attr('x', event.x)
+        .attr('y', event.y);
+    })
+    .on('end', function (event) {
+      d3.select(this).attr('stroke', null);
+    });
+
   groups.forEach((group) => {
     if (group.startAngle !== undefined && group.endAngle !== undefined) {
       const angle = (group.startAngle + group.endAngle) / 2
-      const radius = tracks['operational'].outer + 20 // Offset
+      const radius = tracks['operational'].outer + 40 // Offset
       const x = centerX + radius * Math.cos(angle)
       const y = centerY + yOffset + radius * Math.sin(angle) * yScale
 
@@ -186,8 +199,10 @@ function addGroupNames(
         .attr('alignment-baseline', 'middle')
         .text(group.name)
         .style('font-weight', 'bold')
-        .style('font-size', '14px')
+        .style('font-size', '18px')
         .style('fill', '#000')
+        .style('cursor', 'move')
+        .call(drag); // Make the text draggable
     }
   })
 }
