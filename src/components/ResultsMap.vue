@@ -172,15 +172,15 @@ function addGroupNames(
   groups: Group[],
 ) {
   const drag = d3.drag()
-    .on('start', function (event) {
+    .on('start', function (this: SVGTextElement) {
       d3.select(this).raise().attr('stroke', 'black');
     })
-    .on('drag', function (event) {
+    .on('drag', function (this: SVGTextElement, event: d3.D3DragEvent<SVGTextElement, unknown, unknown>) {
       d3.select(this)
         .attr('x', event.x)
         .attr('y', event.y);
     })
-    .on('end', function (event) {
+    .on('end', function (this: SVGTextElement) {
       d3.select(this).attr('stroke', null);
     });
 
@@ -362,7 +362,7 @@ const drawMap = () => {
     } else {
       angle = (i * (2 * Math.PI)) / props.data.bubbles.length
     }
-    const radius = layerRadii[bubble.layer]
+    const radius = layerRadii[bubble.layer as keyof typeof layerRadii]
     bubble.x = centerX + radius * Math.cos(angle)
     bubble.y = centerY + +yOffset + radius * Math.sin(angle) * yScale
   })
@@ -371,10 +371,10 @@ const drawMap = () => {
   addGroupNames(svg, updatedGroups)
 
   // Constants for bubble sizing
-  let BUBBLE_RADIUS = 15
-  const BUBBLE_RADIUS_X = 55
-  const BUBBLE_RADIUS_Y = 45
-  const OFFSET = 3 // Adjust this value to control how far outside the bubbles the lines should start/end
+  // let BUBBLE_RADIUS = 15
+  // const BUBBLE_RADIUS_X = 55
+  // const BUBBLE_RADIUS_Y = 45
+  const OFFSET = 4 // Adjust this value to control how far outside the bubbles the lines should start/end
   const TEXT_WIDTH = 120
   const BUBBLE_PADDING_X = 20 // Horizontal padding around the text inside the bubble
   const BUBBLE_PADDING_Y = 25
@@ -412,6 +412,8 @@ const drawMap = () => {
     g.append('ellipse')
       .attr('rx', bubbleRadiusX)
       .attr('ry', bubbleRadiusY)
+      .attr('stroke', '#000')
+      .attr('stroke-width', 1)
       .attr(
         'fill',
         props.data.mapConfig.layerColors[
@@ -528,6 +530,8 @@ const drawMap = () => {
       .attr('cy', bubble.cy)
       .attr('rx', bubble.rx)
       .attr('ry', bubble.ry)
+      .attr('stroke', '#000')
+      .attr('stroke-width', 1)
       .attr('fill', props.data.mapConfig.layerColors[bubble.track as keyof typeof props.data.mapConfig.layerColors]);
 
       const textElement = legendGroup
