@@ -15,7 +15,6 @@ const props = defineProps<{
   data: ResultsMapData
 }>()
 
-const dataBubbles = ref(props.data.bubbles)
 const svgRef = ref<SVGElement | null>(null)
 const containerRef = ref<HTMLDivElement | null>(null)
 const width = 1200
@@ -397,15 +396,15 @@ const drawMap = () => {
   const drag = d3.drag().on('start', dragstarted).on('drag', dragged).on('end', dragended)
 
   props.data.bubbles.forEach((bubble) => {
-    console.log('SSS - ' + bubble.text.substring(0,5), `${bubble.x},${bubble.y})`);
 
     const g = bubbleGroup
       .append('g')
       .datum(bubble) // Bind the bubble data to the element
       .attr('transform', `translate(${bubble.x},${bubble.y})`)
+      .style('cursor', 'move')
       .on('contextmenu', (event: MouseEvent) => showContextMenu(event, bubble)) // Add right-click event
       .call(drag) // Apply drag behavior
-      console.log('SSS 2 - ' + bubble.text.substring(0,5), `${bubble.x},${bubble.y})`);
+
     const textElement = g
       .append('text')
       .attr('text-anchor', 'middle')
@@ -440,44 +439,56 @@ const drawMap = () => {
       )
       .attr('opacity', 0.8)
       .lower()
-
-      console.log('SSS 3 - ' + bubble.text.substring(0,5), `${bubble.x},${bubble.y})`);
   })
 
-  function dragstarted(event, d) {
+  let initX: number, initY: number;
+  let initMouseX: number, initialMouseY: number;
+
+  function dragstarted(this: SVGElement,event: d3.D3DragEvent<SVGTextElement, unknown, unknown>, d: { x: number; y: number; }) {
     console.log('StartDrag: ', event.x,  event.y);
 
-    //d3.select(this).raise().classed('active', true)
+    const [x, y] = d3.pointer(event, svgRef.value!);
+
+    initX = d.x;
+    initY = d.y;
+
+    initMouseX = x;
+    initialMouseY = y;
+
+   // d3.select(this).raise().classed('active', true)
+   d3.select(this).raise().attr('stroke', 'black')
   }
 
-  function dragged(event, d) {
-    console.log('Dragged: ', event, d) // Log the data bound to the dragged element
-    console.log('SVG Offset:', event.x, event.y);
+  function dragged(event: d3.D3DragEvent<SVGTextElement, unknown, unknown>, d: { id: string; }) {
+    console.log('Dragged: ', event, d)
+    const [x, y] = d3.pointer(event, svgRef.value!);
 
    // d3.select(this).attr('transform', `translate(${event.x},${event.y})`)
+
+   const deltaX = x - initMouseX;
+   const deltaY = y - initialMouseY;
 
     // Update the position of the dragged bubble
     const bubble = props.data.bubbles.find((b) => b.id === d.id)
     if (bubble) {
-      console.log('bubble.x = bubble.y;', event.x - bubble.x, '=',event.y -  bubble.y)
-      bubble.x = event.x
-      bubble.y = event.y
-      bubble.locked = true
-      console.log('bubble.x = bubble.y;222', bubble.x, '=', bubble.y)
 
-      console.log(props.data.bubbles) // Check here if the values match your drag updates.
+      bubble.x = initX + deltaX;
+      bubble.y = initY + deltaY;
+      bubble.locked = true
+
+      //d3.select(this).attr('transform', `translate(${bubble.x},${bubble.y})`)
     }
 
     // Update the paths dynamically
     //updateRelationships();
   }
 
-  function dragended(event, d) {
-    d3.select(this).classed('active', false);
+  function dragended(this: SVGAElement) {
+    d3.select(this).attr('stroke', null)
   }
 
   function updateRelationships() {
-    linkGroup.selectAll('path').attr('d', (rel) => {
+    linkGroup.selectAll('path').attr('d', (rel: { source: string; target: string; }) => {
       const source = props.data.bubbles.find((b) => b.id === rel.source)
       const target = props.data.bubbles.find((b) => b.id === rel.target)
 
@@ -853,7 +864,7 @@ function wrap(text: d3.Selection<d3.BaseType, unknown, d3.BaseType, unknown>, wi
           <el-select
             v-model="relationship.type"
             placeholder="Select"
-            @change="(newType) => updateRelationshipType(relationship, newType)"
+            @change="(newType: string) => updateRelationshipType(relationship, newType)"
           >
             <el-option
               v-for="type in relationshipTypes"
