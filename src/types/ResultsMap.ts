@@ -27,6 +27,7 @@ export interface Bubble {
     text: string
     layer: LayerType
     groupId: string
+    locked: boolean
     x?: number
     y?: number
 }

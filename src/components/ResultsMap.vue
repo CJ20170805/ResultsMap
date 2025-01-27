@@ -15,6 +15,7 @@ const props = defineProps<{
   data: ResultsMapData
 }>()
 
+const dataBubbles = ref(props.data.bubbles)
 const svgRef = ref<SVGElement | null>(null)
 const containerRef = ref<HTMLDivElement | null>(null)
 const width = 1200
@@ -111,7 +112,7 @@ const layerRadii = {
 function calculateGroupAngles(groups: Group[], bubbles: Bubble[]) {
   const totalAngle = 2 * Math.PI
   const groupedBubbles = bubbles.filter((b) => b.groupId !== '')
-  const ungroupedBubbles = bubbles.filter((b) => b.groupId === '')
+  //const ungroupedBubbles = bubbles.filter((b) => b.groupId === '')
 
   // Calculate angles for groups
   let currentAngle = 0
@@ -171,18 +172,20 @@ function addGroupNames(
   svg: d3.Selection<SVGElement | null, unknown, null, undefined>,
   groups: Group[],
 ) {
-  const drag = d3.drag()
+  const drag = d3
+    .drag()
     .on('start', function (this: SVGTextElement) {
-      d3.select(this).raise().attr('stroke', 'black');
+      d3.select(this).raise().attr('stroke', 'black')
     })
-    .on('drag', function (this: SVGTextElement, event: d3.D3DragEvent<SVGTextElement, unknown, unknown>) {
-      d3.select(this)
-        .attr('x', event.x)
-        .attr('y', event.y);
-    })
+    .on(
+      'drag',
+      function (this: SVGTextElement, event: d3.D3DragEvent<SVGTextElement, unknown, unknown>) {
+        d3.select(this).attr('x', event.x).attr('y', event.y)
+      },
+    )
     .on('end', function (this: SVGTextElement) {
-      d3.select(this).attr('stroke', null);
-    });
+      d3.select(this).attr('stroke', null)
+    })
 
   groups.forEach((group) => {
     if (group.startAngle !== undefined && group.endAngle !== undefined) {
@@ -202,21 +205,13 @@ function addGroupNames(
         .style('font-size', '18px')
         .style('fill', '#000')
         .style('cursor', 'move')
-        .call(drag); // Make the text draggable
+        .call(drag) // Make the text draggable
     }
   })
 }
 
-const drawMap = () => {
-  console.log('Map Data', props.data)
-  if (!svgRef.value) return
-
-  const svg = d3.select(svgRef.value)
-  svg.selectAll('*').remove()
-
-  // Apply scale transformation
-  svg.attr('transform', `scale(${scale.value})`)
-
+// Add arrows and title
+function addArrowsAndTitle(svg: d3.Selection<SVGElement | null, unknown, null, undefined>){
   // Define arrow marker
   svg
     .append('defs')
@@ -324,8 +319,24 @@ const drawMap = () => {
     .style('font-size', `${props.data.mapConfig.titleFontSize}px`)
     .style('fill', '#000')
 
+}
+
+const drawMap = () => {
+  console.log('Map Data', props.data)
+  if (!svgRef.value) return
+
+  const svg = d3.select(svgRef.value)
+  svg.selectAll('*').remove()
+
+  // Apply scale transformation
+  svg.attr('transform', `scale(${scale.value})`)
+
+  // Define arrows and title
+  addArrowsAndTitle(svg);
+
   // Calculate group angles
   const updatedGroups = calculateGroupAngles(props.data.groups, props.data.bubbles)
+
   // Draw layers (concentric circles)
   Object.entries(tracks)
     .reverse()
@@ -345,8 +356,9 @@ const drawMap = () => {
 
   // Position bubbles along their orbits
   props.data.bubbles.forEach((bubble, i) => {
-    let angle: number
+    if (bubble.locked) return
 
+    let angle: number
     if (bubble.groupId) {
       // Find bubble's group
       const group = updatedGroups.find((g) => g.id === bubble.groupId)
@@ -382,12 +394,18 @@ const drawMap = () => {
   // Draw bubbles
   const bubbleGroup = svg.append('g')
   const bubbleRadii = new Map<string, { rx: number; ry: number }>()
+  const drag = d3.drag().on('start', dragstarted).on('drag', dragged).on('end', dragended)
+
   props.data.bubbles.forEach((bubble) => {
+    console.log('SSS - ' + bubble.text.substring(0,5), `${bubble.x},${bubble.y})`);
+
     const g = bubbleGroup
       .append('g')
+      .datum(bubble) // Bind the bubble data to the element
       .attr('transform', `translate(${bubble.x},${bubble.y})`)
       .on('contextmenu', (event: MouseEvent) => showContextMenu(event, bubble)) // Add right-click event
-
+      .call(drag) // Apply drag behavior
+      console.log('SSS 2 - ' + bubble.text.substring(0,5), `${bubble.x},${bubble.y})`);
     const textElement = g
       .append('text')
       .attr('text-anchor', 'middle')
@@ -422,7 +440,76 @@ const drawMap = () => {
       )
       .attr('opacity', 0.8)
       .lower()
+
+      console.log('SSS 3 - ' + bubble.text.substring(0,5), `${bubble.x},${bubble.y})`);
   })
+
+  function dragstarted(event, d) {
+    console.log('StartDrag: ', event.x,  event.y);
+
+    //d3.select(this).raise().classed('active', true)
+  }
+
+  function dragged(event, d) {
+    console.log('Dragged: ', event, d) // Log the data bound to the dragged element
+    console.log('SVG Offset:', event.x, event.y);
+
+   // d3.select(this).attr('transform', `translate(${event.x},${event.y})`)
+
+    // Update the position of the dragged bubble
+    const bubble = props.data.bubbles.find((b) => b.id === d.id)
+    if (bubble) {
+      console.log('bubble.x = bubble.y;', event.x - bubble.x, '=',event.y -  bubble.y)
+      bubble.x = event.x
+      bubble.y = event.y
+      bubble.locked = true
+      console.log('bubble.x = bubble.y;222', bubble.x, '=', bubble.y)
+
+      console.log(props.data.bubbles) // Check here if the values match your drag updates.
+    }
+
+    // Update the paths dynamically
+    //updateRelationships();
+  }
+
+  function dragended(event, d) {
+    d3.select(this).classed('active', false);
+  }
+
+  function updateRelationships() {
+    linkGroup.selectAll('path').attr('d', (rel) => {
+      const source = props.data.bubbles.find((b) => b.id === rel.source)
+      const target = props.data.bubbles.find((b) => b.id === rel.target)
+
+      if (!source || !target) return null
+
+      const dx = target.x - source.x
+      const dy = target.y - source.y
+      const distance = Math.sqrt(dx * dx + dy * dy)
+      const unitX = dx / distance
+      const unitY = dy / distance
+
+      const sourceRadius = bubbleRadii.get(source.id)
+      const targetRadius = bubbleRadii.get(target.id)
+
+      if (!sourceRadius || !targetRadius) return null
+
+      const startX = source.x + unitX * (sourceRadius.rx + OFFSET)
+      const startY = source.y + unitY * (sourceRadius.ry + OFFSET)
+      const endX = target.x - unitX * (targetRadius.rx + OFFSET)
+      const endY = target.y - unitY * (targetRadius.ry + OFFSET)
+
+      const controlX = (startX + endX) / 2 + unitY * 50
+      const controlY = (startY + endY) / 2 - unitX * 50
+
+      console.log(
+        'Updated Path:',
+        `M ${startX} ${startY} Q ${controlX} ${controlY} ${endX} ${endY}`,
+      )
+
+      return `M ${startX} ${startY} Q ${controlX} ${controlY} ${endX} ${endY}`
+    })
+  }
 
   // Draw relationships
   const linkGroup = svg.append('g')
@@ -432,35 +519,24 @@ const drawMap = () => {
 
     if (!source || !target) return
 
-    // Calculate direction vector
-    if (
-      target.x === undefined ||
-      source.x === undefined ||
-      target.y === undefined ||
-      source.y === undefined
-    )
-      return
-
     const dx = target.x - source.x
     const dy = target.y - source.y
     const distance = Math.sqrt(dx * dx + dy * dy)
     const unitX = dx / distance
     const unitY = dy / distance
 
-    const sourceRadius = bubbleRadii.get(source.id);
-    const targetRadius = bubbleRadii.get(target.id);
+    const sourceRadius = bubbleRadii.get(source.id)
+    const targetRadius = bubbleRadii.get(target.id)
 
-    if (!sourceRadius || !targetRadius) return;
+    if (!sourceRadius || !targetRadius) return
 
-    // Adjust start and end points based on bubble radius and offset
-    const startX = source.x + unitX * (sourceRadius.rx + OFFSET);
-    const startY = source.y + unitY * (sourceRadius.ry + OFFSET);
-    const endX = target.x - unitX * (targetRadius.rx + OFFSET);
-    const endY = target.y - unitY * (targetRadius.ry + OFFSET);
+    const startX = source.x + unitX * (sourceRadius.rx + OFFSET)
+    const startY = source.y + unitY * (sourceRadius.ry + OFFSET)
+    const endX = target.x - unitX * (targetRadius.rx + OFFSET)
+    const endY = target.y - unitY * (targetRadius.ry + OFFSET)
 
-    // Calculate control point for quadratic Bézier curve
-    const controlX = (startX + endX) / 2 + unitY * 50; // Adjust 50 for curve intensity
-    const controlY = (startY + endY) / 2 - unitX * 50; // Adjust 50 for curve intensity
+    const controlX = (startX + endX) / 2 + unitY * 50
+    const controlY = (startY + endY) / 2 - unitX * 50
 
     const line = linkGroup
       .append('path')
@@ -469,19 +545,13 @@ const drawMap = () => {
       .attr('stroke-width', 1.5)
       .attr('fill', 'none')
 
-    console.log('rel.type', rel.type)
-
     if (rel.type === 'cause-effect') {
-      // Add arrow marker
       line.attr('marker-end', 'url(#arrow)')
     } else if (rel.type === 'companion') {
-      // Add circles at both ends
       line.attr('marker-start', 'url(#dot)').attr('marker-end', 'url(#dot)')
     } else if (rel.type === 'conflict') {
-      // Add double arrow marker
       line.attr('marker-start', 'url(#start-line-arrow)').attr('marker-end', 'url(#end-line-arrow)')
     } else if (rel.type === 'lead-lag') {
-      // Add single arrow marker
       line.attr('marker-end', 'url(#end-line-arrow)')
     }
   })
@@ -532,39 +602,45 @@ const drawMap = () => {
       .attr('ry', bubble.ry)
       .attr('stroke', '#000')
       .attr('stroke-width', 1)
-      .attr('fill', props.data.mapConfig.layerColors[bubble.track as keyof typeof props.data.mapConfig.layerColors]);
+      .attr(
+        'fill',
+        props.data.mapConfig.layerColors[
+          bubble.track as keyof typeof props.data.mapConfig.layerColors
+        ],
+      )
 
-      const textElement = legendGroup
+    const textElement = legendGroup
       .append('text')
       .attr('x', bubble.cx)
       .attr('text-anchor', 'middle')
       .attr('alignment-baseline', 'middle')
       .style('font-size', '12px')
-      .style('fill', '#000');
+      .style('fill', '#000')
 
-    const words = bubble.text.split(' ').filter(word => word.trim() !== '');
-    const lineHeight = 1.1; // Adjust line height as needed
-    const fontSize = 12; // Font size in pixels
-    const totalHeight = lineHeight * (words.length - 1) * fontSize; // Total height of the text
+    const words = bubble.text.split(' ').filter((word) => word.trim() !== '')
+    const lineHeight = 1.1 // Adjust line height as needed
+    const fontSize = 12 // Font size in pixels
+    const totalHeight = lineHeight * (words.length - 1) * fontSize // Total height of the text
 
     // Ensure the total height does not exceed the bubble's height
-    const maxHeight = bubble.ry * 2;
-    const adjustedLineHeight = totalHeight > maxHeight ? maxHeight / (words.length - 1) : lineHeight * fontSize;
+    const maxHeight = bubble.ry * 2
+    const adjustedLineHeight =
+      totalHeight > maxHeight ? maxHeight / (words.length - 1) : lineHeight * fontSize
 
-    let initialY = bubble.cy - (adjustedLineHeight * (words.length - 1)) / 2;
+    let initialY = bubble.cy - (adjustedLineHeight * (words.length - 1)) / 2
 
     switch (words.length) {
       case 1:
-        break;
+        break
       case 2:
-        initialY += 6;
-        break;
+        initialY += 6
+        break
       case 3:
-        initialY += 8;
-        break;
+        initialY += 8
+        break
       default:
-      initialY += 6;
-        break;
+        initialY += 6
+        break
     }
 
     words.forEach((word, i) => {
@@ -572,9 +648,8 @@ const drawMap = () => {
         .append('tspan')
         .attr('x', bubble.cx)
         .attr('y', initialY + i * adjustedLineHeight)
-        .text(word);
-    });
-
+        .text(word)
+    })
 
     if (index < props.data.legends.legendBubbles.length - 1) {
       legendGroup
@@ -590,9 +665,9 @@ const drawMap = () => {
         )
         .attr('stroke', '#000')
         .attr('stroke-width', 1.5)
-        .attr('marker-end', 'url(#arrow)');
+        .attr('marker-end', 'url(#arrow)')
     }
-  });
+  })
 
   // Add vertical legend lines with text at the top
   // const legendLines = [
@@ -680,9 +755,8 @@ function wrap(text: d3.Selection<d3.BaseType, unknown, d3.BaseType, unknown>, wi
     const lines: string[] = []
 
     if (words.length < 8) {
-      width = 80;
+      width = 80
     }
-
 
     // First, calculate how many lines we'll need
     let currentLine: string[] = []

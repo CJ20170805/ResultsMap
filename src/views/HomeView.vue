@@ -27,10 +27,10 @@ const mapData = ref<ResultsMapData>({
     },
   },
   bubbles: [
-    { id: '1', text: 'fires are prevented', layer: 'strategic', groupId: '1' },
-    { id: '2', text: 'less injury from fire incidents', layer: 'mission', groupId: '1' },
-    { id: '3', text: 'crews arrive at emergencies quickly', layer: 'process', groupId: '2' },
-    { id: '4', text: 'transit without bottlenecks', layer: 'operational', groupId: '3' },
+    { id: '1', text: 'fires are prevented', layer: 'strategic', groupId: '1', locked: false },
+    { id: '2', text: 'less injury from fire incidents', layer: 'mission', groupId: '1', locked: false },
+    { id: '3', text: 'crews arrive at emergencies quickly', layer: 'process', groupId: '2', locked: false },
+    { id: '4', text: 'transit without bottlenecks', layer: 'operational', groupId: '3', locked: false },
   ],
   relationships: [
     { id: '1', source: '1', target: '2', type: 'cause-effect' },
