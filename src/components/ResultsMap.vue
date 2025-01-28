@@ -199,8 +199,21 @@ function addGroupNames(
     })
     .on(
       'drag',
-      function (this: SVGTextElement, event: d3.D3DragEvent<SVGTextElement, unknown, unknown>) {
-        d3.select(this).attr('x', event.x).attr('y', event.y)
+      function (
+        this: SVGTextElement,
+        event: d3.D3DragEvent<SVGTextElement, unknown, unknown>,
+        d: Group,
+      ) {
+        console.log('DDD', d)
+
+        const [x, y] = d3.pointer(event, svgRef.value!)
+
+        const currentText = groups.find((group) => group.id === d.id)
+        if (currentText) {
+          currentText.x = x
+          currentText.y = y
+          d3.select(this).attr('x', x).attr('y', y)
+        }
       },
     )
     .on('end', function (this: SVGTextElement) {
@@ -209,13 +222,26 @@ function addGroupNames(
 
   groups.forEach((group) => {
     if (group.startAngle !== undefined && group.endAngle !== undefined) {
-      const angle = (group.startAngle + group.endAngle) / 2
-      const radius = tracks['operational'].outer + 40 // Offset
-      const x = centerX + radius * Math.cos(angle)
-      const y = centerY + yOffset + radius * Math.sin(angle) * yScale
+      console.log('XXX', group.startAngle, group.endAngle)
+
+      let x: number, y: number
+
+      if (!group.x || !group.y) {
+        const angle = (group.startAngle + group.endAngle) / 2
+        const radius = tracks['operational'].outer + 40 // Offset
+        x = centerX + radius * Math.cos(angle)
+        y = centerY + yOffset + radius * Math.sin(angle) * yScale
+
+        group.x = x
+        group.y = y
+      } else {
+        x = group.x
+        y = group.y
+      }
 
       svg
         .append('text')
+        .datum(group)
         .attr('x', x)
         .attr('y', y)
         .attr('text-anchor', 'middle')

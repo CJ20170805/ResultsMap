@@ -20,6 +20,8 @@ export interface Group {
     // layers: LayerType[]
     startAngle?: number
     endAngle?: number
+    x?: number
+    y?: number
 }
 
 export interface Bubble {
