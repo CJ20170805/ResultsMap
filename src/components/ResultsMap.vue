@@ -23,25 +23,32 @@ const centerX = width / 2 + 50
 const centerY = height / 2 - 40
 const yScale = 0.9
 const yOffset = 50
-const scale = ref(1)
+//const scale = ref(1)
 
 const contextMenuVisible = ref(false)
 const contextMenuPosition = ref({ x: 0, y: 0 })
 const selectedBubble = ref<Bubble | null>(null)
 const newText = ref('')
 
+let isDragging = false
+let currentTransform: { x: number; y: number; k: number }
+
 const relationshipTypes = ['cause-effect', 'companion', 'conflict', 'lead-lag']
 
 // Initialize zoom behavior
-const zoom = d3.zoom()
+const zoom = d3
+  .zoom()
   .scaleExtent([0.1, 10]) // Set minimum and maximum zoom scale
   .on('zoom', (event) => {
-    console.log("onZoom...", event);
+    console.log('onZoom...', event)
 
-    // Apply the zoom transformation to the SVG
-    d3.select(svgRef.value).select('g')
-      .attr('transform', event.transform);
-  });
+    currentTransform = event.transform
+
+    if (!isDragging) {
+      // Apply the zoom transformation to the SVG
+      d3.select(svgRef.value).select('g').attr('transform', event.transform)
+    }
+  })
 
 // Attach zoom behavior to the SVG
 // const svg = d3.select(svgRef.value).call(zoom);
@@ -224,7 +231,7 @@ function addGroupNames(
 }
 
 // Add arrows and title
-function addArrowsAndTitle(svg: d3.Selection<SVGElement | null, unknown, null, undefined>){
+function addArrowsAndTitle(svg: d3.Selection<SVGElement | null, unknown, null, undefined>) {
   // Define arrow marker
   svg
     .append('defs')
@@ -331,27 +338,36 @@ function addArrowsAndTitle(svg: d3.Selection<SVGElement | null, unknown, null, u
     .style('font-weight', 'bold')
     .style('font-size', `${props.data.mapConfig.titleFontSize}px`)
     .style('fill', '#000')
-
 }
 
 const drawMap = () => {
   console.log('Map Data', props.data)
   if (!svgRef.value) return
 
-  const svg = d3.select(svgRef.value).call(zoom);
+  // const currentTransform = d3.zoomTransform(mapGroup.node());
+
+  const svg = d3.select(svgRef.value).call(zoom)
   svg.selectAll('*').remove()
 
-   // Create or select the <g> element for the map content
-  let mapGroup = svg.select('g.map-group');
+  // Create or select the <g> element for the map content
+  let mapGroup = svg.select('g.map-group')
   if (mapGroup.empty()) {
-    mapGroup = svg.append('g').attr('class', 'map-group');
+    mapGroup = svg.append('g').attr('class', 'map-group')
+  }
+
+  if (isDragging && currentTransform) {
+    // Reapply the saved zoom transformation
+    mapGroup.attr(
+      'transform',
+      `translate(${currentTransform.x},${currentTransform.y}) scale(${currentTransform.k})`,
+    )
   }
 
   // Apply scale transformation
   //svg.attr('transform', `scale(${scale.value})`)
 
   // Define arrows and title
-  addArrowsAndTitle(mapGroup);
+  addArrowsAndTitle(mapGroup)
 
   // Calculate group angles
   const updatedGroups = calculateGroupAngles(props.data.groups, props.data.bubbles)
@@ -416,7 +432,6 @@ const drawMap = () => {
   const drag = d3.drag().on('start', dragstarted).on('drag', dragged).on('end', dragended)
 
   props.data.bubbles.forEach((bubble) => {
-
     const g = bubbleGroup
       .append('g')
       .datum(bubble) // Bind the bubble data to the element
@@ -461,39 +476,46 @@ const drawMap = () => {
       .lower()
   })
 
-  let initX: number, initY: number;
-  let initMouseX: number, initialMouseY: number;
+  let initX: number, initY: number
+  let initMouseX: number, initialMouseY: number
 
-  function dragstarted(this: SVGElement,event: d3.D3DragEvent<SVGTextElement, Bubble, unknown>, d: Bubble) {
-    console.log('StartDrag: ', event.x,  event.y);
+  function dragstarted(
+    this: SVGElement,
+    event: d3.D3DragEvent<SVGTextElement, Bubble, unknown>,
+    d: Bubble,
+  ) {
+    console.log('StartDrag: ', event.x, event.y)
 
-    const [x, y] = d3.pointer(event, svgRef.value!);
+    d3.select(svgRef.value).on('.zoom', null) // Remove zoom event listeners
 
-    initX = d.x;
-    initY = d.y;
+    const [x, y] = d3.pointer(event, svgRef.value!)
 
-    initMouseX = x;
-    initialMouseY = y;
+    initX = d.x
+    initY = d.y
 
-   // d3.select(this).raise().classed('active', true)
-   d3.select(this).raise().attr('stroke', 'black')
+    initMouseX = x
+    initialMouseY = y
+
+    isDragging = true
+
+    // d3.select(this).raise().classed('active', true)
+    d3.select(this).raise().attr('stroke', 'black')
   }
 
   function dragged(event: d3.D3DragEvent<SVGTextElement, unknown, unknown>, d: Bubble) {
     console.log('Dragged: ', event, d)
-    const [x, y] = d3.pointer(event, svgRef.value!);
+    const [x, y] = d3.pointer(event, svgRef.value!)
 
-   // d3.select(this).attr('transform', `translate(${event.x},${event.y})`)
+    // d3.select(this).attr('transform', `translate(${event.x},${event.y})`)
 
-   const deltaX = x - initMouseX;
-   const deltaY = y - initialMouseY;
+    const deltaX = x - initMouseX
+    const deltaY = y - initialMouseY
 
     // Update the position of the dragged bubble
     const bubble = props.data.bubbles.find((b) => b.id === d.id)
     if (bubble) {
-
-      bubble.x = initX + deltaX;
-      bubble.y = initY + deltaY;
+      bubble.x = initX + deltaX
+      bubble.y = initY + deltaY
       bubble.locked = true
 
       //d3.select(this).attr('transform', `translate(${bubble.x},${bubble.y})`)
@@ -504,11 +526,13 @@ const drawMap = () => {
   }
 
   function dragended(this: SVGAElement) {
+    d3.select(svgRef.value).call(zoom) // Reapply zoom behavior
+    isDragging = false // Reset dragging flag
     d3.select(this).attr('stroke', null)
   }
 
   function updateRelationships() {
-    linkGroup.selectAll('path').attr('d', (rel: { source: string; target: string; }) => {
+    linkGroup.selectAll('path').attr('d', (rel: { source: string; target: string }) => {
       const source = props.data.bubbles.find((b) => b.id === rel.source)
       const target = props.data.bubbles.find((b) => b.id === rel.target)
 
@@ -753,15 +777,15 @@ const drawMap = () => {
 const zoomIn = () => {
   // scale.value += 0.1
   // drawMap()
-  const svg = d3.select(svgRef.value);
-  svg.transition().call(zoom.scaleBy, 1.2);
+  const svg = d3.select(svgRef.value)
+  svg.transition().call(zoom.scaleBy, 1.2)
 }
 
 const zoomOut = () => {
   // scale.value = Math.max(0.1, scale.value - 0.1) // Prevent scale from going below 0.1
   // drawMap()
-  const svg = d3.select(svgRef.value);
-  svg.transition().call(zoom.scaleBy, 0.8);
+  const svg = d3.select(svgRef.value)
+  svg.transition().call(zoom.scaleBy, 0.8)
 }
 
 const handleClickOutside = (event: MouseEvent) => {
@@ -837,9 +861,7 @@ function wrap(text: d3.Selection<d3.BaseType, unknown, d3.BaseType, unknown>, wi
   <div ref="containerRef" class="svg-container">
     <svg ref="svgRef" :viewBox="`0 0 ${width} ${height}`" preserveAspectRatio="xMidYMid meet">
       <!-- SVG content goes here -->
-       <g>
-
-       </g>
+      <g></g>
     </svg>
 
     <div class="zoom-controls">
@@ -912,7 +934,7 @@ function wrap(text: d3.Selection<d3.BaseType, unknown, d3.BaseType, unknown>, wi
 .svg-container {
   width: 100%;
   height: 100%;
-  overflow: auto;
+  overflow: hidden;
   position: relative;
 }
 
