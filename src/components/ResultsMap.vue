@@ -399,7 +399,7 @@ const drawMap = () => {
     mapGroup = svg.append('g').attr('class', 'map-group')
   }
 
-  if (isDragging && currentTransform) {
+  if (currentTransform) {
     // Reapply the saved zoom transformation
     mapGroup.attr(
       'transform',
