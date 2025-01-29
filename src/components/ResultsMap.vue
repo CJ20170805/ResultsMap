@@ -192,10 +192,24 @@ function addGroupNames(
   svg: d3.Selection<SVGElement | null, unknown, null, undefined>,
   groups: Group[],
 ) {
+
+  let initX: number, initY: number
+  let initMouseX: number, initialMouseY: number
+
   const drag = d3
     .drag()
-    .on('start', function (this: SVGTextElement) {
+    .on('start', function (this: SVGTextElement,d: Group) {
       d3.select(this).raise().attr('stroke', 'black')
+
+      const [x, y] = d3.pointer(event, svgRef.value!)
+
+      initX = d.x
+      initY = d.y
+
+      initMouseX = x
+      initialMouseY = y
+
+      isDragging = true
     })
     .on(
       'drag',
@@ -208,16 +222,20 @@ function addGroupNames(
 
         const [x, y] = d3.pointer(event, svgRef.value!)
 
+        const deltaX = x - initMouseX
+        const deltaY = y - initialMouseY
+
         const currentText = groups.find((group) => group.id === d.id)
         if (currentText) {
-          currentText.x = x
-          currentText.y = y
+          currentText.x = initX + deltaX
+          currentText.y = initY + deltaY
           d3.select(this).attr('x', x).attr('y', y)
         }
       },
     )
     .on('end', function (this: SVGTextElement) {
       d3.select(this).attr('stroke', null)
+      isDragging = false
     })
 
   groups.forEach((group) => {
