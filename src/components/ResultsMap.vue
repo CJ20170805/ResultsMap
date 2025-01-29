@@ -27,6 +27,8 @@ const contextMenuVisible = ref(false)
 const contextMenuPosition = ref({ x: 0, y: 0 })
 const selectedBubble = ref<Bubble | null>(null)
 const newText = ref('')
+const mapRelationships = ref(props.data.relationships);
+const mapBubbles = ref(props.data.bubbles);
 
 let isDragging = false
 let currentTransform: { x: number; y: number; k: number }
@@ -35,7 +37,7 @@ const relationshipTypes = ['cause-effect', 'companion', 'conflict', 'lead-lag']
 
 // Initialize zoom behavior
 const zoom = d3
-  .zoom()
+  .zoom<SVGElement, unknown>()
   .scaleExtent([0.1, 10]) // Set minimum and maximum zoom scale
   .on('zoom', (event) => {
     console.log('onZoom...', event)
@@ -59,7 +61,7 @@ const updateRelationshipType = (relationship: Relationship, newType: string) => 
 const removeRelationship = (relationship: Relationship) => {
   const index = props.data.relationships.findIndex((rel) => rel.id === relationship.id)
   if (index !== -1) {
-    props.data.relationships.splice(index, 1)
+    mapRelationships.value.splice(index, 1)
     drawMap()
   }
 }
@@ -95,7 +97,7 @@ const removeBubble = () => {
   if (selectedBubble.value) {
     const index = props.data.bubbles.findIndex((b) => b.id === selectedBubble.value!.id)
     if (index !== -1) {
-      props.data.bubbles.splice(index, 1)
+      mapBubbles.value.splice(index, 1)
       drawMap()
       hideContextMenu()
     }
@@ -147,9 +149,9 @@ function calculateGroupAngles(groups: Group[], bubbles: Bubble[]) {
 
 // Add function to draw group dividers
 function drawGroupDividers(
-  svg: d3.Selection<SVGElement | null, unknown, null, undefined>,
+  svg: d3.Selection<SVGGElement, unknown, null, undefined>,
   groups: Group[],
-  startLayer: LayerType = 'None' as LayerType,
+  startLayer: LayerType | 'None',
 ) {
   if (groups.length <= 1) return
   const dividerGroup = svg.append('g').attr('class', 'group-dividers')
@@ -158,7 +160,7 @@ function drawGroupDividers(
     if (group.startAngle !== undefined && group.endAngle !== undefined) {
       let startX, startY
 
-      if (startLayer === ('None' as LayerType)) return // Skip drawing dividers if startLayer is None
+      if (startLayer === 'None') return // Skip drawing dividers if startLayer is None
 
       if (startLayer === 'mission') {
         // Start from the center if the startLayer is mission
@@ -187,21 +189,23 @@ function drawGroupDividers(
 
 // Function to add group names
 function addGroupNames(
-  svg: d3.Selection<SVGElement | null, unknown, null, undefined>,
+  svg: d3.Selection<SVGGElement, unknown, null, undefined>,
   groups: Group[],
 ) {
   let initX: number, initY: number
   let initMouseX: number, initialMouseY: number
 
   const drag = d3
-    .drag()
-    .on('start', function (this: SVGTextElement, d: Group) {
+    .drag<SVGTextElement, Group>()
+    .on('start', function (event: d3.D3DragEvent<SVGTextElement, Group, unknown>, d: Group) {
       d3.select(this).raise().attr('stroke', 'black')
 
       const [x, y] = d3.pointer(event, svgRef.value!)
 
-      initX = d.x
-      initY = d.y
+      if (d.x && d.y) {
+        initX = d.x
+        initY = d.y
+      }
 
       initMouseX = x
       initialMouseY = y
@@ -230,7 +234,7 @@ function addGroupNames(
         }
       },
     )
-    .on('end', function (this: SVGTextElement) {
+    .on('end', function () {
       d3.select(this).attr('stroke', null)
       isDragging = false
     })
@@ -266,13 +270,13 @@ function addGroupNames(
         .style('font-size', '18px')
         .style('fill', '#000')
         .style('cursor', 'move')
-        .call(drag) // Make the text draggable
+        .call(drag); // Make the text draggable
     }
   })
 }
 
 // Add arrows and title
-function addArrowsAndTitle(svg: d3.Selection<SVGElement | null, unknown, null, undefined>) {
+function addArrowsAndTitle(svg: d3.Selection<SVGGElement, unknown, null, undefined>) {
   // Define arrow marker
   svg
     .append('defs')
@@ -394,7 +398,7 @@ const drawMap = () => {
   svg.selectAll('*').remove()
 
   // Create or select the <g> element for the map content
-  let mapGroup = svg.select('g.map-group')
+  let mapGroup: d3.Selection<SVGGElement, unknown, null, undefined> = svg.select('g.map-group')
   if (mapGroup.empty()) {
     mapGroup = svg.append('g').attr('class', 'map-group')
   }
@@ -473,7 +477,7 @@ const drawMap = () => {
   // Draw bubbles
   const bubbleGroup = mapGroup.append('g')
   const bubbleRadii = new Map<string, { rx: number; ry: number }>()
-  const drag = d3.drag().on('start', dragstarted).on('drag', dragged).on('end', dragended)
+  const drag = d3.drag<SVGGElement, Bubble>().on('start', dragstarted).on('drag', dragged).on('end', dragended)
 
   props.data.bubbles.forEach((bubble) => {
     const g = bubbleGroup
@@ -495,7 +499,7 @@ const drawMap = () => {
       .call(wrap, TEXT_WIDTH)
 
     // Measure the text dimensions
-    const textBBox = textElement.node().getBBox()
+    const textBBox =  textElement.node()!.getBBox()
     const textWidth = textBBox.width
     const textHeight = textBBox.height
 
@@ -534,8 +538,10 @@ const drawMap = () => {
 
     const [x, y] = d3.pointer(event, svgRef.value!)
 
-    initX = d.x
-    initY = d.y
+    if(d.x && d.y){
+      initX = d.x
+      initY = d.y
+    }
 
     initMouseX = x
     initialMouseY = y
@@ -569,46 +575,12 @@ const drawMap = () => {
     //updateRelationships();
   }
 
-  function dragended(this: SVGAElement) {
-    d3.select(svgRef.value).call(zoom) // Reapply zoom behavior
+  function dragended(this: SVGGElement) {
+    d3.select(svgRef.value!).call(zoom) // Reapply zoom behavior
     isDragging = false // Reset dragging flag
     d3.select(this).attr('stroke', null)
   }
 
-  function updateRelationships() {
-    linkGroup.selectAll('path').attr('d', (rel: { source: string; target: string }) => {
-      const source = props.data.bubbles.find((b) => b.id === rel.source)
-      const target = props.data.bubbles.find((b) => b.id === rel.target)
-
-      if (!source || !target) return null
-
-      const dx = target.x - source.x
-      const dy = target.y - source.y
-      const distance = Math.sqrt(dx * dx + dy * dy)
-      const unitX = dx / distance
-      const unitY = dy / distance
-
-      const sourceRadius = bubbleRadii.get(source.id)
-      const targetRadius = bubbleRadii.get(target.id)
-
-      if (!sourceRadius || !targetRadius) return null
-
-      const startX = source.x + unitX * (sourceRadius.rx + OFFSET)
-      const startY = source.y + unitY * (sourceRadius.ry + OFFSET)
-      const endX = target.x - unitX * (targetRadius.rx + OFFSET)
-      const endY = target.y - unitY * (targetRadius.ry + OFFSET)
-
-      const controlX = (startX + endX) / 2 + unitY * 50
-      const controlY = (startY + endY) / 2 - unitX * 50
-
-      console.log(
-        'Updated Path:',
-        `M ${startX} ${startY} Q ${controlX} ${controlY} ${endX} ${endY}`,
-      )
-
-      return `M ${startX} ${startY} Q ${controlX} ${controlY} ${endX} ${endY}`
-    })
-  }
 
   // Draw relationships
   const linkGroup = mapGroup.append('g')
@@ -616,7 +588,7 @@ const drawMap = () => {
     const source = props.data.bubbles.find((b) => b.id === rel.source)
     const target = props.data.bubbles.find((b) => b.id === rel.target)
 
-    if (!source || !target) return
+    if (!source || !target || !target.x || !target.y || !source.x || !source.y) return
 
     const dx = target.x - source.x
     const dy = target.y - source.y
@@ -821,14 +793,14 @@ const drawMap = () => {
 const zoomIn = () => {
   // scale.value += 0.1
   // drawMap()
-  const svg = d3.select(svgRef.value)
+  const svg = d3.select(svgRef.value!)
   svg.transition().call(zoom.scaleBy, 1.2)
 }
 
 const zoomOut = () => {
   // scale.value = Math.max(0.1, scale.value - 0.1) // Prevent scale from going below 0.1
   // drawMap()
-  const svg = d3.select(svgRef.value)
+  const svg = d3.select(svgRef.value!)
   svg.transition().call(zoom.scaleBy, 0.8)
 }
 
@@ -851,7 +823,7 @@ onBeforeUnmount(() => {
 watch(() => props.data, drawMap, { deep: true })
 
 // Helper function to wrap text with proper typing
-function wrap(text: d3.Selection<d3.BaseType, unknown, d3.BaseType, unknown>, width: number) {
+function wrap(text: d3.Selection<SVGTextElement, Bubble, null, undefined>, width: number) {
   text.each(function (this: d3.BaseType) {
     const textElement = d3.select(this)
     const words = textElement.text().split(/\s+/).reverse()
@@ -871,7 +843,9 @@ function wrap(text: d3.Selection<d3.BaseType, unknown, d3.BaseType, unknown>, wi
       .forEach((word: string) => {
         currentLine.push(word)
         tempSpan.text(currentLine.join(' '))
-        if (tempSpan.node()?.getComputedTextLength() > width) {
+
+        const node = tempSpan.node();
+        if (node && node.getComputedTextLength() > width) {
           currentLine.pop()
           if (currentLine.length) lines.push(currentLine.join(' '))
           currentLine = [word]
@@ -937,7 +911,7 @@ function wrap(text: d3.Selection<d3.BaseType, unknown, d3.BaseType, unknown>, wi
       <h4
         v-if="
           props.data.relationships.filter(
-            (rel) => rel.source === selectedBubble.id || rel.target === selectedBubble.id,
+            (rel) => rel.source === selectedBubble?.id || rel.target === selectedBubble?.id,
           ).length
         "
       >
@@ -946,7 +920,7 @@ function wrap(text: d3.Selection<d3.BaseType, unknown, d3.BaseType, unknown>, wi
       <ul>
         <li
           v-for="relationship in props.data.relationships.filter(
-            (rel) => rel.source === selectedBubble.id || rel.target === selectedBubble.id,
+            (rel) => rel.source === selectedBubble?.id || rel.target === selectedBubble?.id,
           )"
           :key="relationship.id"
         >

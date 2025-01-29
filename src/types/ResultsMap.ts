@@ -1,4 +1,4 @@
-export type LayerType = 'None' | 'mission' | 'strategic' | 'process' | 'operational'
+export type LayerType = 'mission' | 'strategic' | 'process' | 'operational'
 export type RelationType = 'cause-effect' | 'companion' | 'conflict' | 'lead-lag'
 
 export interface LayerColors {
