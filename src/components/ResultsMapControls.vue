@@ -81,8 +81,7 @@ const handleAddRelationship = () => {
 }
 
 const handleGroupLayerChange = () => {
-  console.log('EEEEE', groupLevel.value)
-  props.onChangeGroupLevel(groupLevel.value)
+  props.onChangeGroupLevel(groupLevel.value as LayerType);
 }
 
 
