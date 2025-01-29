@@ -51,6 +51,7 @@ const handleAddBubble = () => {
       text: newBubble.value.text,
       layer: newBubble.value.layer,
       groupId: newBubble.value.groupId,
+      locked: false
     })
     newBubble.value.text = ''
   }

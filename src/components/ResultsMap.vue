@@ -9,7 +9,6 @@ import type {
   LayerType,
   LayerColors,
 } from '@/types/ResultsMap'
-// import { Plus, Minus } from '@element-plus/icons-vue'
 
 const props = defineProps<{
   data: ResultsMapData
@@ -23,7 +22,6 @@ const centerX = width / 2 + 50
 const centerY = height / 2 - 40
 const yScale = 0.9
 const yOffset = 50
-//const scale = ref(1)
 
 const contextMenuVisible = ref(false)
 const contextMenuPosition = ref({ x: 0, y: 0 })
@@ -192,13 +190,12 @@ function addGroupNames(
   svg: d3.Selection<SVGElement | null, unknown, null, undefined>,
   groups: Group[],
 ) {
-
   let initX: number, initY: number
   let initMouseX: number, initialMouseY: number
 
   const drag = d3
     .drag()
-    .on('start', function (this: SVGTextElement,d: Group) {
+    .on('start', function (this: SVGTextElement, d: Group) {
       d3.select(this).raise().attr('stroke', 'black')
 
       const [x, y] = d3.pointer(event, svgRef.value!)
@@ -387,6 +384,9 @@ function addArrowsAndTitle(svg: d3.Selection<SVGElement | null, unknown, null, u
 const drawMap = () => {
   console.log('Map Data', props.data)
   if (!svgRef.value) return
+
+  // Data saving
+  localStorage.setItem('MapData', JSON.stringify(props.data))
 
   // const currentTransform = d3.zoomTransform(mapGroup.node());
 

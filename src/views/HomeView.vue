@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import ResultsMap from '@/components/ResultsMap.vue'
 import ResultsMapControls from '@/components/ResultsMapControls.vue'
 import type {
@@ -8,58 +8,31 @@ import type {
   Relationship,
   Group,
   LayerType,
-  MapConfig,
 } from '@/types/ResultsMap'
-import type { DrawerProps } from 'element-plus'
 import { ArrowLeft, ArrowRight } from '@element-plus/icons-vue'
+import defaultMapData from '@/data/default';
 
 const showAside = ref(true)
 
-const mapData = ref<ResultsMapData>({
-  mapConfig: {
-    title: 'Results Map',
-    titleFontSize: 28,
-    layerColors: {
-      mission: '#ffcdd2', // Pink
-      strategic: '#c8e6c9', // Green
-      process: '#bbdefb', // Blue
-      operational: '#ffe0b2', // Orange
-    },
-  },
-  bubbles: [
-    { id: '1', text: 'fires are prevented', layer: 'strategic', groupId: '1', locked: false },
-    { id: '2', text: 'less injury from fire incidents', layer: 'mission', groupId: '1', locked: false },
-    { id: '3', text: 'crews arrive at emergencies quickly', layer: 'process', groupId: '2', locked: false },
-    { id: '4', text: 'transit without bottlenecks', layer: 'operational', groupId: '3', locked: false },
-  ],
-  relationships: [
-    { id: '1', source: '1', target: '2', type: 'cause-effect' },
-    { id: '2', source: '3', target: '4', type: 'companion' },
-    { id: '3', source: '1', target: '4', type: 'conflict' },
-  ],
-  groups: [
-    { id: '1', name: 'G1', startAngle: 0, endAngle: 2 },
-    { id: '2', name: 'G2', startAngle: 2, endAngle: 4 },
-    { id: '3', name: 'GROUP3 WITH A LONG NAME', startAngle: 4, endAngle: 6 },
-  ],
-  groupLevel: 'strategic',
-  legends: {
-    legendBubbles: [
-      { cx: 30, cy: 250, rx: 40, ry: 34, track: 'operational', text: 'Operational' },
-      { cx: 30, cy: 170, rx: 40, ry: 34, track: 'process', text: 'Process' },
-      { cx: 30, cy: 90, rx: 40, ry: 34, track: 'strategic', text: 'Strategic' },
-      { cx: 30, cy: 10, rx: 40, ry: 34, track: 'mission', text: 'Mission' },
-    ],
-    legendLines: [
-      { x: 30, y: 310, length: 32, color: '#666', type: 'Cause-Effect', text: 'Cause-Effect', visible: true },
-      { x: 30, y: 344, length: 32, color: '#666', type: 'Conflict', text: 'Conflict', visible: true },
-      { x: 30, y: 378, length: 32, color: '#666', type: 'Companion', text: 'Companion', visible: true },
-      { x: 30, y: 412, length: 32, color: '#666', type: 'Lead-Lag', text: 'Lead-Lag', visible: true },
-    ],
-  },
+
+const mapData = ref<ResultsMapData | null>(null)
+
+onMounted(() => {
+    const localMapData = localStorage.getItem('MapData')
+    if (localMapData) {
+      console.log('???/')
+
+      mapData.value = JSON.parse(localMapData)
+
+      console.log('LocalMapData:', JSON.parse(localMapData))
+    } else {
+      mapData.value = defaultMapData
+      localStorage.setItem('MapData', JSON.stringify(mapData.value))
+    }
 })
 
 const addBubble = (bubble: Omit<Bubble, 'id'>) => {
+  if(!mapData.value) return
   const newId = (mapData.value.bubbles.length + 1).toString()
   mapData.value.bubbles.push({
     ...bubble,
@@ -68,6 +41,7 @@ const addBubble = (bubble: Omit<Bubble, 'id'>) => {
 }
 
 const addRelationship = (relationship: Omit<Relationship, 'id'>) => {
+  if(!mapData.value) return
   const newId = (mapData.value.relationships.length + 1).toString()
   mapData.value.relationships.push({
     ...relationship,
@@ -76,6 +50,7 @@ const addRelationship = (relationship: Omit<Relationship, 'id'>) => {
 }
 
 const addGroup = (group: Omit<Group, 'id'>) => {
+  if(!mapData.value) return
   const newId = (mapData.value.groups.length + 1).toString()
   mapData.value.groups.push({
     ...group,
@@ -84,10 +59,12 @@ const addGroup = (group: Omit<Group, 'id'>) => {
 }
 
 const deleteGroup = (index: number) => {
+  if(!mapData.value) return
   mapData.value.groups.splice(index, 1)
 }
 
 const changeGroupLevel = (groupLevel: LayerType) => {
+  if(!mapData.value) return
   mapData.value.groupLevel = groupLevel
   console.log('changeGroupLevel', groupLevel)
 }
@@ -108,7 +85,7 @@ const toggleAside = () => {
       </el-row>
     </el-header> -->
 
-    <el-container class="main-container">
+    <el-container class="main-container" v-if="mapData">
       <el-aside v-show="showAside" width="400px">
         <div class="aside-container">
           <ResultsMapControls

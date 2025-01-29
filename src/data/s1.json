@@ -1,0 +1,420 @@
+{
+    "mapConfig": {
+        "title": "Better Outcomes for Female Offenders 2023-2025",
+        "titleFontSize": 28,
+        "layerColors": {
+            "mission": "#ffcdd2",
+            "strategic": "#c8e6c9",
+            "process": "#bbdefb",
+            "operational": "#ffe0b2"
+        }
+    },
+    "bubbles": [
+        {
+            "text": " Fewer women are re-entering the Justice System",
+            "layer": "mission",
+            "groupId": "",
+            "id": "1",
+            "x": 641.8346862792969,
+            "y": 503.17034912109375,
+            "locked": true
+        },
+        {
+            "text": " Female offender mental & physical health is improving",
+            "layer": "mission",
+            "groupId": "",
+            "id": "2",
+            "x": 617.4778628694539,
+            "y": 596.9451281401914,
+            "locked": true
+        },
+        {
+            "text": "Women on probation are more satisfied with programs",
+            "layer": "strategic",
+            "groupId": "1",
+            "id": "3",
+            "x": 947.9837995326441,
+            "y": 500.1585339087019,
+            "locked": true
+        },
+        {
+            "text": "Women are more connected to Women on probation are more satisfied with programs cultural supports",
+            "layer": "strategic",
+            "groupId": "1",
+            "id": "4",
+            "x": 830.237171376583,
+            "y": 659.1100031622618,
+            "locked": true
+        },
+        {
+            "text": "Standardized surveys prior/post program delivery",
+            "layer": "process",
+            "groupId": "1",
+            "id": "5",
+            "x": 990.7590846122177,
+            "y": 703.1179905787739,
+            "locked": true
+        },
+        {
+            "text": "Secure, reliable transportation of  appointments through contracts with community group",
+            "layer": "process",
+            "groupId": "1",
+            "id": "6",
+            "x": 891.9027589259774,
+            "y": 832.6718444846473,
+            "locked": true
+        },
+        {
+            "text": "Probation Services hires a Spiritual Care provider at Redwood probation office",
+            "layer": "process",
+            "groupId": "1",
+            "id": "7",
+            "x": 726.5821806503309,
+            "y": 863.4977125205357,
+            "locked": true
+        },
+        {
+            "text": "Contracts with service providers are completed",
+            "layer": "operational",
+            "groupId": "1",
+            "id": "8",
+            "x": 739.0061244282192,
+            "y": 979.9277996865144
+        },
+        {
+            "text": "Standardized surveys are crafted & conducted annually",
+            "layer": "operational",
+            "groupId": "1",
+            "id": "9",
+            "x": 620.1745032235762,
+            "y": 986.656426403086
+        },
+        {
+            "text": "Women are better at navigating multiple social services system  (Pillar 2)",
+            "layer": "strategic",
+            "groupId": "2",
+            "id": "10",
+            "x": 726.0672737797377,
+            "y": 752.0355058320973,
+            "locked": true
+        },
+        {
+            "text": "More Child/ maternal contacts are occurring (Pillar 4)",
+            "layer": "strategic",
+            "groupId": "2",
+            "id": "11",
+            "x": 462.76094012973044,
+            "y": 802.0262622041305,
+            "locked": true
+        },
+        {
+            "text": "More Spiritual Care providers hired in WCC",
+            "layer": "process",
+            "groupId": "2",
+            "id": "12",
+            "x": 346.3739280241132,
+            "y": 554.0052997094707,
+            "locked": true
+        },
+        {
+            "text": " Client-focused orientation of services/systems/ resources is offered and taught",
+            "layer": "process",
+            "groupId": "2",
+            "id": "13",
+            "x": 170.63199433675697,
+            "y": 646.2884617701802,
+            "locked": true
+        },
+        {
+            "text": "Mandate/programming alignment across service providers ",
+            "layer": "process",
+            "groupId": "2",
+            "id": "14",
+            "x": 454.876953123887,
+            "y": 527.0657361999511,
+            "locked": true
+        },
+        {
+            "text": "Client orientation sessions are designed and delivered regularly",
+            "layer": "operational",
+            "groupId": "2",
+            "id": "15",
+            "x": 288.5647284450963,
+            "y": 852.1083169860841,
+            "locked": true
+        },
+        {
+            "text": "Staff training  sessions are designed and delivered regularly",
+            "layer": "operational",
+            "groupId": "2",
+            "id": "16",
+            "x": 189.92299846390023,
+            "y": 453.6850732370245
+        },
+        {
+            "text": "More women are being referred to safe housing (Pillar 3)",
+            "layer": "strategic",
+            "groupId": "3",
+            "id": "17",
+            "x": 551.5056309584782,
+            "y": 403.3941776469688,
+            "locked": true
+        },
+        {
+            "text": "More women are being referred for health care, mental health & addictions (Pillar 1)",
+            "layer": "strategic",
+            "groupId": "3",
+            "id": "18",
+            "x": 735.0291719578638,
+            "y": 238.0078772692401,
+            "locked": true
+        },
+        {
+            "text": "Women are economically supporting their families",
+            "layer": "strategic",
+            "groupId": "3",
+            "id": "20",
+            "x": 791.2639613699648,
+            "y": 416.3860607939164,
+            "locked": true
+        },
+        {
+            "text": "Job skills/ readiness assessments are tailored to offender population",
+            "layer": "process",
+            "groupId": "3",
+            "id": "21",
+            "x": 360.9088893998942,
+            "y": 362.4792154694843,
+            "locked": true
+        },
+        {
+            "text": "Thunderwing facilitates life skills/job readiness referrals to life skills training",
+            "layer": "process",
+            "groupId": "3",
+            "id": "22",
+            "x": 514.1633605957034,
+            "y": 268.9052276611328,
+            "locked": true
+        },
+        {
+            "text": "Partnership are formed with new female only treatment centre",
+            "layer": "process",
+            "groupId": "3",
+            "id": "24",
+            "x": 793.696376679319,
+            "y": 120.12133158594787,
+            "locked": true
+        },
+        {
+            "text": "New client-focused curriculum and assessments developed and offered on a more accessible basis",
+            "layer": "operational",
+            "groupId": "3",
+            "id": "26",
+            "x": 431.33912814289374,
+            "y": 127.73843127990142,
+            "locked": true
+        },
+        {
+            "text": "Formal multi-year agreement is negotiated with treatment centre",
+            "layer": "operational",
+            "groupId": "3",
+            "id": "27",
+            "x": 1043.4758932789618,
+            "y": 296.9823028194752,
+            "locked": true
+        },
+        {
+            "text": "Ddddd",
+            "layer": "process",
+            "groupId": "4",
+            "id": "25",
+            "x": 929.1108630593569,
+            "y": 377.4926791631873
+        }
+    ],
+    "relationships": [
+        {
+            "source": "21",
+            "target": "17",
+            "type": "cause-effect",
+            "id": "1"
+        },
+        {
+            "source": "22",
+            "target": "18",
+            "type": "cause-effect",
+            "id": "2"
+        },
+        {
+            "source": "18",
+            "target": "1",
+            "type": "cause-effect",
+            "id": "3"
+        },
+        {
+            "source": "26",
+            "target": "22",
+            "type": "cause-effect",
+            "id": "4"
+        },
+        {
+            "source": "15",
+            "target": "12",
+            "type": "cause-effect",
+            "id": "5"
+        },
+        {
+            "source": "12",
+            "target": "11",
+            "type": "cause-effect",
+            "id": "6"
+        },
+        {
+            "source": "11",
+            "target": "2",
+            "type": "cause-effect",
+            "id": "7"
+        },
+        {
+            "source": "10",
+            "target": "2",
+            "type": "cause-effect",
+            "id": "8"
+        },
+        {
+            "source": "4",
+            "target": "1",
+            "type": "cause-effect",
+            "id": "9"
+        },
+        {
+            "source": "20",
+            "target": "1",
+            "type": "cause-effect",
+            "id": "10"
+        },
+        {
+            "source": "17",
+            "target": "18",
+            "type": "conflict",
+            "id": "11"
+        }
+    ],
+    "groups": [
+        {
+            "name": "Probation Phase",
+            "id": "1",
+            "startAngle": 0,
+            "endAngle": 1.7592918860102844,
+            "x": 1228.6138916015625,
+            "y": 553.069580078125
+        },
+        {
+            "name": "Custody Phase",
+            "id": "2",
+            "startAngle": 1.7592918860102844,
+            "endAngle": 3.518583772020569,
+            "x": 168.25599670410156,
+            "y": 765.1411743164062
+        },
+        {
+            "name": "Post-Custody/Transition Phase (bottom half of circle) ",
+            "id": "3",
+            "startAngle": 3.518583772020569,
+            "endAngle": 5.529203070318037,
+            "x": 1146.8346405029297,
+            "y": 108.13511657714844
+        },
+        {
+            "name": "Group4",
+            "id": "4",
+            "startAngle": 5.529203070318037,
+            "endAngle": 5.78053048260522,
+            "x": 1180.016535952787,
+            "y": 267.1199340820314
+        },
+        {
+            "name": "Group5",
+            "id": "5",
+            "startAngle": 5.78053048260522,
+            "endAngle": 5.78053048260522,
+            "x": 1177.244319155912,
+            "y": 321.1773986816408
+        }
+    ],
+    "groupLevel": "strategic",
+    "legends": {
+        "legendBubbles": [
+            {
+                "cx": 30,
+                "cy": 250,
+                "rx": 40,
+                "ry": 34,
+                "track": "operational",
+                "text": "Operational"
+            },
+            {
+                "cx": 30,
+                "cy": 170,
+                "rx": 40,
+                "ry": 34,
+                "track": "process",
+                "text": "Process"
+            },
+            {
+                "cx": 30,
+                "cy": 90,
+                "rx": 40,
+                "ry": 34,
+                "track": "strategic",
+                "text": "Strategic"
+            },
+            {
+                "cx": 30,
+                "cy": 10,
+                "rx": 40,
+                "ry": 34,
+                "track": "mission",
+                "text": "Mission"
+            }
+        ],
+        "legendLines": [
+            {
+                "x": 30,
+                "y": 310,
+                "length": 32,
+                "color": "#666",
+                "type": "Cause-Effect",
+                "text": "Cause-Effect",
+                "visible": true
+            },
+            {
+                "x": 30,
+                "y": 344,
+                "length": 32,
+                "color": "#666",
+                "type": "Conflict",
+                "text": "Conflict",
+                "visible": true
+            },
+            {
+                "x": 30,
+                "y": 378,
+                "length": 32,
+                "color": "#666",
+                "type": "Companion",
+                "text": "Companion",
+                "visible": true
+            },
+            {
+                "x": 30,
+                "y": 412,
+                "length": 32,
+                "color": "#666",
+                "type": "Lead-Lag",
+                "text": "Lead-Lag",
+                "visible": true
+            }
+        ]
+    }
+}
