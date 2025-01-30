@@ -27,8 +27,8 @@ const contextMenuVisible = ref(false)
 const contextMenuPosition = ref({ x: 0, y: 0 })
 const selectedBubble = ref<Bubble | null>(null)
 const newText = ref('')
-const mapRelationships = ref(props.data.relationships);
-const mapBubbles = ref(props.data.bubbles);
+const mapRelationships = ref(props.data.relationships)
+const mapBubbles = ref(props.data.bubbles)
 
 let isDragging = false
 let currentTransform: { x: number; y: number; k: number }
@@ -188,10 +188,7 @@ function drawGroupDividers(
 }
 
 // Function to add group names
-function addGroupNames(
-  svg: d3.Selection<SVGGElement, unknown, null, undefined>,
-  groups: Group[],
-) {
+function addGroupNames(svg: d3.Selection<SVGGElement, unknown, null, undefined>, groups: Group[]) {
   let initX: number, initY: number
   let initMouseX: number, initialMouseY: number
 
@@ -270,7 +267,7 @@ function addGroupNames(
         .style('font-size', '18px')
         .style('fill', '#000')
         .style('cursor', 'move')
-        .call(drag); // Make the text draggable
+        .call(drag) // Make the text draggable
     }
   })
 }
@@ -477,7 +474,11 @@ const drawMap = () => {
   // Draw bubbles
   const bubbleGroup = mapGroup.append('g')
   const bubbleRadii = new Map<string, { rx: number; ry: number }>()
-  const drag = d3.drag<SVGGElement, Bubble>().on('start', dragstarted).on('drag', dragged).on('end', dragended)
+  const drag = d3
+    .drag<SVGGElement, Bubble>()
+    .on('start', dragstarted)
+    .on('drag', dragged)
+    .on('end', dragended)
 
   props.data.bubbles.forEach((bubble) => {
     const g = bubbleGroup
@@ -499,7 +500,7 @@ const drawMap = () => {
       .call(wrap, TEXT_WIDTH)
 
     // Measure the text dimensions
-    const textBBox =  textElement.node()!.getBBox()
+    const textBBox = textElement.node()!.getBBox()
     const textWidth = textBBox.width
     const textHeight = textBBox.height
 
@@ -520,7 +521,7 @@ const drawMap = () => {
           bubble.layer as keyof typeof props.data.mapConfig.layerColors
         ],
       )
-      .attr('opacity', 0.8)
+      .attr('opacity', 1)
       .lower()
   })
 
@@ -538,7 +539,7 @@ const drawMap = () => {
 
     const [x, y] = d3.pointer(event, svgRef.value!)
 
-    if(d.x && d.y){
+    if (d.x && d.y) {
       initX = d.x
       initY = d.y
     }
@@ -581,7 +582,6 @@ const drawMap = () => {
     d3.select(this).attr('stroke', null)
   }
 
-
   // Draw relationships
   const linkGroup = mapGroup.append('g')
   props.data.relationships.forEach((rel) => {
@@ -606,24 +606,102 @@ const drawMap = () => {
     const endX = target.x - unitX * (targetRadius.rx + OFFSET)
     const endY = target.y - unitY * (targetRadius.ry + OFFSET)
 
-    const controlX = (startX + endX) / 2 + unitY * 50
-    const controlY = (startY + endY) / 2 - unitX * 50
+    // Use a straight line for close bubbles
+    const CLOSE_DISTANCE_THRESHOLD = 240
+    console.log('distance', distance)
 
-    const line = linkGroup
-      .append('path')
-      .attr('d', `M ${startX} ${startY} Q ${controlX} ${controlY} ${endX} ${endY}`)
-      .attr('stroke', '#666')
-      .attr('stroke-width', 1.5)
-      .attr('fill', 'none')
+    if (distance < CLOSE_DISTANCE_THRESHOLD) {
+      const line = linkGroup
+        .append('line')
+        .attr('data-relationship-id', rel.id) // Add a unique identifier
+        .attr('x1', startX)
+        .attr('y1', startY)
+        .attr('x2', endX)
+        .attr('y2', endY)
+        .attr('stroke', '#666')
+        .attr('stroke-width', 1.5)
+        .attr('fill', 'none')
 
-    if (rel.type === 'cause-effect') {
-      line.attr('marker-end', 'url(#arrow)')
-    } else if (rel.type === 'companion') {
-      line.attr('marker-start', 'url(#dot)').attr('marker-end', 'url(#dot)')
-    } else if (rel.type === 'conflict') {
-      line.attr('marker-start', 'url(#start-line-arrow)').attr('marker-end', 'url(#end-line-arrow)')
-    } else if (rel.type === 'lead-lag') {
-      line.attr('marker-end', 'url(#end-line-arrow)')
+      if (rel.type === 'cause-effect') {
+        line.attr('marker-end', 'url(#arrow)')
+      } else if (rel.type === 'companion') {
+        line.attr('marker-start', 'url(#dot)').attr('marker-end', 'url(#dot)')
+      } else if (rel.type === 'conflict') {
+        line
+          .attr('marker-start', 'url(#start-line-arrow)')
+          .attr('marker-end', 'url(#end-line-arrow)')
+      } else if (rel.type === 'lead-lag') {
+        line.attr('marker-end', 'url(#end-line-arrow)')
+      }
+    } else {
+      let controlX = (startX + endX) / 2 + unitY * 50
+      let controlY = (startY + endY) / 2 - unitX * 50
+
+      // Check for collisions with other bubbles
+      let closestBubble: Bubble|null = null
+      let minDistance = Infinity
+
+      props.data.bubbles.forEach((b) => {
+        if (b.id === source.id || b.id === target.id || !b.x || !b.y) return
+
+        const radius = bubbleRadii.get(b.id)
+        if (!radius) return
+
+        if (lineIntersectsEllipse(startX, startY, endX, endY, b.x, b.y, radius.rx, radius.ry)) {
+          const midX = (startX + endX) / 2
+          const midY = (startY + endY) / 2
+          const dx = midX - b.x
+          const dy = midY - b.y
+          const distance = Math.sqrt(dx * dx + dy * dy)
+
+          if (distance < minDistance) {
+            minDistance = distance
+            closestBubble = b
+          }
+        }
+      })
+
+      if (closestBubble && closestBubble.x && closestBubble.y) {
+        const perpX = -unitY
+        const perpY = unitX
+
+        const lineVecX = endX - startX
+        const lineVecY = endY - startY
+        const cross = (closestBubble.x - startX) * lineVecY - (closestBubble.y - startY) * lineVecX
+        const sign = cross > 0 ? 1 : -1
+
+        // Get the radius of the closest bubble
+        const closestRadius = bubbleRadii.get(closestBubble.id)
+        if (!closestRadius) return
+
+        // Calculate shift distance based on bubble size + padding
+        const shiftX = closestRadius.rx + OFFSET
+        const shiftY = closestRadius.ry + OFFSET
+
+        // Adjust control points proportionally to bubble size
+        controlX += sign * perpX * (shiftX * 1.2) // 1.5x for clearance
+        controlY += sign * perpY * (shiftY * 1.5)
+      }
+
+      const line = linkGroup
+        .append('path')
+        .attr('data-relationship-id', rel.id) // Add a unique identifier
+        .attr('d', `M ${startX} ${startY} Q ${controlX} ${controlY} ${endX} ${endY}`)
+        .attr('stroke', '#666')
+        .attr('stroke-width', 1.5)
+        .attr('fill', 'none')
+
+      if (rel.type === 'cause-effect') {
+        line.attr('marker-end', 'url(#arrow)')
+      } else if (rel.type === 'companion') {
+        line.attr('marker-start', 'url(#dot)').attr('marker-end', 'url(#dot)')
+      } else if (rel.type === 'conflict') {
+        line
+          .attr('marker-start', 'url(#start-line-arrow)')
+          .attr('marker-end', 'url(#end-line-arrow)')
+      } else if (rel.type === 'lead-lag') {
+        line.attr('marker-end', 'url(#end-line-arrow)')
+      }
     }
   })
 
@@ -657,13 +735,6 @@ const drawMap = () => {
     .style('fill', '#000')
 
   // Add legend bubbles
-  // const legendBubbles = [
-  //   { cx: 30, cy: 250, rx: 40, ry: 30, track: 'operational', text: 'Operational' },
-  //   { cx: 30, cy: 180, rx: 40, ry: 30, track: 'process', text: 'Process' },
-  //   { cx: 30, cy: 110, rx: 40, ry: 30, track: 'strategic', text: 'Strategic' },
-  //   { cx: 30, cy: 40, rx: 40, ry: 30, track: 'mission', text: 'Mission' },
-  // ]
-
   props.data.legends.legendBubbles.forEach((bubble, index) => {
     legendGroup
       .append('ellipse')
@@ -741,12 +812,6 @@ const drawMap = () => {
   })
 
   // Add vertical legend lines with text at the top
-  // const legendLines = [
-  //   { x: 30, y: 310, length: 30, color: '#666', text: 'Cause-Effect' },
-  //   { x: 30, y: 344, length: 30, color: '#666', text: 'Conflict' },
-  //   { x: 30, y: 378, length: 30, color: '#666', text: 'Companion' },
-  //   { x: 30, y: 412, length: 30, color: '#666', text: 'Lead-Lag' },
-  // ]
   let currentY = 0
   props.data.legends.legendLines.forEach((line) => {
     if (line.visible) {
@@ -844,7 +909,7 @@ function wrap(text: d3.Selection<SVGTextElement, Bubble, null, undefined>, width
         currentLine.push(word)
         tempSpan.text(currentLine.join(' '))
 
-        const node = tempSpan.node();
+        const node = tempSpan.node()
         if (node && node.getComputedTextLength() > width) {
           currentLine.pop()
           if (currentLine.length) lines.push(currentLine.join(' '))
@@ -872,6 +937,35 @@ function wrap(text: d3.Selection<SVGTextElement, Bubble, null, undefined>, width
         .text(line)
     })
   })
+}
+
+// Helper: Check if line intersects an ellipse
+function lineIntersectsEllipse(
+  x1: number,
+  y1: number,
+  x2: number,
+  y2: number,
+  h: number,
+  k: number,
+  rx: number,
+  ry: number,
+): boolean {
+  const dx = x2 - x1
+  const dy = y2 - y1
+
+  // Quadratic equation coefficients
+  const A = (dx * dx) / (rx * rx) + (dy * dy) / (ry * ry)
+  const B = 2 * ((dx * (x1 - h)) / (rx * rx) + (dy * (y1 - k)) / (ry * ry))
+  const C = (x1 - h) ** 2 / (rx * rx) + (y1 - k) ** 2 / (ry * ry) - 1
+
+  const discriminant = B * B - 4 * A * C
+  if (discriminant < 0) return false
+
+  const sqrtDisc = Math.sqrt(discriminant)
+  const t1 = (-B + sqrtDisc) / (2 * A)
+  const t2 = (-B - sqrtDisc) / (2 * A)
+
+  return (t1 >= 0 && t1 <= 1) || (t2 >= 0 && t2 <= 1)
 }
 </script>
 
