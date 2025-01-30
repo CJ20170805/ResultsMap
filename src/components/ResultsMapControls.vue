@@ -58,14 +58,14 @@ const handleAddBubble = () => {
 }
 
 const handleAddGroup = () => {
-  if (newGroup.value.name !== "") {
+  //if (newGroup.value.name !== "") {
     props.onAddGroup({
       name: newGroup.value.name,
       //layers: newGroup.value.layers,
     })
     newGroup.value.name = ''
     // newGroup.value.layers = []
-  }
+  //}
 }
 
 const handleAddRelationship = () => {
@@ -140,9 +140,12 @@ const deleteGroup = (groupId: string) => {
             <div class="control-section">
               <h3>Groups</h3>
               <el-form>
-                <el-form-item v-for="group in groups" :key="group.id">
-                  <el-row :gutter="20">
-                    <el-col :span="22">
+                <el-form-item v-for="(group, index) in groups" :key="group.id">
+                  <el-row :gutter="10">
+                    <el-col :span="5">
+                      <span>Group {{ index + 1 }}</span>
+                    </el-col>
+                    <el-col :span="15">
                       <el-input v-model="group.name" placeholder="Group Name"></el-input>
                     </el-col>
                     <el-col :span="2">

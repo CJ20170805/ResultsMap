@@ -51,6 +51,12 @@ const addRelationship = (relationship: Omit<Relationship, 'id'>) => {
 
 const addGroup = (group: Omit<Group, 'id'>) => {
   if(!mapData.value) return
+
+  // remove all x and y of group
+  mapData.value.groups.forEach((group) => {
+    group.x = undefined
+    group.y = undefined
+  })
   const newId = (mapData.value.groups.length + 1).toString()
   mapData.value.groups.push({
     ...group,

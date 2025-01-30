@@ -129,19 +129,26 @@ const layerRadii = {
 // }
 
 // Add function to calculate group angles
-function calculateGroupAngles(groups: Group[], bubbles: Bubble[]) {
-  const totalAngle = 2 * Math.PI
-  const groupedBubbles = bubbles.filter((b) => b.groupId !== '')
-  //const ungroupedBubbles = bubbles.filter((b) => b.groupId === '')
+function calculateGroupAngles(groups: Group[]) {
+  //, bubbles: Bubble[]
+  // const totalAngle = 2 * Math.PI
+  // const groupedBubbles = bubbles.filter((b) => b.groupId !== '')
 
-  // Calculate angles for groups
-  let currentAngle = 0
-  groups.forEach((group) => {
-    const groupBubbles = groupedBubbles.filter((b) => b.groupId === group.id)
-    const angleShare = (groupBubbles.length / bubbles.length) * totalAngle
-    group.startAngle = currentAngle
-    group.endAngle = currentAngle + angleShare
-    currentAngle += angleShare
+  // // Calculate angles for groups
+  // let currentAngle = 0
+  // groups.forEach((group) => {
+  //   const groupBubbles = groupedBubbles.filter((b) => b.groupId === group.id)
+  //   const angleShare = (groupBubbles.length / bubbles.length) * totalAngle
+  //   group.startAngle = currentAngle
+  //   group.endAngle = currentAngle + angleShare
+  //   currentAngle += angleShare
+  // })
+
+  const angleIncrement = (2 * Math.PI) / groups.length
+  groups.forEach((group, index) => {
+    group.startAngle = index * angleIncrement
+    group.endAngle = (index + 1) * angleIncrement
+    console.log('GroupAngle: ', group.startAngle, group.endAngle)
   })
 
   return groups
@@ -154,6 +161,7 @@ function drawGroupDividers(
   startLayer: LayerType | 'None',
 ) {
   if (groups.length <= 1) return
+
   const dividerGroup = svg.append('g').attr('class', 'group-dividers')
 
   groups.forEach((group) => {
@@ -171,6 +179,7 @@ function drawGroupDividers(
         startX = centerX + Math.cos(group.startAngle) * tracks[startLayer].inner
         startY = centerY + yOffset + Math.sin(group.startAngle) * tracks[startLayer].inner * yScale
       }
+
       const endX = centerX + Math.cos(group.startAngle) * tracks.operational.outer
       const endY =
         centerY + yOffset + Math.sin(group.startAngle) * tracks.operational.outer * yScale
@@ -237,38 +246,37 @@ function addGroupNames(svg: d3.Selection<SVGGElement, unknown, null, undefined>,
     })
 
   groups.forEach((group) => {
-    if (group.startAngle !== undefined && group.endAngle !== undefined) {
-      console.log('XXX', group.startAngle, group.endAngle)
+    if (group.startAngle === undefined || group.endAngle === undefined) return
 
-      let x: number, y: number
+    let x: number, y: number
 
-      if (!group.x || !group.y) {
-        const angle = (group.startAngle + group.endAngle) / 2
-        const radius = tracks['operational'].outer + 40 // Offset
-        x = centerX + radius * Math.cos(angle)
-        y = centerY + yOffset + radius * Math.sin(angle) * yScale
+    if (!group.x || !group.y) {
+      const midAngle = (group.startAngle + group.endAngle) / 2
+      const outerRadius = tracks.operational.outer + 20 // Offset outside the outer track
+      x = centerX + outerRadius * Math.cos(midAngle)
+      y = centerY + yOffset + outerRadius * Math.sin(midAngle) * yScale
 
-        group.x = x
-        group.y = y
-      } else {
-        x = group.x
-        y = group.y
-      }
-
-      svg
-        .append('text')
-        .datum(group)
-        .attr('x', x)
-        .attr('y', y)
-        .attr('text-anchor', 'middle')
-        .attr('alignment-baseline', 'middle')
-        .text(group.name)
-        .style('font-weight', 'bold')
-        .style('font-size', '18px')
-        .style('fill', '#000')
-        .style('cursor', 'move')
-        .call(drag) // Make the text draggable
+      group.x = x
+      group.y = y
+    } else {
+      x = group.x
+      y = group.y
     }
+
+    // Add text element
+    svg
+      .append('text')
+      .datum(group)
+      .attr('x', x)
+      .attr('y', y)
+      .attr('text-anchor', 'middle')
+      .attr('dominant-baseline', 'middle')
+      .text(group.name)
+      .style('font-weight', 'bold')
+      .style('font-size', '18px')
+      .style('fill', '#000')
+      .style('cursor', 'move')
+      .call(drag)
   })
 }
 
@@ -415,7 +423,8 @@ const drawMap = () => {
   addArrowsAndTitle(mapGroup)
 
   // Calculate group angles
-  const updatedGroups = calculateGroupAngles(props.data.groups, props.data.bubbles)
+  const updatedGroups = calculateGroupAngles(props.data.groups)
+  //, props.data.bubbles
 
   // Draw layers (concentric circles)
   Object.entries(tracks)
@@ -638,7 +647,7 @@ const drawMap = () => {
       let controlY = (startY + endY) / 2 - unitX * 50
 
       // Check for collisions with other bubbles
-      let closestBubble: Bubble|null = null
+      const closestBubble = ref<Bubble | null>(null)
       let minDistance = Infinity
 
       props.data.bubbles.forEach((b) => {
@@ -656,22 +665,23 @@ const drawMap = () => {
 
           if (distance < minDistance) {
             minDistance = distance
-            closestBubble = b
+            closestBubble.value = b
           }
         }
       })
 
-      if (closestBubble && closestBubble.x && closestBubble.y) {
+      if (closestBubble.value && closestBubble.value.x && closestBubble.value.y) {
         const perpX = -unitY
         const perpY = unitX
 
         const lineVecX = endX - startX
         const lineVecY = endY - startY
-        const cross = (closestBubble.x - startX) * lineVecY - (closestBubble.y - startY) * lineVecX
+        const cross =
+          (closestBubble.value.x - startX) * lineVecY - (closestBubble.value.y - startY) * lineVecX
         const sign = cross > 0 ? 1 : -1
 
         // Get the radius of the closest bubble
-        const closestRadius = bubbleRadii.get(closestBubble.id)
+        const closestRadius = bubbleRadii.get(closestBubble.value.id)
         if (!closestRadius) return
 
         // Calculate shift distance based on bubble size + padding
