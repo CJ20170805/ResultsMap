@@ -52,10 +52,11 @@ const addRelationship = (relationship: Omit<Relationship, 'id'>) => {
 const addGroup = (group: Omit<Group, 'id'>) => {
   if(!mapData.value) return
 
-  // remove all x and y of group
+  // remove all x and y of group, recover the group's name and divider calculation
   mapData.value.groups.forEach((group) => {
     group.x = undefined
     group.y = undefined
+    group.locked = false
   })
   const newId = (mapData.value.groups.length + 1).toString()
   mapData.value.groups.push({
@@ -66,6 +67,13 @@ const addGroup = (group: Omit<Group, 'id'>) => {
 
 const deleteGroup = (index: number) => {
   if(!mapData.value) return
+
+   mapData.value.groups.forEach((group) => {
+    group.x = undefined
+    group.y = undefined
+    group.locked = false
+  })
+
   mapData.value.groups.splice(index, 1)
 }
 

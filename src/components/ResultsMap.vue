@@ -144,12 +144,14 @@ function calculateGroupAngles(groups: Group[]) {
   //   currentAngle += angleShare
   // })
 
-  // const angleIncrement = (2 * Math.PI) / groups.length
-  // groups.forEach((group, index) => {
-  //   group.startAngle = index * angleIncrement
-  //   group.endAngle = (index + 1) * angleIncrement
-  //   console.log('GroupAngle: ', group.startAngle, group.endAngle)
-  // })
+  const angleIncrement = (2 * Math.PI) / groups.length
+  groups.forEach((group, index) => {
+    if (!group.locked) {
+      group.startAngle = index * angleIncrement
+      group.endAngle = (index + 1) * angleIncrement
+      console.log('GroupAngle: ', group.startAngle, group.endAngle)
+    }
+  })
 
   return groups
 }
@@ -204,6 +206,7 @@ function drawGroupDividers(
 
       // Update the group's angle in the data model
       const group = line.datum() as Group
+      group.locked = true
       group.startAngle = angle
       group.endAngle = angle
     })

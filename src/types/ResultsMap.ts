@@ -20,8 +20,9 @@ export interface Group {
     // layers: LayerType[]
     startAngle?: number
     endAngle?: number
-    x?: number
+    x?: number   // coordinates of the group name
     y?: number
+    locked: boolean
 }
 
 export interface Bubble {
