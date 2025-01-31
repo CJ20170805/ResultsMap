@@ -144,12 +144,12 @@ function calculateGroupAngles(groups: Group[]) {
   //   currentAngle += angleShare
   // })
 
-  const angleIncrement = (2 * Math.PI) / groups.length
-  groups.forEach((group, index) => {
-    group.startAngle = index * angleIncrement
-    group.endAngle = (index + 1) * angleIncrement
-    console.log('GroupAngle: ', group.startAngle, group.endAngle)
-  })
+  // const angleIncrement = (2 * Math.PI) / groups.length
+  // groups.forEach((group, index) => {
+  //   group.startAngle = index * angleIncrement
+  //   group.endAngle = (index + 1) * angleIncrement
+  //   console.log('GroupAngle: ', group.startAngle, group.endAngle)
+  // })
 
   return groups
 }
@@ -164,26 +164,74 @@ function drawGroupDividers(
 
   const dividerGroup = svg.append('g').attr('class', 'group-dividers')
 
+  // Define the drag behavior
+  const drag = d3
+    .drag<SVGLineElement, Group>()
+    .on('start', function () {
+      d3.select(this).raise().attr('stroke', '#999')
+    })
+    .on('drag', function (event) {
+      // Get the current mouse position relative to the SVG
+      const [x, y] = d3.pointer(event, svgRef.value!)
+
+      // Adjust Y coordinate for scaling and offset before calculating the angle
+      const adjustedY = (y - centerY - yOffset) / yScale
+
+      // Calculate the angle using the adjusted Y coordinate
+      const angle = Math.atan2(adjustedY, x - centerX)
+
+      // Update the line's start and end points
+      const line = d3.select(this)
+
+      // Handle the case where startLayer is "None"
+      let startX, startY
+      if (startLayer === 'None') {
+        // If startLayer is "None", start from the center
+        startX = centerX
+        startY = centerY
+      } else {
+        // Otherwise, calculate the start point based on the layer
+        startX = centerX + Math.cos(angle) * tracks[startLayer].inner
+        startY = centerY + Math.sin(angle) * tracks[startLayer].inner * yScale + yOffset
+      }
+
+      // End point (outer radius)
+      const endX = centerX + Math.cos(angle) * tracks.operational.outer
+      const endY = centerY + Math.sin(angle) * tracks.operational.outer * yScale + yOffset
+
+      // Update the line position
+      line.attr('x1', startX).attr('y1', startY).attr('x2', endX).attr('y2', endY)
+
+      // Update the group's angle in the data model
+      const group = line.datum() as Group
+      group.startAngle = angle
+      group.endAngle = angle
+    })
+    .on('end', function () {
+      d3.select(this).attr('stroke', 'white') // Reset line color
+    })
+
   groups.forEach((group) => {
     if (group.startAngle !== undefined && group.endAngle !== undefined) {
       let startX, startY
 
-      if (startLayer === 'None') return // Skip drawing dividers if startLayer is None
+      if (startLayer === 'None') return
 
       if (startLayer === 'mission') {
-        // Start from the center if the startLayer is mission
+        // Start from the center
         startX = centerX
         startY = centerY
       } else {
-        // Start from the middle of the specified startLayer
+        // Start from the inner radius of the specified layer
         startX = centerX + Math.cos(group.startAngle) * tracks[startLayer].inner
-        startY = centerY + yOffset + Math.sin(group.startAngle) * tracks[startLayer].inner * yScale
+        startY = centerY + Math.sin(group.startAngle) * tracks[startLayer].inner * yScale + yOffset
       }
 
       const endX = centerX + Math.cos(group.startAngle) * tracks.operational.outer
       const endY =
-        centerY + yOffset + Math.sin(group.startAngle) * tracks.operational.outer * yScale
+        centerY + Math.sin(group.startAngle) * tracks.operational.outer * yScale + yOffset
 
+      // Draw the line
       dividerGroup
         .append('line')
         .attr('x1', startX)
@@ -192,10 +240,12 @@ function drawGroupDividers(
         .attr('y2', endY)
         .attr('stroke', 'white')
         .attr('stroke-width', 3)
+        .attr('cursor', 'ew-resize')
+        .datum(group)
+        .call(drag)
     }
   })
 }
-
 // Function to add group names
 function addGroupNames(svg: d3.Selection<SVGGElement, unknown, null, undefined>, groups: Group[]) {
   let initX: number, initY: number
