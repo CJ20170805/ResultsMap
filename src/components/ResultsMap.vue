@@ -956,6 +956,7 @@ const zoomOut = () => {
 // Define layers from outermost to innermost
 const layers = ['operational', 'process', 'strategic', 'mission']
 const currentLayerIndex = ref(0) // Start with the outermost layer
+const selectedGroup = ref('all');
 
 const currentLayer = computed(() => layers[currentLayerIndex.value])
 
@@ -979,17 +980,22 @@ const updateBubbleVisibility = () => {
   // Update bubble visibility based on the selected layer
   props.data.bubbles.forEach((bubble) => {
     const bubbleLayerIndex = layers.indexOf(bubble.layer)
-    bubble.visible = bubbleLayerIndex >= selectedLayerIndex // Show bubbles from mission to the selected layer
+    const isInSelectedGroup =
+    selectedGroup.value === 'all' || bubble.groupId === selectedGroup.value;
+    bubble.visible = bubbleLayerIndex >= selectedLayerIndex && isInSelectedGroup // Show bubbles from mission to the selected layer
   })
 }
 
-const updateGroupVisibility = (group: Group) => {
-  // Logic to update group visibility
-  const bubbles = props.data.bubbles.filter((bubble: Bubble) => bubble.groupId === group.id)
-  bubbles.forEach((bubble: Bubble) => {
-    bubble.visible = group.visible
-  })
-}
+const updateGroupVisibility = () => {
+  updateBubbleVisibility(); // Update visibility when the group selection changes
+};
+
+// Reset layer and group selection to default values
+const resetView = () => {
+  currentLayerIndex.value = 0; // Reset to the outermost layer
+  selectedGroup.value = 'all'; // Reset to "All" groups
+  updateBubbleVisibility(); // Update visibility to show all bubbles and relationships
+};
 
 const handleClickOutside = (event: MouseEvent) => {
   const contextMenuElement = document.querySelector('.context-menu')
@@ -1094,23 +1100,43 @@ function lineIntersectsEllipse(
 <template>
   <div ref="containerRef" class="svg-container">
     <div v-if="isPresentationMode" class="presentation-controls">
-      <!-- <el-form>
-        <el-form-item v-for="group in props.data.groups" :key="group.id" :label="group.name">
-          <el-switch v-model="group.visible" @change="updateGroupVisibility(group)"></el-switch>
-        </el-form-item>
-      </el-form> -->
       <el-row :gutter="20">
-        <el-col :span="8">
+        <el-col :span="7">
           <span style="margin: 0 10px 0 0;">Layer: </span>
           <el-button @click="switchToPreviousLayer" icon="ArrowUp"></el-button>
           <span class="layer-label">{{ currentLayer }}</span>
           <el-button @click="switchToNextLayer" icon="ArrowDown"></el-button>
         </el-col>
+        <el-col :span="7">
+           <!-- Group selection dropdown -->
+          <el-row>
+            <el-col :span="5">
+              <span style="margin: 0 10px 0 0; line-height: 30px;">Group: </span>
+            </el-col>
+            <el-col :span="17">
+              <el-select
+            v-model="selectedGroup"
+            placeholder="Select Group"
+            @change="updateGroupVisibility"
+          >
+            <el-option label="All" value="all"></el-option>
+            <el-option
+              v-for="group in props.data.groups"
+              :key="group.id"
+              :label="group.name"
+              :value="group.id"
+            ></el-option>
+          </el-select>
+            </el-col>
+          </el-row>
+        </el-col>
+        <el-col :span="6">
+           <el-button @click="resetView">Reset</el-button>
+        </el-col>
       </el-row>
     </div>
 
     <svg ref="svgRef" :viewBox="`0 0 ${width} ${height}`" preserveAspectRatio="xMidYMid meet">
-      <!-- SVG content goes here -->
       <g></g>
     </svg>
 
