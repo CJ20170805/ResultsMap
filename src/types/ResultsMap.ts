@@ -23,6 +23,7 @@ export interface Group {
     x?: number   // coordinates of the group name
     y?: number
     locked: boolean
+    visible: boolean
 }
 
 export interface Bubble {
@@ -33,6 +34,7 @@ export interface Bubble {
     locked: boolean
     x?: number
     y?: number
+    visible: boolean
 }
 
 export interface Relationship {

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, onBeforeUnmount, watch } from 'vue'
+import { ref, onMounted, onBeforeUnmount, watch, computed } from 'vue'
 import * as d3 from 'd3'
 import type {
   ResultsMapData,
@@ -29,6 +29,7 @@ const selectedBubble = ref<Bubble | null>(null)
 const newText = ref('')
 const mapRelationships = ref(props.data.relationships)
 const mapBubbles = ref(props.data.bubbles)
+const isPresentationMode = ref(false)
 
 let isDragging = false
 let currentTransform: { x: number; y: number; k: number }
@@ -52,6 +53,14 @@ const zoom = d3
 
 // Attach zoom behavior to the SVG
 // const svg = d3.select(svgRef.value).call(zoom);
+
+// presentation mode
+const togglePresentationMode = () => {
+  isPresentationMode.value = !isPresentationMode.value
+  if (isPresentationMode.value) {
+  } else {
+  }
+}
 
 const updateRelationshipType = (relationship: Relationship, newType: string) => {
   relationship.type = newType as Relationship['type']
@@ -498,7 +507,7 @@ const drawMap = () => {
 
   // Position bubbles along their orbits
   props.data.bubbles.forEach((bubble, i) => {
-    if (bubble.locked) return
+    if (bubble.locked || !bubble.visible) return
 
     let angle: number
     if (bubble.groupId) {
@@ -543,6 +552,8 @@ const drawMap = () => {
     .on('end', dragended)
 
   props.data.bubbles.forEach((bubble) => {
+    if (!bubble.visible) return
+
     const g = bubbleGroup
       .append('g')
       .datum(bubble) // Bind the bubble data to the element
@@ -650,7 +661,17 @@ const drawMap = () => {
     const source = props.data.bubbles.find((b) => b.id === rel.source)
     const target = props.data.bubbles.find((b) => b.id === rel.target)
 
-    if (!source || !target || !target.x || !target.y || !source.x || !source.y) return
+    if (
+      !source ||
+      !target ||
+      !target.x ||
+      !target.y ||
+      !source.x ||
+      !source.y ||
+      !source.visible ||
+      !target.visible
+    )
+      return
 
     const dx = target.x - source.x
     const dy = target.y - source.y
@@ -932,6 +953,44 @@ const zoomOut = () => {
   svg.transition().call(zoom.scaleBy, 0.8)
 }
 
+// Define layers from outermost to innermost
+const layers = ['operational', 'process', 'strategic', 'mission']
+const currentLayerIndex = ref(0) // Start with the outermost layer
+
+const currentLayer = computed(() => layers[currentLayerIndex.value])
+
+// const toggleLayerControls = () => {
+//   showLayerControls.value = !showLayerControls.value;
+// };
+
+const switchToNextLayer = () => {
+  currentLayerIndex.value = (currentLayerIndex.value + 1) % layers.length
+  updateBubbleVisibility()
+}
+
+const switchToPreviousLayer = () => {
+  currentLayerIndex.value = (currentLayerIndex.value - 1 + layers.length) % layers.length
+  updateBubbleVisibility()
+}
+
+const updateBubbleVisibility = () => {
+  const selectedLayerIndex = layers.indexOf(currentLayer.value)
+
+  // Update bubble visibility based on the selected layer
+  props.data.bubbles.forEach((bubble) => {
+    const bubbleLayerIndex = layers.indexOf(bubble.layer)
+    bubble.visible = bubbleLayerIndex >= selectedLayerIndex // Show bubbles from mission to the selected layer
+  })
+}
+
+const updateGroupVisibility = (group: Group) => {
+  // Logic to update group visibility
+  const bubbles = props.data.bubbles.filter((bubble: Bubble) => bubble.groupId === group.id)
+  bubbles.forEach((bubble: Bubble) => {
+    bubble.visible = group.visible
+  })
+}
+
 const handleClickOutside = (event: MouseEvent) => {
   const contextMenuElement = document.querySelector('.context-menu')
   if (contextMenuElement && !contextMenuElement.contains(event.target as Node)) {
@@ -1034,6 +1093,22 @@ function lineIntersectsEllipse(
 
 <template>
   <div ref="containerRef" class="svg-container">
+    <div v-if="isPresentationMode" class="presentation-controls">
+      <!-- <el-form>
+        <el-form-item v-for="group in props.data.groups" :key="group.id" :label="group.name">
+          <el-switch v-model="group.visible" @change="updateGroupVisibility(group)"></el-switch>
+        </el-form-item>
+      </el-form> -->
+      <el-row :gutter="20">
+        <el-col :span="8">
+          <span style="margin: 0 10px 0 0;">Layer: </span>
+          <el-button @click="switchToPreviousLayer" icon="ArrowUp"></el-button>
+          <span class="layer-label">{{ currentLayer }}</span>
+          <el-button @click="switchToNextLayer" icon="ArrowDown"></el-button>
+        </el-col>
+      </el-row>
+    </div>
+
     <svg ref="svgRef" :viewBox="`0 0 ${width} ${height}`" preserveAspectRatio="xMidYMid meet">
       <!-- SVG content goes here -->
       <g></g>
@@ -1042,6 +1117,11 @@ function lineIntersectsEllipse(
     <div class="zoom-controls">
       <el-button @click="zoomIn" icon="Plus"></el-button>
       <el-button @click="zoomOut" icon="Minus"></el-button>
+      <el-button
+        style="margin: 15px 0 0 0"
+        @click="togglePresentationMode"
+        icon="Monitor"
+      ></el-button>
     </div>
   </div>
 
@@ -1116,6 +1196,23 @@ function lineIntersectsEllipse(
 svg {
   width: 100%;
   height: 100%;
+}
+
+.presentation-controls {
+  position: fixed;
+  top: 0px;
+  right: 0px;
+  left: 0px;
+  background: white;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
+}
+
+.layer-label {
+  margin: 0 10px;
+  font-size: 14px;
+  font-weight: bold;
 }
 
 .zoom-controls {

@@ -51,7 +51,8 @@ const handleAddBubble = () => {
       text: newBubble.value.text,
       layer: newBubble.value.layer,
       groupId: newBubble.value.groupId,
-      locked: false
+      locked: false,
+      visible: true
     })
     newBubble.value.text = ''
   }
@@ -62,6 +63,7 @@ const handleAddGroup = () => {
     props.onAddGroup({
       name: newGroup.value.name,
       locked: false,
+      visible: true
       //layers: newGroup.value.layers,
     })
     newGroup.value.name = ''
