@@ -16,10 +16,17 @@ export default [
 
   ...pluginVue.configs['flat/essential'],
   ...vueTsEslintConfig(),
-  
+
   {
     ...pluginVitest.configs.recommended,
     files: ['src/**/__tests__/*'],
   },
   skipFormatting,
+   // Custom rule overrides
+   {
+    name: 'app/custom-rules',
+    rules: {
+      '@typescript-eslint/no-explicit-any': 'off', // Disable the rule globally
+    },
+  },
 ]

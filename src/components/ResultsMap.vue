@@ -29,7 +29,6 @@ const selectedBubble = ref<Bubble | null>(null)
 const newText = ref('')
 const mapRelationships = ref(props.data.relationships)
 const mapBubbles = ref(props.data.bubbles)
-const isPresentationMode = ref(false)
 
 let isDragging = false
 let currentTransform: { x: number; y: number; k: number }
@@ -53,14 +52,6 @@ const zoom = d3
 
 // Attach zoom behavior to the SVG
 // const svg = d3.select(svgRef.value).call(zoom);
-
-// presentation mode
-const togglePresentationMode = () => {
-  isPresentationMode.value = !isPresentationMode.value
-  if (isPresentationMode.value) {
-  } else {
-  }
-}
 
 const updateRelationshipType = (relationship: Relationship, newType: string) => {
   relationship.type = newType as Relationship['type']
@@ -953,12 +944,35 @@ const zoomOut = () => {
   svg.transition().call(zoom.scaleBy, 0.8)
 }
 
+// presentation mode functions
 // Define layers from outermost to innermost
 const layers = ['operational', 'process', 'strategic', 'mission']
 const currentLayerIndex = ref(0) // Start with the outermost layer
-const selectedGroup = ref('all');
+const selectedGroup = ref('all')
+const isPresentationMode = ref(false)
+const showControls = ref(false)
 
 const currentLayer = computed(() => layers[currentLayerIndex.value])
+
+const togglePresentationMode = () => {
+  isPresentationMode.value = !isPresentationMode.value
+  if (isPresentationMode.value) {
+    enterFullscreen()
+  } else {
+    exitFullscreen()
+  }
+}
+
+const handlePresentationMouseEnter = () => {
+  if (isPresentationMode.value) {
+    showControls.value = true
+  }
+}
+const handlePresentationMouseLeave = () => {
+  if (isPresentationMode.value) {
+    showControls.value = false
+  }
+}
 
 // const toggleLayerControls = () => {
 //   showLayerControls.value = !showLayerControls.value;
@@ -981,21 +995,52 @@ const updateBubbleVisibility = () => {
   props.data.bubbles.forEach((bubble) => {
     const bubbleLayerIndex = layers.indexOf(bubble.layer)
     const isInSelectedGroup =
-    selectedGroup.value === 'all' || bubble.groupId === selectedGroup.value;
+      selectedGroup.value === 'all' || bubble.groupId === selectedGroup.value
     bubble.visible = bubbleLayerIndex >= selectedLayerIndex && isInSelectedGroup // Show bubbles from mission to the selected layer
   })
 }
 
 const updateGroupVisibility = () => {
-  updateBubbleVisibility(); // Update visibility when the group selection changes
-};
+  updateBubbleVisibility() // Update visibility when the group selection changes
+}
+
+const enterFullscreen = () => {
+  const container = containerRef.value
+  if (container) {
+    if (container.requestFullscreen) {
+      container.requestFullscreen()
+    } else if ((container as any).webkitRequestFullscreen) {
+      // Safari support
+      ;(container as any).webkitRequestFullscreen()
+    } else if ((container as any).msRequestFullscreen) {
+      // IE/Edge support
+      ;(container as any).msRequestFullscreen()
+    }
+  }
+}
+
+const exitFullscreen = () => {
+  if (document.exitFullscreen) {
+    document.exitFullscreen()
+  } else if ((document as any).webkitExitFullscreen) {
+    // Safari support
+    ;(document as any).webkitExitFullscreen()
+  } else if ((document as any).msExitFullscreen) {
+    // IE/Edge support
+    ;(document as any).msExitFullscreen()
+  }
+}
+
+const handleFullscreenChange = () => {
+  isPresentationMode.value = !!document.fullscreenElement
+}
 
 // Reset layer and group selection to default values
 const resetView = () => {
-  currentLayerIndex.value = 0; // Reset to the outermost layer
-  selectedGroup.value = 'all'; // Reset to "All" groups
-  updateBubbleVisibility(); // Update visibility to show all bubbles and relationships
-};
+  currentLayerIndex.value = 0 // Reset to the outermost layer
+  selectedGroup.value = 'all' // Reset to "All" groups
+  updateBubbleVisibility() // Update visibility to show all bubbles and relationships
+}
 
 const handleClickOutside = (event: MouseEvent) => {
   const contextMenuElement = document.querySelector('.context-menu')
@@ -1007,10 +1052,16 @@ const handleClickOutside = (event: MouseEvent) => {
 onMounted(() => {
   drawMap()
   document.addEventListener('click', handleClickOutside)
+  document.addEventListener('fullscreenchange', handleFullscreenChange)
+  document.addEventListener('webkitfullscreenchange', handleFullscreenChange) // Safari
+  document.addEventListener('msfullscreenchange', handleFullscreenChange) // IE/Edge
 })
 
 onBeforeUnmount(() => {
   document.removeEventListener('click', handleClickOutside)
+  document.removeEventListener('fullscreenchange', handleFullscreenChange)
+  document.removeEventListener('webkitfullscreenchange', handleFullscreenChange) // Safari
+  document.removeEventListener('msfullscreenchange', handleFullscreenChange) // IE/Edge
 })
 
 watch(() => props.data, drawMap, { deep: true })
@@ -1099,39 +1150,59 @@ function lineIntersectsEllipse(
 
 <template>
   <div ref="containerRef" class="svg-container">
-    <div v-if="isPresentationMode" class="presentation-controls">
-      <el-row :gutter="20">
+    <div
+      class="presentation-controls"
+      :class="{ 'show-controls': showControls }"
+      @mouseenter="handlePresentationMouseEnter"
+      @mouseleave="handlePresentationMouseLeave"
+    >
+      <el-row :gutter="20" v-show="showControls">
         <el-col :span="7">
-          <span style="margin: 0 10px 0 0;">Layer: </span>
+          <span style="margin: 0 10px 0 0">Layer: </span>
           <el-button @click="switchToPreviousLayer" icon="ArrowUp"></el-button>
           <span class="layer-label">{{ currentLayer }}</span>
           <el-button @click="switchToNextLayer" icon="ArrowDown"></el-button>
         </el-col>
         <el-col :span="7">
-           <!-- Group selection dropdown -->
+          <!-- Group selection dropdown -->
           <el-row>
             <el-col :span="5">
-              <span style="margin: 0 10px 0 0; line-height: 30px;">Group: </span>
+              <span style="margin: 0 10px 0 0; line-height: 30px">Group: </span>
             </el-col>
             <el-col :span="17">
-              <el-select
-            v-model="selectedGroup"
-            placeholder="Select Group"
-            @change="updateGroupVisibility"
-          >
-            <el-option label="All" value="all"></el-option>
-            <el-option
-              v-for="group in props.data.groups"
-              :key="group.id"
-              :label="group.name"
-              :value="group.id"
-            ></el-option>
-          </el-select>
+              <!-- <el-select
+                v-model="selectedGroup"
+                placeholder="Select Group"
+                @change="updateGroupVisibility"
+                popper-append-to-body
+              >
+                <el-option label="All" value="all"></el-option>
+                <el-option
+                  v-for="group in props.data.groups"
+                  :key="group.id"
+                  :label="group.name"
+                  :value="group.id"
+                ></el-option>
+              </el-select> -->
+              <select
+              v-model="selectedGroup"
+              @change="updateGroupVisibility"
+              class="custom-select"
+            >
+              <option value="all">All</option>
+              <option
+                v-for="group in props.data.groups"
+                :key="group.id"
+                :value="group.id"
+              >
+                {{ group.name }}
+              </option>
+            </select>
             </el-col>
           </el-row>
         </el-col>
-        <el-col :span="6">
-           <el-button @click="resetView">Reset</el-button>
+        <el-col :span="4">
+          <el-button @click="resetView">Reset</el-button>
         </el-col>
       </el-row>
     </div>
@@ -1146,7 +1217,8 @@ function lineIntersectsEllipse(
       <el-button
         style="margin: 15px 0 0 0"
         @click="togglePresentationMode"
-        icon="Monitor"
+        :class="{ 'presentation-mode': isPresentationMode }"
+        :icon="`${isPresentationMode ? 'Platform' : 'Monitor'}`"
       ></el-button>
     </div>
   </div>
@@ -1217,6 +1289,7 @@ function lineIntersectsEllipse(
   height: 100%;
   overflow: hidden;
   position: relative;
+  background: #fff;
 }
 
 svg {
@@ -1229,9 +1302,45 @@ svg {
   top: 0px;
   right: 0px;
   left: 0px;
-  background: white;
-  padding: 20px;
+  padding: 5px 0;
   border-radius: 8px;
+  background-color: #fff;
+  transition: all 0.2s;
+}
+
+.custom-select {
+  display: block;
+  width: 100%;
+  height: 30px;
+  padding: 0 10px;
+  font-size: 14px;
+  line-height: 1.5;
+  color: #606266; /* Element Plus text color */
+  background-color: #fff; /* Element Plus background */
+  background-image: none;
+  border: 1px solid #dcdfe6; /* Element Plus border color */
+  border-radius: 4px; /* Element Plus border radius */
+  appearance: none; /* Remove native select arrow styling */
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.1);
+  transition: border-color 0.3s, box-shadow 0.3s;
+}
+
+.custom-select:focus {
+  outline: none;
+  border-color: #409eff; /* Element Plus focus border color */
+  box-shadow: 0 0 4px rgba(64, 158, 255, 0.5);
+}
+
+.custom-select:hover {
+  border-color: #c6e2ff; /* Element Plus hover border color */
+}
+
+.custom-select option {
+  color: #606266;
+}
+
+.show-controls{
+  padding: 10px 80px;
   box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
 }
 
