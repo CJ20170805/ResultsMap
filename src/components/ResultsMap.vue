@@ -317,7 +317,7 @@ function addGroupNames(svg: d3.Selection<SVGGElement, unknown, null, undefined>,
     }
 
     // Add text element
-    svg
+    const textElement = svg
       .append('text')
       .datum(group)
       .attr('x', x)
@@ -328,8 +328,10 @@ function addGroupNames(svg: d3.Selection<SVGGElement, unknown, null, undefined>,
       .style('font-weight', 'bold')
       .style('font-size', '18px')
       .style('fill', '#000')
-      .style('cursor', 'move')
-      .call(drag)
+
+    if(!isPresentationMode.value){
+      textElement.style('cursor', 'move').call(drag)
+    }
   })
 }
 
@@ -955,6 +957,11 @@ const zoomOut = () => {
   svg.transition().call(zoom.scaleBy, 0.8)
 }
 
+const resetZoom = () => {
+  const svg = d3.select(svgRef.value!)
+  svg.transition().call(zoom.transform, d3.zoomIdentity)
+}
+
 // presentation mode functions
 // Define layers from outermost to innermost
 const layers = ['operational', 'process', 'strategic', 'mission']
@@ -1007,7 +1014,7 @@ const updateBubbleVisibility = () => {
     const bubbleLayerIndex = layers.indexOf(bubble.layer)
     const isInSelectedGroup =
       selectedGroup.value === 'all' || bubble.groupId === selectedGroup.value
-    bubble.visible = bubbleLayerIndex >= selectedLayerIndex && isInSelectedGroup // Show bubbles from mission to the selected layer
+    bubble.visible = (bubbleLayerIndex >= selectedLayerIndex && isInSelectedGroup) || bubble.layer === 'mission' // Show bubbles from mission to the selected layer
   })
 }
 
@@ -1049,6 +1056,7 @@ const handleFullscreenChange = () => {
 
 // Reset layer and group selection to default values
 const resetView = () => {
+  resetZoom();
   focusedBubbleId.value = null;
   currentLayerIndex.value = 0 // Reset to the outermost layer
   selectedGroup.value = 'all' // Reset to "All" groups
@@ -1278,6 +1286,7 @@ function lineIntersectsEllipse(
     <div class="zoom-controls">
       <el-button @click="zoomIn" icon="Plus"></el-button>
       <el-button @click="zoomOut" icon="Minus"></el-button>
+      <el-button @click="resetZoom" icon="RefreshRight"></el-button>
       <el-button
         style="margin: 15px 0 0 0"
         @click="togglePresentationMode"
