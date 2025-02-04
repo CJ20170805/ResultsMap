@@ -545,13 +545,24 @@ const drawMap = () => {
   props.data.bubbles.forEach((bubble) => {
     if (!bubble.visible) return
 
+    const isRelated = focusedBubbleId.value
+      ? getRelatedBubblesAndRelationships(focusedBubbleId.value).relatedBubbles.includes(bubble.id)
+      : true;
+
     const g = bubbleGroup
       .append('g')
       .datum(bubble) // Bind the bubble data to the element
       .attr('transform', `translate(${bubble.x},${bubble.y})`)
       .style('cursor', 'move')
       .on('contextmenu', (event: MouseEvent) => showContextMenu(event, bubble)) // Add right-click event
-      .call(drag) // Apply drag behavior
+
+    if(isPresentationMode.value){
+      g.classed('transparent', !!focusedBubbleId.value && !isRelated) // Apply transparency
+      .classed('highlight', focusedBubbleId.value === bubble.id) // Highlight focused bubble
+      .on('click', () => handleBubbleClick(bubble.id)) // Handle bubble click
+    } else {
+      g.call(drag);
+    }
 
     const textElement = g
       .append('text')
@@ -1033,14 +1044,67 @@ const exitFullscreen = () => {
 
 const handleFullscreenChange = () => {
   isPresentationMode.value = !!document.fullscreenElement
+  resetView();
 }
 
 // Reset layer and group selection to default values
 const resetView = () => {
+  focusedBubbleId.value = null;
   currentLayerIndex.value = 0 // Reset to the outermost layer
   selectedGroup.value = 'all' // Reset to "All" groups
   updateBubbleVisibility() // Update visibility to show all bubbles and relationships
+  drawMap();
 }
+
+// Bubble focus
+const focusedBubbleId = ref<string | null>(null);
+
+const handleBubbleClick = (bubbleId: string) => {
+  console.log('clicked bubble', bubbleId);
+
+  if (focusedBubbleId.value === bubbleId) {
+    // If the same bubble is clicked again, reset the focus
+    focusedBubbleId.value = null;
+  } else {
+    // Set the clicked bubble as the focused bubble
+    focusedBubbleId.value = bubbleId;
+  }
+
+
+  drawMap();
+};
+
+const getRelatedBubblesAndRelationships = (bubbleId: string) => {
+  const relatedBubbles = new Set<string>();
+  const relatedRelationships = new Set<string>();
+
+  const exploreRelationships = (currentBubbleId: string) => {
+    props.data.relationships.forEach((rel) => {
+      if (rel.source === currentBubbleId || rel.target === currentBubbleId) {
+        if (!relatedRelationships.has(rel.id)) {
+          relatedRelationships.add(rel.id);
+
+          const otherBubbleId = rel.source === currentBubbleId ? rel.target : rel.source;
+
+          if (!relatedBubbles.has(otherBubbleId)) {
+            relatedBubbles.add(otherBubbleId);
+            exploreRelationships(otherBubbleId); // Recursively explore siblings
+          }
+        }
+      }
+    });
+  };
+
+  // Start exploration from the initial bubble
+  relatedBubbles.add(bubbleId);
+  exploreRelationships(bubbleId);
+
+  return {
+    relatedBubbles: Array.from(relatedBubbles),
+    relatedRelationships: Array.from(relatedRelationships),
+  };
+};
+
 
 const handleClickOutside = (event: MouseEvent) => {
   const contextMenuElement = document.querySelector('.context-menu')
@@ -1283,6 +1347,17 @@ function lineIntersectsEllipse(
     </div>
   </div>
 </template>
+<style>
+.transparent {
+  opacity: 0.2;
+  transition: opacity 0.2s ease;
+}
+
+.highlight {
+  opacity: 1;
+  stroke-width: 2px;
+}
+</style>
 <style scoped>
 .svg-container {
   width: 100%;
@@ -1307,6 +1382,7 @@ svg {
   background-color: #fff;
   transition: all 0.2s;
 }
+
 
 .custom-select {
   display: block;
