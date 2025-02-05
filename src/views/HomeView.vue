@@ -37,6 +37,7 @@ const addBubble = (bubble: Omit<Bubble, 'id'>) => {
   mapData.value.bubbles.push({
     ...bubble,
     id: newId,
+    locked: false,
   })
 }
 
@@ -51,6 +52,10 @@ const addRelationship = (relationship: Omit<Relationship, 'id'>) => {
 
 const addGroup = (group: Omit<Group, 'id'>) => {
   if(!mapData.value) return
+
+  mapData.value.bubbles.forEach(bubble => {
+    bubble.locked = false;
+  })
 
   // remove all x and y of group, recover the group's name and divider calculation
   mapData.value.groups.forEach((group) => {
