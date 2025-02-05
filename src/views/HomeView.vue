@@ -33,7 +33,7 @@ onMounted(() => {
 
 const addBubble = (bubble: Omit<Bubble, 'id'>) => {
   if(!mapData.value) return
-  const newId = (mapData.value.bubbles.length + 1).toString()
+  const newId = Date.now().toString()
   mapData.value.bubbles.push({
     ...bubble,
     id: newId,
@@ -63,7 +63,9 @@ const addGroup = (group: Omit<Group, 'id'>) => {
     group.y = undefined
     group.locked = false
   })
-  const newId = (mapData.value.groups.length + 1).toString()
+  const newId = "G" + (mapData.value.groups.length + 1).toString()
+  console.log('GGGG', group);
+
   mapData.value.groups.push({
     ...group,
     id: newId,
@@ -72,6 +74,10 @@ const addGroup = (group: Omit<Group, 'id'>) => {
 
 const deleteGroup = (index: number) => {
   if(!mapData.value) return
+
+  mapData.value.bubbles.forEach(bubble => {
+    bubble.locked = false;
+  })
 
    mapData.value.groups.forEach((group) => {
     group.x = undefined

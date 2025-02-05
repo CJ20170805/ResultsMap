@@ -174,41 +174,59 @@ function drawGroupDividers(
     })
     .on('drag', function (event) {
       // Get the current mouse position relative to the SVG
-      const [x, y] = d3.pointer(event, svgRef.value!)
+      const [x, y] = d3.pointer(event, svgRef.value!);
 
       // Adjust Y coordinate for scaling and offset before calculating the angle
-      const adjustedY = (y - centerY - yOffset) / yScale
+      const adjustedY = (y - centerY - yOffset) / yScale;
 
       // Calculate the angle using the adjusted Y coordinate
-      const angle = Math.atan2(adjustedY, x - centerX)
+      const angle = Math.atan2(adjustedY, x - centerX);
 
       // Update the line's start and end points
-      const line = d3.select(this)
+      const line = d3.select(this);
 
       // Handle the case where startLayer is "None"
-      let startX, startY
+      let startX, startY;
       if (startLayer === 'None') {
         // If startLayer is "None", start from the center
-        startX = centerX
-        startY = centerY
+        startX = centerX;
+        startY = centerY;
       } else {
         // Otherwise, calculate the start point based on the layer
-        startX = centerX + Math.cos(angle) * tracks[startLayer].inner
-        startY = centerY + Math.sin(angle) * tracks[startLayer].inner * yScale + yOffset
+        startX = centerX + Math.cos(angle) * tracks[startLayer].inner;
+        startY = centerY + Math.sin(angle) * tracks[startLayer].inner * yScale + yOffset;
       }
 
       // End point (outer radius)
-      const endX = centerX + Math.cos(angle) * tracks.operational.outer
-      const endY = centerY + Math.sin(angle) * tracks.operational.outer * yScale + yOffset
+      const endX = centerX + Math.cos(angle) * tracks.operational.outer;
+      const endY = centerY + Math.sin(angle) * tracks.operational.outer * yScale + yOffset;
 
       // Update the line position
-      line.attr('x1', startX).attr('y1', startY).attr('x2', endX).attr('y2', endY)
+      line.attr('x1', startX).attr('y1', startY).attr('x2', endX).attr('y2', endY);
 
-      // Update the group's angle in the data model
-      const group = line.datum() as Group
-      group.locked = true
-      group.startAngle = angle
-      group.endAngle = angle
+      // Get the current group (left of the divider) and the next group (right of the divider)
+      const currentGroup = line.datum() as Group;
+      const currentIndex = groups.indexOf(currentGroup);
+      const nextGroup = groups[currentIndex + 1];
+
+      if (currentGroup && nextGroup) {
+        // Update the end angle of the current group and the start angle of the next group
+        currentGroup.locked = true;
+        nextGroup.locked = true;
+        currentGroup.endAngle = angle;
+        nextGroup.startAngle = angle;
+
+        // Ensure angles are in the correct order
+        if (currentGroup.startAngle! > currentGroup.endAngle!) {
+          [currentGroup.startAngle, currentGroup.endAngle] = [
+            currentGroup.endAngle!,
+            currentGroup.startAngle!,
+          ];
+        }
+        if (nextGroup.startAngle! > nextGroup.endAngle!) {
+          [nextGroup.startAngle, nextGroup.endAngle] = [nextGroup.endAngle!, nextGroup.startAngle!];
+        }
+      }
     })
     .on('end', function () {
       d3.select(this).attr('stroke', 'white') // Reset line color
@@ -329,7 +347,7 @@ function addGroupNames(svg: d3.Selection<SVGGElement, unknown, null, undefined>,
       .style('font-size', '18px')
       .style('fill', '#000')
 
-    if(!isPresentationMode.value){
+    if (!isPresentationMode.value) {
       textElement.style('cursor', 'move').call(drag)
     }
   })
@@ -510,14 +528,15 @@ const drawMap = () => {
         // Position bubble within its group's angle range
         const groupBubbles = props.data.bubbles.filter((b) => b.groupId === group.id)
         const bubbleIndex = groupBubbles.findIndex((b) => b.id === bubble.id)
-        const angleStep = (group.endAngle - group.startAngle) / groupBubbles.length
-        angle = group.startAngle + angleStep * bubbleIndex + angleStep / 2
+        const angleStep = (group.endAngle - group.startAngle) / (groupBubbles.length + 1) // Evenly distribute bubbles
+        angle = group.startAngle + angleStep * (bubbleIndex + 1) // Add 1 to avoid starting at the very edge
       } else {
         angle = (i * (2 * Math.PI)) / props.data.bubbles.length
       }
     } else {
       angle = (i * (2 * Math.PI)) / props.data.bubbles.length
     }
+
     const radius = layerRadii[bubble.layer as keyof typeof layerRadii]
     bubble.x = centerX + radius * Math.cos(angle)
     bubble.y = centerY + +yOffset + radius * Math.sin(angle) * yScale
@@ -549,7 +568,7 @@ const drawMap = () => {
 
     const isRelated = focusedBubbleId.value
       ? getRelatedBubblesAndRelationships(focusedBubbleId.value).relatedBubbles.includes(bubble.id)
-      : true;
+      : true
 
     const g = bubbleGroup
       .append('g')
@@ -558,12 +577,12 @@ const drawMap = () => {
       .style('cursor', 'move')
       .on('contextmenu', (event: MouseEvent) => showContextMenu(event, bubble)) // Add right-click event
 
-    if(isPresentationMode.value){
+    if (isPresentationMode.value) {
       g.classed('transparent', !!focusedBubbleId.value && !isRelated) // Apply transparency
-      .classed('highlight', focusedBubbleId.value === bubble.id) // Highlight focused bubble
-      .on('click', () => handleBubbleClick(bubble.id)) // Handle bubble click
+        .classed('highlight', focusedBubbleId.value === bubble.id) // Highlight focused bubble
+        .on('click', () => handleBubbleClick(bubble.id)) // Handle bubble click
     } else {
-      g.call(drag);
+      g.call(drag)
     }
 
     const textElement = g
@@ -1014,7 +1033,8 @@ const updateBubbleVisibility = () => {
     const bubbleLayerIndex = layers.indexOf(bubble.layer)
     const isInSelectedGroup =
       selectedGroup.value === 'all' || bubble.groupId === selectedGroup.value
-    bubble.visible = (bubbleLayerIndex >= selectedLayerIndex && isInSelectedGroup) || bubble.layer === 'mission' // Show bubbles from mission to the selected layer
+    bubble.visible =
+      (bubbleLayerIndex >= selectedLayerIndex && isInSelectedGroup) || bubble.layer === 'mission' // Show bubbles from mission to the selected layer
   })
 }
 
@@ -1051,68 +1071,66 @@ const exitFullscreen = () => {
 
 const handleFullscreenChange = () => {
   isPresentationMode.value = !!document.fullscreenElement
-  resetView();
+  resetView()
 }
 
 // Reset layer and group selection to default values
 const resetView = () => {
-  resetZoom();
-  focusedBubbleId.value = null;
+  resetZoom()
+  focusedBubbleId.value = null
   currentLayerIndex.value = 0 // Reset to the outermost layer
   selectedGroup.value = 'all' // Reset to "All" groups
   updateBubbleVisibility() // Update visibility to show all bubbles and relationships
-  drawMap();
+  drawMap()
 }
 
 // Bubble focus
-const focusedBubbleId = ref<string | null>(null);
+const focusedBubbleId = ref<string | null>(null)
 
 const handleBubbleClick = (bubbleId: string) => {
-  console.log('clicked bubble', bubbleId);
+  console.log('clicked bubble', bubbleId)
 
   if (focusedBubbleId.value === bubbleId) {
     // If the same bubble is clicked again, reset the focus
-    focusedBubbleId.value = null;
+    focusedBubbleId.value = null
   } else {
     // Set the clicked bubble as the focused bubble
-    focusedBubbleId.value = bubbleId;
+    focusedBubbleId.value = bubbleId
   }
 
-
-  drawMap();
-};
+  drawMap()
+}
 
 const getRelatedBubblesAndRelationships = (bubbleId: string) => {
-  const relatedBubbles = new Set<string>();
-  const relatedRelationships = new Set<string>();
+  const relatedBubbles = new Set<string>()
+  const relatedRelationships = new Set<string>()
 
   const exploreRelationships = (currentBubbleId: string) => {
     props.data.relationships.forEach((rel) => {
       if (rel.source === currentBubbleId || rel.target === currentBubbleId) {
         if (!relatedRelationships.has(rel.id)) {
-          relatedRelationships.add(rel.id);
+          relatedRelationships.add(rel.id)
 
-          const otherBubbleId = rel.source === currentBubbleId ? rel.target : rel.source;
+          const otherBubbleId = rel.source === currentBubbleId ? rel.target : rel.source
 
           if (!relatedBubbles.has(otherBubbleId)) {
-            relatedBubbles.add(otherBubbleId);
-            exploreRelationships(otherBubbleId); // Recursively explore siblings
+            relatedBubbles.add(otherBubbleId)
+            exploreRelationships(otherBubbleId) // Recursively explore siblings
           }
         }
       }
-    });
-  };
+    })
+  }
 
   // Start exploration from the initial bubble
-  relatedBubbles.add(bubbleId);
-  exploreRelationships(bubbleId);
+  relatedBubbles.add(bubbleId)
+  exploreRelationships(bubbleId)
 
   return {
     relatedBubbles: Array.from(relatedBubbles),
     relatedRelationships: Array.from(relatedRelationships),
-  };
-};
-
+  }
+}
 
 const handleClickOutside = (event: MouseEvent) => {
   const contextMenuElement = document.querySelector('.context-menu')
@@ -1256,20 +1274,12 @@ function lineIntersectsEllipse(
                   :value="group.id"
                 ></el-option>
               </el-select> -->
-              <select
-              v-model="selectedGroup"
-              @change="updateGroupVisibility"
-              class="custom-select"
-            >
-              <option value="all">All</option>
-              <option
-                v-for="group in props.data.groups"
-                :key="group.id"
-                :value="group.id"
-              >
-                {{ group.name }}
-              </option>
-            </select>
+              <select v-model="selectedGroup" @change="updateGroupVisibility" class="custom-select">
+                <option value="all">All</option>
+                <option v-for="group in props.data.groups" :key="group.id" :value="group.id">
+                  {{ group.name }}
+                </option>
+              </select>
             </el-col>
           </el-row>
         </el-col>
@@ -1392,7 +1402,6 @@ svg {
   transition: all 0.2s;
 }
 
-
 .custom-select {
   display: block;
   width: 100%;
@@ -1407,7 +1416,9 @@ svg {
   border-radius: 4px; /* Element Plus border radius */
   appearance: none; /* Remove native select arrow styling */
   box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.1);
-  transition: border-color 0.3s, box-shadow 0.3s;
+  transition:
+    border-color 0.3s,
+    box-shadow 0.3s;
 }
 
 .custom-select:focus {
@@ -1424,7 +1435,7 @@ svg {
   color: #606266;
 }
 
-.show-controls{
+.show-controls {
   padding: 10px 80px;
   box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
 }

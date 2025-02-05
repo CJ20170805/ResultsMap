@@ -63,7 +63,7 @@ const handleAddGroup = () => {
     props.onAddGroup({
       name: newGroup.value.name,
       locked: false,
-      visible: true
+      //visible: true
       //layers: newGroup.value.layers,
     })
     newGroup.value.name = ''
