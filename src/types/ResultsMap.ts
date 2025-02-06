@@ -23,6 +23,7 @@ export interface Group {
     x?: number   // coordinates of the group name
     y?: number
     locked: boolean
+    isDragging: boolean
     //visible: boolean
 }
 

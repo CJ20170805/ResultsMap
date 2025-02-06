@@ -9,7 +9,6 @@ import type {
   LayerType,
   LayerColors,
 } from '@/types/ResultsMap'
-import { log } from 'console'
 
 const props = defineProps<{
   data: ResultsMapData
@@ -201,6 +200,9 @@ function drawGroupDividers(
         currentGroup.locked = true
         preGroup.locked = true
 
+        currentGroup.isDragging = true;
+        preGroup.isDragging = true;
+
         let clampedAngle = normalizedAngle
         console.log('currentIndex', currentIndex)
 
@@ -252,6 +254,17 @@ function drawGroupDividers(
     })
     .on('end', function () {
       d3.select(this).attr('stroke', 'white')
+
+      const line = d3.select(this)
+
+
+      const currentGroup = line.datum() as Group
+      const currentIndex = groups.indexOf(currentGroup)
+      const preGroup = currentIndex === 0 ? groups[groups.length - 1] : groups[currentIndex - 1]
+
+      currentGroup.isDragging = false;
+      preGroup.isDragging = false;
+
     })
 
   // Draw dividers
@@ -363,7 +376,9 @@ function addGroupNames(svg: d3.Selection<SVGGElement, unknown, null, undefined>,
 
     let x: number, y: number
 
-    if (!group.x || !group.y) {
+    console.log("group.isDragging?", group.isDragging);
+
+    if ((!group.x || !group.y) || group.isDragging) {
       const midAngle = (group.startAngle + group.endAngle) / 2
       const outerRadius = tracks.operational.outer + 20 // Offset outside the outer track
       x = centerX + outerRadius * Math.cos(midAngle)
