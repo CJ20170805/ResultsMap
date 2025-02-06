@@ -9,6 +9,7 @@ import type {
   LayerType,
   LayerColors,
 } from '@/types/ResultsMap'
+import { log } from 'console';
 
 const props = defineProps<{
   data: ResultsMapData
@@ -162,17 +163,18 @@ function drawGroupDividers(
   groups: Group[],
   startLayer: LayerType | 'None',
 ) {
-  if (groups.length <= 1) return
+  if (groups.length <= 1) return;
 
-  const dividerGroup = svg.append('g').attr('class', 'group-dividers')
+  const dividerGroup = svg.append('g').attr('class', 'group-dividers');
 
   // Define the drag behavior
   const drag = d3
     .drag<SVGLineElement, Group>()
     .on('start', function () {
-      d3.select(this).raise().attr('stroke', '#999')
+      d3.select(this).raise().attr('stroke', '#999'); // Highlight the divider
     })
     .on('drag', function (event) {
+    const minimumGap = Math.PI / 18; // Minimum gap in radians (10 degrees)
       // Get the current mouse position relative to the SVG
       const [x, y] = d3.pointer(event, svgRef.value!);
 
@@ -207,52 +209,62 @@ function drawGroupDividers(
       // Get the current group (left of the divider) and the next group (right of the divider)
       const currentGroup = line.datum() as Group;
       const currentIndex = groups.indexOf(currentGroup);
-      const nextGroup = groups[currentIndex + 1];
+      const preGroup = currentIndex == 0? groups[groups.length-1] : groups[currentIndex - 1];
 
-      if (currentGroup && nextGroup) {
-        // Update the end angle of the current group and the start angle of the next group
+      console.log('currentGroup: ', currentGroup, 'nextGroup: ', preGroup)
+
+      if (currentGroup && preGroup) {
         currentGroup.locked = true;
-        nextGroup.locked = true;
-        currentGroup.endAngle = angle;
-        nextGroup.startAngle = angle;
+        preGroup.locked = true;
+
+        console.log("Angle===", angle);
+        
+        
+        // Update the end angle of the current group and the start angle of the next group
+        currentGroup.startAngle = angle;
+        preGroup.endAngle = angle;
 
         // Ensure angles are in the correct order
-        if (currentGroup.startAngle! > currentGroup.endAngle!) {
-          [currentGroup.startAngle, currentGroup.endAngle] = [
-            currentGroup.endAngle!,
-            currentGroup.startAngle!,
-          ];
-        }
-        if (nextGroup.startAngle! > nextGroup.endAngle!) {
-          [nextGroup.startAngle, nextGroup.endAngle] = [nextGroup.endAngle!, nextGroup.startAngle!];
-        }
+        // if (currentGroup.startAngle! > currentGroup.endAngle!) {
+        //   [currentGroup.startAngle, currentGroup.endAngle] = [
+        //     currentGroup.endAngle!,
+        //     currentGroup.startAngle!,
+        //   ];
+        // }
+        // if (preGroup.startAngle! > preGroup.endAngle!) {
+        //   [preGroup.startAngle, preGroup.endAngle] = [preGroup.endAngle!, preGroup.startAngle!];
+        // }
       }
+
+      // Redraw the map to reflect the updated angles
+      drawMap();
     })
     .on('end', function () {
-      d3.select(this).attr('stroke', 'white') // Reset line color
-    })
+      d3.select(this).attr('stroke', 'white'); // Reset line color
+    });
 
-  groups.forEach((group) => {
+  // Draw dividers for each group
+  groups.forEach((group, index) => {
     if (group.startAngle !== undefined && group.endAngle !== undefined) {
-      let startX, startY
+      let startX, startY;
 
-      if (startLayer === 'None') return
+      if (startLayer === 'None') return;
 
       if (startLayer === 'mission') {
         // Start from the center
-        startX = centerX
-        startY = centerY
+        startX = centerX;
+        startY = centerY;
       } else {
         // Start from the inner radius of the specified layer
-        startX = centerX + Math.cos(group.startAngle) * tracks[startLayer].inner
-        startY = centerY + Math.sin(group.startAngle) * tracks[startLayer].inner * yScale + yOffset
+        startX = centerX + Math.cos(group.startAngle) * tracks[startLayer].inner;
+        startY = centerY + Math.sin(group.startAngle) * tracks[startLayer].inner * yScale + yOffset;
       }
 
-      const endX = centerX + Math.cos(group.startAngle) * tracks.operational.outer
+      const endX = centerX + Math.cos(group.startAngle) * tracks.operational.outer;
       const endY =
-        centerY + Math.sin(group.startAngle) * tracks.operational.outer * yScale + yOffset
+        centerY + Math.sin(group.startAngle) * tracks.operational.outer * yScale + yOffset;
 
-      // Draw the line
+      // Draw the divider
       dividerGroup
         .append('line')
         .attr('x1', startX)
@@ -262,11 +274,13 @@ function drawGroupDividers(
         .attr('stroke', 'white')
         .attr('stroke-width', 3)
         .attr('cursor', 'ew-resize')
-        .datum(group)
-        .call(drag)
+        .datum(group) // Bind the current group to the divider
+        .call(drag);
     }
-  })
+  });
 }
+
+
 // Function to add group names
 function addGroupNames(svg: d3.Selection<SVGGElement, unknown, null, undefined>, groups: Group[]) {
   let initX: number, initY: number
