@@ -189,20 +189,6 @@ function drawGroupDividers(
       const line = d3.select(this)
       let startX, startY
 
-      if (startLayer === 'None') {
-        startX = centerX
-        startY = centerY
-      } else {
-        // Use original y-axis for drawing (SVG coordinates)
-        startX = centerX + Math.cos(angle) * tracks[startLayer].inner
-        startY = centerY + -Math.sin(angle) * tracks[startLayer].inner * yScale + yOffset
-      }
-
-      // End point (outer radius)
-      const endX = centerX + Math.cos(angle) * tracks.operational.outer
-      const endY = centerY + -Math.sin(angle) * tracks.operational.outer * yScale + yOffset
-
-      line.attr('x1', startX).attr('y1', startY).attr('x2', endX).attr('y2', endY)
 
       const currentGroup = line.datum() as Group
       const currentIndex = groups.indexOf(currentGroup)
@@ -220,6 +206,8 @@ function drawGroupDividers(
 
         // Disable drag for first group's divider
         if (currentIndex === 0) return
+        // Prevent the first group and last group go to other side when they through the boundary divier
+        if ((currentIndex === 1 && angle <= 0) || (currentIndex === groups.length-1 && angle >= 0)) return
 
         // For non-first groups, handle constraints
         const minBound = preGroup.startAngle! + MIN_ANGLE
@@ -243,6 +231,23 @@ function drawGroupDividers(
         // Update angles
         currentGroup.startAngle = clampedAngle
         preGroup.endAngle = clampedAngle
+
+
+
+        if (startLayer === 'None') {
+        startX = centerX
+        startY = centerY
+      } else {
+        // Use original y-axis for drawing (SVG coordinates)
+        startX = centerX + Math.cos(angle) * tracks[startLayer].inner
+        startY = centerY + -Math.sin(angle) * tracks[startLayer].inner * yScale + yOffset
+      }
+
+      // End point (outer radius)
+      const endX = centerX + Math.cos(angle) * tracks.operational.outer
+      const endY = centerY + -Math.sin(angle) * tracks.operational.outer * yScale + yOffset
+
+      line.attr('x1', startX).attr('y1', startY).attr('x2', endX).attr('y2', endY)
       }
     })
     .on('end', function () {
