@@ -181,7 +181,10 @@ function drawGroupDividers(
 
       // Calculate angle with corrected y-axis
       const angle = Math.atan2(adjustedY, x - centerX) // Now uses inverted y
+      const normalizedAngle = angle < 0 ? angle + 2 * Math.PI : angle
       console.log('Angle===', angle)
+
+      const MIN_ANGLE = 0.3
 
       const line = d3.select(this)
       let startX, startY
@@ -192,30 +195,54 @@ function drawGroupDividers(
       } else {
         // Use original y-axis for drawing (SVG coordinates)
         startX = centerX + Math.cos(angle) * tracks[startLayer].inner
-        startY = centerY + -Math.sin(angle) * tracks[startLayer].inner * yScale + yOffset // 🔥 Invert sine
+        startY = centerY + -Math.sin(angle) * tracks[startLayer].inner * yScale + yOffset
       }
 
       // End point (outer radius)
       const endX = centerX + Math.cos(angle) * tracks.operational.outer
-      const endY = centerY + -Math.sin(angle) * tracks.operational.outer * yScale + yOffset // 🔥 Invert sine
+      const endY = centerY + -Math.sin(angle) * tracks.operational.outer * yScale + yOffset
 
       line.attr('x1', startX).attr('y1', startY).attr('x2', endX).attr('y2', endY)
 
       const currentGroup = line.datum() as Group
       const currentIndex = groups.indexOf(currentGroup)
       const preGroup = currentIndex === 0 ? groups[groups.length - 1] : groups[currentIndex - 1]
-console.log("CurrentGroup: ", currentGroup, "preGroup: ", preGroup);
+      const nextGroup = groups[(currentIndex + 1) % groups.length]
+
+      console.log('CurrentGroup: ', currentGroup, 'preGroup: ', preGroup)
 
       if (currentGroup && preGroup) {
         currentGroup.locked = true
         preGroup.locked = true
 
-        // Optional: Convert angle to [0, 2π) for consistency
-        const normalizedAngle = angle < 0 ? angle + 2 * Math.PI : angle
-        console.log("NormalizedAngle", normalizedAngle);
+        let clampedAngle = normalizedAngle
+        console.log('currentIndex', currentIndex)
 
-        currentGroup.startAngle = normalizedAngle
-        preGroup.endAngle = normalizedAngle
+        // Disable drag for first group's divider
+        if (currentIndex === 0) return
+
+        // For non-first groups, handle constraints
+        const minBound = preGroup.startAngle! + MIN_ANGLE
+        const maxBound = currentIndex === groups.length - 1 ? currentGroup.endAngle! - MIN_ANGLE : nextGroup.startAngle! - MIN_ANGLE
+
+        // Handle circular boundary wrap
+        if (maxBound < minBound) {
+          if (clampedAngle > maxBound && clampedAngle < minBound) {
+            const distToMin = clampedAngle - maxBound
+            const distToMax = minBound - clampedAngle
+            clampedAngle = distToMin < distToMax ? maxBound : minBound
+          }
+        } else {
+          clampedAngle = Math.max(minBound, Math.min(clampedAngle, maxBound))
+        }
+
+        // Final normalization
+        clampedAngle = clampedAngle % (2 * Math.PI)
+        if (clampedAngle < 0) clampedAngle += 2 * Math.PI
+
+        // Update angles
+        currentGroup.startAngle = clampedAngle
+        preGroup.endAngle = clampedAngle
       }
     })
     .on('end', function () {
@@ -223,41 +250,61 @@ console.log("CurrentGroup: ", currentGroup, "preGroup: ", preGroup);
     })
 
   // Draw dividers
-  groups.forEach((group) => {
+  groups.forEach((group, index) => {
     if (group.startAngle === undefined || group.endAngle === undefined) return
     if (startLayer === 'None') return
 
-    let startX, startY
-    if (startLayer === 'mission') {
-      startX = centerX
-      startY = centerY
+    // For first group, create a static line at 0
+    if (index === 0) {
+      const startX =
+        startLayer === 'mission' ? centerX : centerX + Math.cos(0) * tracks[startLayer].inner
+
+      const startY =
+        startLayer === 'mission'
+          ? centerY
+          : centerY + -Math.sin(0) * tracks[startLayer].inner * yScale + yOffset
+
+      const endX = centerX + Math.cos(0) * tracks.operational.outer
+      const endY = centerY + -Math.sin(0) * tracks.operational.outer * yScale + yOffset
+
+      dividerGroup
+        .append('line')
+        .attr('x1', startX)
+        .attr('y1', startY)
+        .attr('x2', endX)
+        .attr('y2', endY)
+        .attr('stroke', 'white')
+        .attr('stroke-width', 3)
+        .attr('cursor', 'default') // Disable resize cursor
+        .datum(group)
     } else {
-      // Use normalized angle for initial placement
-      const angle = group.startAngle
-      startX = centerX + Math.cos(angle) * tracks[startLayer].inner
-      startY = centerY + -Math.sin(angle) * tracks[startLayer].inner * yScale + yOffset // 🔥 Invert sine
+      // For other groups, create draggable lines
+      const startX = centerX + Math.cos(group.startAngle) * tracks[startLayer].inner
+      const startY =
+        centerY + -Math.sin(group.startAngle) * tracks[startLayer].inner * yScale + yOffset
+
+      const endX = centerX + Math.cos(group.startAngle) * tracks.operational.outer
+      const endY =
+        centerY + -Math.sin(group.startAngle) * tracks.operational.outer * yScale + yOffset
+
+      dividerGroup
+        .append('line')
+        .attr('x1', startX)
+        .attr('y1', startY)
+        .attr('x2', endX)
+        .attr('y2', endY)
+        .attr('stroke', 'white')
+        .attr('stroke-width', 3)
+        .attr('cursor', 'ew-resize')
+        .datum(group)
+        .call(drag)
     }
-
-    const endX = centerX + Math.cos(group.startAngle) * tracks.operational.outer
-    const endY = centerY + -Math.sin(group.startAngle) * tracks.operational.outer * yScale + yOffset
-
-    dividerGroup
-      .append('line')
-      .attr('x1', startX)
-      .attr('y1', startY)
-      .attr('x2', endX)
-      .attr('y2', endY)
-      .attr('stroke', 'white')
-      .attr('stroke-width', 3)
-      .attr('cursor', 'ew-resize')
-      .datum(group)
-      .call(drag)
   })
 }
 
 // Function to add group names
 function addGroupNames(svg: d3.Selection<SVGGElement, unknown, null, undefined>, groups: Group[]) {
-  console.log("GroupName--", groups);
+  console.log('GroupName--', groups)
 
   let initX: number, initY: number
   let initMouseX: number, initialMouseY: number
@@ -315,7 +362,7 @@ function addGroupNames(svg: d3.Selection<SVGGElement, unknown, null, undefined>,
       const midAngle = (group.startAngle + group.endAngle) / 2
       const outerRadius = tracks.operational.outer + 20 // Offset outside the outer track
       x = centerX + outerRadius * Math.cos(midAngle)
-      y = centerY + yOffset + outerRadius * -Math.sin(midAngle) * yScale  //  - Math.sin to set the anticlockwise order
+      y = centerY + yOffset + outerRadius * -Math.sin(midAngle) * yScale //  - Math.sin to set the anticlockwise order
 
       //console.log("AddGroupName--", midAngle, centerY, yOffset, outerRadius, Math.sin(midAngle) * yScale,group.name, group.x, group.y, "===", x, y);
 
