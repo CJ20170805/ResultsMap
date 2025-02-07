@@ -607,12 +607,30 @@ const drawMap = () => {
       angle = (i * (2 * Math.PI)) / props.data.bubbles.length;
     }
   } else {
-    // Ungrouped bubbles: evenly distribute around the entire circle
-    const ungroupedBubbles = props.data.bubbles.filter((b) => !b.groupId);
-    const bubbleIndex = ungroupedBubbles.findIndex((b) => b.id === bubble.id);
+     // Handle ungrouped bubbles
+     if (bubble.layer === 'mission') {
+      // Special logic for mission layer
+      const ungroupedMissionBubbles = props.data.bubbles.filter(
+        (b) => !b.groupId && b.layer === 'mission'
+      );
 
-    // Distribute evenly around a full circle
-    angle = ((bubbleIndex + 1) * (2 * Math.PI)) / (ungroupedBubbles.length + 1); // Avoid starting at the exact edge
+      if (ungroupedMissionBubbles.length === 1) {
+        // If there's only one bubble, position it at the center
+        bubble.x = centerX;
+        bubble.y = centerY + yOffset;
+        return; // Skip the rest of the loop for this bubble
+      } else {
+        // If there are multiple bubbles, distribute them evenly around the full circle
+        const bubbleIndex = ungroupedMissionBubbles.findIndex((b) => b.id === bubble.id);
+        angle = (bubbleIndex * (2 * Math.PI)) / ungroupedMissionBubbles.length;
+      }
+    } else {
+      // For other layers, use the existing logic
+      const ungroupedBubbles = props.data.bubbles.filter((b) => !b.groupId);
+      const bubbleIndex = ungroupedBubbles.findIndex((b) => b.id === bubble.id);
+
+      angle = ((bubbleIndex + 1) * (2 * Math.PI)) / (ungroupedBubbles.length + 1);
+    }
   }
 
   // Calculate the bubble's position using its orbit radius
