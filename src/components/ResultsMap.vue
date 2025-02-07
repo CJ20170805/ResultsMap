@@ -175,6 +175,11 @@ function drawGroupDividers(
     .on('drag', function (event) {
       const [x, y] = d3.pointer(event, svgRef.value!)
 
+      //Unlock every single bubble
+      props.data.bubbles.forEach(b=>{
+        b.locked = false;
+      })
+
       // Adjust Y coordinate for scaling/offset AND INVERT Y-AXIS
       const adjustedY = -(y - centerY - yOffset) / yScale // 🔥 Negate to fix coordinate system
 
@@ -274,13 +279,8 @@ function drawGroupDividers(
 
     // For first group, create a static line at 0
     if (index === 0) {
-      const startX =
-        startLayer === 'mission' ? centerX : centerX + Math.cos(0) * tracks[startLayer].inner
-
-      const startY =
-        startLayer === 'mission'
-          ? centerY
-          : centerY + -Math.sin(0) * tracks[startLayer].inner * yScale + yOffset
+      const startX = centerX + Math.cos(0) * tracks[startLayer].inner
+      const startY = centerY + -Math.sin(0) * tracks[startLayer].inner * yScale + yOffset
 
       const endX = centerX + Math.cos(0) * tracks.operational.outer
       const endY = centerY + -Math.sin(0) * tracks.operational.outer * yScale + yOffset
@@ -376,7 +376,7 @@ function addGroupNames(svg: d3.Selection<SVGGElement, unknown, null, undefined>,
 
     let x: number, y: number
 
-    console.log("group.isDragging?", group.isDragging);
+    // console.log("group.isDragging?", group.isDragging);
 
     if ((!group.x || !group.y) || group.isDragging) {
       const midAngle = (group.startAngle + group.endAngle) / 2
@@ -577,29 +577,51 @@ const drawMap = () => {
 
   // Position bubbles along their orbits
   props.data.bubbles.forEach((bubble, i) => {
-    if (bubble.locked || !bubble.visible) return
+  if (bubble.locked || !bubble.visible) return;
 
-    let angle: number
-    if (bubble.groupId) {
-      // Find bubble's group
-      const group = updatedGroups.find((g) => g.id === bubble.groupId)
-      if (group && group.startAngle !== undefined && group.endAngle !== undefined) {
-        // Position bubble within its group's angle range
-        const groupBubbles = props.data.bubbles.filter((b) => b.groupId === group.id)
-        const bubbleIndex = groupBubbles.findIndex((b) => b.id === bubble.id)
-        const angleStep = (group.endAngle - group.startAngle) / (groupBubbles.length + 1) // Evenly distribute bubbles
-        angle = group.startAngle + angleStep * (bubbleIndex + 1) // Add 1 to avoid starting at the very edge
-      } else {
-        angle = (i * (2 * Math.PI)) / props.data.bubbles.length
-      }
+  let angle: number;
+
+  if (bubble.groupId) {
+    // Find the group this bubble belongs to
+    const group = updatedGroups.find((g) => g.id === bubble.groupId);
+    if (group && group.startAngle !== undefined && group.endAngle !== undefined) {
+      // Get all bubbles in the group for the same orbit (layer)
+      const groupBubbles = props.data.bubbles.filter(
+        (b) => b.groupId === group.id && b.layer === bubble.layer
+      );
+
+      const bubbleIndex = groupBubbles.findIndex((b) => b.id === bubble.id);
+
+      // Calculate the angular range for the group
+      const sectorStart = group.startAngle;
+      const sectorEnd = group.endAngle;
+      const sectorSize = sectorEnd - sectorStart;
+
+      // Calculate the angular step based on bubbles in the same orbit
+      const angleStep = sectorSize / (groupBubbles.length + 1); // Leave padding at edges
+
+      // Position the bubble within its orbit
+      angle = sectorStart + angleStep * (bubbleIndex + 1);
     } else {
-      angle = (i * (2 * Math.PI)) / props.data.bubbles.length
+      // Fallback for undefined groups
+      angle = (i * (2 * Math.PI)) / props.data.bubbles.length;
     }
+  } else {
+    // Ungrouped bubbles: evenly distribute around the entire circle
+    const ungroupedBubbles = props.data.bubbles.filter((b) => !b.groupId);
+    const bubbleIndex = ungroupedBubbles.findIndex((b) => b.id === bubble.id);
 
-    const radius = layerRadii[bubble.layer as keyof typeof layerRadii]
-    bubble.x = centerX + radius * Math.cos(angle)
-    bubble.y = centerY + +yOffset + radius * -Math.sin(angle) * yScale
-  })
+    // Distribute evenly around a full circle
+    angle = ((bubbleIndex + 1) * (2 * Math.PI)) / (ungroupedBubbles.length + 1); // Avoid starting at the exact edge
+  }
+
+  // Calculate the bubble's position using its orbit radius
+  const radius = layerRadii[bubble.layer as keyof typeof layerRadii];
+  bubble.x = centerX + radius * Math.cos(angle);
+  bubble.y = centerY + yOffset + radius * -Math.sin(angle) * yScale;
+});
+
+
 
   // Add group names
   addGroupNames(mapGroup, updatedGroups)
