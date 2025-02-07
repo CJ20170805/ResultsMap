@@ -2,37 +2,30 @@
 import { ref, onMounted } from 'vue'
 import ResultsMap from '@/components/ResultsMap.vue'
 import ResultsMapControls from '@/components/ResultsMapControls.vue'
-import type {
-  ResultsMapData,
-  Bubble,
-  Relationship,
-  Group,
-  LayerType,
-} from '@/types/ResultsMap'
+import type { ResultsMapData, Bubble, Relationship, Group, LayerType } from '@/types/ResultsMap'
 import { ArrowLeft, ArrowRight } from '@element-plus/icons-vue'
-import defaultMapData from '@/data/default';
+import defaultMapData from '@/data/default'
 
 const showAside = ref(true)
-
 
 const mapData = ref<ResultsMapData | null>(null)
 
 onMounted(() => {
-    const localMapData = localStorage.getItem('MapData')
-    if (localMapData) {
-      console.log('???/')
+  const localMapData = localStorage.getItem('MapData')
+  if (localMapData) {
+    console.log('???/')
 
-      mapData.value = JSON.parse(localMapData)
+    mapData.value = JSON.parse(localMapData)
 
-      console.log('LocalMapData:', JSON.parse(localMapData))
-    } else {
-      mapData.value = defaultMapData
-      localStorage.setItem('MapData', JSON.stringify(mapData.value))
-    }
+    console.log('LocalMapData:', JSON.parse(localMapData))
+  } else {
+    mapData.value = defaultMapData
+    localStorage.setItem('MapData', JSON.stringify(mapData.value))
+  }
 })
 
 const addBubble = (bubble: Omit<Bubble, 'id'>) => {
-  if(!mapData.value) return
+  if (!mapData.value) return
   const newId = Date.now().toString()
   mapData.value.bubbles.push({
     ...bubble,
@@ -42,7 +35,7 @@ const addBubble = (bubble: Omit<Bubble, 'id'>) => {
 }
 
 const addRelationship = (relationship: Omit<Relationship, 'id'>) => {
-  if(!mapData.value) return
+  if (!mapData.value) return
   const newId = (mapData.value.relationships.length + 1).toString()
   mapData.value.relationships.push({
     ...relationship,
@@ -51,10 +44,10 @@ const addRelationship = (relationship: Omit<Relationship, 'id'>) => {
 }
 
 const addGroup = (group: Omit<Group, 'id'>) => {
-  if(!mapData.value) return
+  if (!mapData.value) return
 
-  mapData.value.bubbles.forEach(bubble => {
-    bubble.locked = false;
+  mapData.value.bubbles.forEach((bubble) => {
+    bubble.locked = false
   })
 
   // remove all x and y of group, recover the group's name and divider calculation
@@ -63,8 +56,8 @@ const addGroup = (group: Omit<Group, 'id'>) => {
     group.y = undefined
     group.locked = false
   })
-  const newId = "G" + (mapData.value.groups.length + 1).toString()
-  console.log('GGGG', group);
+  const newId = Date.now().toString()
+  console.log('GGGG', group)
 
   mapData.value.groups.push({
     ...group,
@@ -72,24 +65,47 @@ const addGroup = (group: Omit<Group, 'id'>) => {
   })
 }
 
-const deleteGroup = (index: number) => {
-  if(!mapData.value) return
+const deleteGroup = (groupId: string) => {
+  if (!mapData.value) return
 
-  mapData.value.bubbles.forEach(bubble => {
-    bubble.locked = false;
+  // Get the group to be deleted
+  const groupToDelete = mapData.value.groups.find(g=> g.id === groupId);
+  if (!groupToDelete) return
+
+  mapData.value.bubbles.forEach((bubble) => {
+    bubble.locked = false
   })
 
-   mapData.value.groups.forEach((group) => {
+  mapData.value.groups.forEach((group) => {
     group.x = undefined
     group.y = undefined
     group.locked = false
   })
 
-  mapData.value.groups.splice(index, 1)
+  // Delete all bubbles belonging to the group
+  mapData.value.bubbles = mapData.value.bubbles.filter(
+    (bubble) => bubble.groupId !== groupToDelete.id,
+  )
+
+  // Delete all relationships involving bubbles from the group
+  mapData.value.relationships = mapData.value.relationships.filter((relationship) => {
+    if (mapData.value) {
+      // Check if the source or target of the relationship is a bubble in the group
+      const sourceBubble = mapData.value.bubbles.find((bubble) => bubble.id === relationship.source)
+      const targetBubble = mapData.value.bubbles.find((bubble) => bubble.id === relationship.target)
+      // Keep the relationship only if neither source nor target is in the group
+      return (
+        (sourceBubble && targetBubble)
+      )
+    }
+  })
+
+  // Delete the group itself
+  mapData.value.groups = mapData.value.groups.filter((group) => group.id !== groupId);
 }
 
 const changeGroupLevel = (groupLevel: LayerType) => {
-  if(!mapData.value) return
+  if (!mapData.value) return
   mapData.value.groupLevel = groupLevel
   console.log('changeGroupLevel', groupLevel)
 }

@@ -1375,8 +1375,8 @@ function lineIntersectsEllipse(
               </el-select> -->
               <select v-model="selectedGroup" @change="updateGroupVisibility" class="custom-select">
                 <option value="all">All</option>
-                <option v-for="group in props.data.groups" :key="group.id" :value="group.id">
-                  {{ group.name }}
+                <option v-for="(group, index) in props.data.groups" :key="group.id" :value="group.id">
+                  {{ group.name ||  `Group ${index+1}` }}
                 </option>
               </select>
             </el-col>

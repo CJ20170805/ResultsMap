@@ -14,7 +14,7 @@ const props = defineProps<{
   onAddBubble: (bubble: Omit<Bubble, 'id'>) => void
   onAddRelationship: (relationship: Omit<Relationship, 'id'>) => void
   onAddGroup: (group: Omit<Group, 'id'>) => void
-  onDeleteGroup: (index: number) => void
+  onDeleteGroup: (groupId: string) => void
   onChangeGroupLevel: (groupLevel: LayerType) => void
   groups: Group[]
   mapData: ResultsMapData
@@ -63,6 +63,7 @@ const handleAddGroup = () => {
     props.onAddGroup({
       name: newGroup.value.name,
       locked: false,
+      isDragging: false
       //visible: true
       //layers: newGroup.value.layers,
     })
@@ -89,9 +90,8 @@ const handleGroupLayerChange = () => {
 
 
 const deleteGroup = (groupId: string) => {
-  const index = props.mapData.groups.findIndex((g) => g.id === groupId)
-  if (index !== -1) {
-    props.onDeleteGroup(index);
+  if (groupId) {
+    props.onDeleteGroup(groupId);
     console.log(`Deleted group with ID: ${groupId}`)
   }
 }
@@ -231,9 +231,9 @@ const deleteGroup = (groupId: string) => {
                   <el-select v-model="newBubble.groupId" placeholder="Select Group">
                     <el-option value="">No Group</el-option>
                     <el-option
-                      v-for="group in props.groups"
+                      v-for="(group, index) in props.groups"
                       :key="group.id"
-                      :label="group.name"
+                      :label="group.name || `Group ${index+1}`"
                       :value="group.id"
                     ></el-option>
                   </el-select>
