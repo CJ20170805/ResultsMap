@@ -62,7 +62,15 @@ const zoom = d3
 
 // Handle empty right-click
 const handleEmptyPositionRightClick = (event: MouseEvent) => {
-  const [x, y] = d3.pointer(event, svgRef.value!)
+  // Get raw click position
+  const [rawX, rawY] = d3.pointer(event, svgRef.value!)
+
+  // Use currentTransform or fallback to identity transform
+  const transform = currentTransform || { x: 0, y: 0, k: 1 }
+
+  // Invert zoom transformation
+  const invertedX = (rawX - transform.x) / transform.k
+  const invertedY = (rawY - transform.y) / transform.k
 
   // Check if the click is on a bubble node
   const target = event.target as SVGElement
@@ -77,9 +85,10 @@ const handleEmptyPositionRightClick = (event: MouseEvent) => {
       // Show the bubble context menu
       showContextMenu(event, clickedBubble)
     }
-  } else if (isPointWithinLayers(x, y)) {
+  } else if (isPointWithinLayers(invertedX, invertedY)) {
     // Show the empty position context menu
-    newBubblePosition.value = { x, y }
+    newBubblePosition.value = { x: invertedX, y: invertedY }
+
     emptyPositionContextMenuPosition.value = { x: event.clientX, y: event.clientY }
     emptyPositionContextMenuVisible.value = true
   }
@@ -95,14 +104,77 @@ const isPointWithinLayers = (x: number, y: number): boolean => {
   return distanceSquared <= outermostRadius * outermostRadius
 }
 
+// Helper function to detect the layer based on the position
+const detectLayer = (x: number, y: number): LayerType => {
+  // Adjust for y scaling and offset
+  const dx = x - centerX
+  const dy = (y - centerY - yOffset) / yScale
+
+  // Calculate the elliptical distance for each layer
+  const missionRadius = tracks.mission.outer
+  if ((dx * dx) / missionRadius ** 2 + (dy * dy) / missionRadius ** 2 <= 1) {
+    return 'mission'
+  }
+
+  const strategicRadius = tracks.strategic.outer
+  if ((dx * dx) / strategicRadius ** 2 + (dy * dy) / strategicRadius ** 2 <= 1) {
+    return 'strategic'
+  }
+
+  const processRadius = tracks.process.outer
+  if ((dx * dx) / processRadius ** 2 + (dy * dy) / processRadius ** 2 <= 1) {
+    return 'process'
+  }
+
+  return 'operational'
+}
+
+// Helper function to detect the group based on the position
+const detectGroup = (x: number, y: number): string | null => {
+  // Adjust for y scaling and offset
+  const dx = x - centerX
+  const dy = (y - centerY - yOffset) / yScale
+
+  // Calculate angle in the scaled coordinate system (clockwise)
+  const angle = Math.atan2(dy, dx)
+
+  // Convert to anticlockwise order
+  const anticlockwiseAngle = (2 * Math.PI - angle) % (2 * Math.PI)
+
+  // console.log(`Click Position: x=${x}, y=${y}`)
+  // console.log(`Adjusted Position: dx=${dx}, dy=${dy}`)
+  // console.log(`Calculated Angle (clockwise): ${angle}`)
+  // console.log(`Converted Angle (anticlockwise): ${anticlockwiseAngle}`)
+
+  // Find the group that contains this angle
+  const group = props.data.groups.find((group) => {
+    if (group.startAngle === undefined || group.endAngle === undefined) return false
+    return anticlockwiseAngle >= group.startAngle && anticlockwiseAngle <= group.endAngle
+  })
+
+  if (group) {
+    console.log(`Detected Group: ${group.name}`)
+  } else {
+    console.log('No group detected')
+  }
+
+  return group ? group.id : null
+}
+
 const createBubble = () => {
   if (!newBubbleText.value) return
+
+  // Detect the layer and group for the new bubble
+  const layer = detectLayer(newBubblePosition.value.x, newBubblePosition.value.y)
+  const groupId = detectGroup(newBubblePosition.value.x, newBubblePosition.value.y)
+
+  console.log('CreateBubble: ', newBubbleText.value, layer, groupId)
 
   const newBubble: Bubble = {
     id: `bubble-${Date.now()}`, // Generate a unique ID
     text: newBubbleText.value,
-    layer: 'operational', // Default layer, you can change this based on your logic
-    groupId: newBubbleGroup.value,
+    layer, // Automatically detected layer
+    groupId: groupId || '', // Automatically detected group (or empty if no group)
     x: newBubblePosition.value.x,
     y: newBubblePosition.value.y,
     locked: false,
@@ -110,11 +182,10 @@ const createBubble = () => {
   }
 
   mapBubbles.value.push(newBubble)
-  drawMap()
+  //drawMap()
 
   // Reset form and hide context menu
   newBubbleText.value = ''
-  newBubbleGroup.value = ''
   emptyPositionContextMenuVisible.value = false
 }
 
@@ -1549,7 +1620,7 @@ function lineIntersectsEllipse(
     </div>
   </div>
 
-  <!-- context menu for create new bubble -->
+  <!-- Context menu for empty positions -->
   <div
     v-if="emptyPositionContextMenuVisible"
     :style="{
@@ -1562,17 +1633,6 @@ function lineIntersectsEllipse(
     <el-form @submit.prevent="createBubble">
       <el-form-item label="Text">
         <el-input v-model="newBubbleText" type="text" />
-      </el-form-item>
-      <el-form-item label="Group">
-        <el-select v-model="newBubbleGroup" placeholder="Select Group">
-          <el-option label="None" value=""></el-option>
-          <el-option
-            v-for="group in props.data.groups"
-            :key="group.id"
-            :label="group.name"
-            :value="group.id"
-          ></el-option>
-        </el-select>
       </el-form-item>
       <el-form-item>
         <el-button type="primary" @click="createBubble">Create</el-button>
