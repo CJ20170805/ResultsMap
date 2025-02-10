@@ -30,6 +30,13 @@ const newText = ref('')
 const mapRelationships = ref(props.data.relationships)
 const mapBubbles = ref(props.data.bubbles)
 
+// handle empty click
+const emptyPositionContextMenuVisible = ref(false)
+const emptyPositionContextMenuPosition = ref({ x: 0, y: 0 })
+const newBubbleText = ref('')
+const newBubbleGroup = ref('')
+const newBubblePosition = ref({ x: 0, y: 0 })
+
 let isDragging = false
 let currentTransform: { x: number; y: number; k: number }
 
@@ -53,6 +60,65 @@ const zoom = d3
 // Attach zoom behavior to the SVG
 // const svg = d3.select(svgRef.value).call(zoom);
 
+// Handle empty right-click
+const handleEmptyPositionRightClick = (event: MouseEvent) => {
+  const [x, y] = d3.pointer(event, svgRef.value!)
+
+  // Check if the click is on a bubble node
+  const target = event.target as SVGElement
+  const isBubbleNode = target.closest('g')?.classList.contains('bubble-group') // Add a class to bubble groups
+
+  if (isBubbleNode) {
+    // Find the clicked bubble
+    const bubbleId = target.closest('g')?.getAttribute('data-bubble-id')
+    const clickedBubble = props.data.bubbles.find((bubble) => bubble.id === bubbleId)
+
+    if (clickedBubble) {
+      // Show the bubble context menu
+      showContextMenu(event, clickedBubble)
+    }
+  } else if (isPointWithinLayers(x, y)) {
+    // Show the empty position context menu
+    newBubblePosition.value = { x, y }
+    emptyPositionContextMenuPosition.value = { x: event.clientX, y: event.clientY }
+    emptyPositionContextMenuVisible.value = true
+  }
+}
+
+const isPointWithinLayers = (x: number, y: number): boolean => {
+  const dx = x - centerX
+  const dy = (y - centerY - yOffset) / yScale // Adjust for y scaling and offset
+  const distanceSquared = dx * dx + dy * dy
+
+  // Check if the point is within the outermost layer
+  const outermostRadius = tracks.operational.outer
+  return distanceSquared <= outermostRadius * outermostRadius
+}
+
+const createBubble = () => {
+  if (!newBubbleText.value) return
+
+  const newBubble: Bubble = {
+    id: `bubble-${Date.now()}`, // Generate a unique ID
+    text: newBubbleText.value,
+    layer: 'operational', // Default layer, you can change this based on your logic
+    groupId: newBubbleGroup.value,
+    x: newBubblePosition.value.x,
+    y: newBubblePosition.value.y,
+    locked: false,
+    visible: true,
+  }
+
+  mapBubbles.value.push(newBubble)
+  drawMap()
+
+  // Reset form and hide context menu
+  newBubbleText.value = ''
+  newBubbleGroup.value = ''
+  emptyPositionContextMenuVisible.value = false
+}
+
+// Handle bubble right-click
 const updateRelationshipType = (relationship: Relationship, newType: string) => {
   relationship.type = newType as Relationship['type']
   drawMap()
@@ -77,6 +143,10 @@ const showContextMenu = (event: MouseEvent, bubble: Bubble) => {
 const hideContextMenu = () => {
   contextMenuVisible.value = false
   selectedBubble.value = null
+
+  emptyPositionContextMenuVisible.value = false
+  newBubbleText.value = ''
+  newBubbleGroup.value = ''
 }
 
 const updateBubbleText = () => {
@@ -176,8 +246,8 @@ function drawGroupDividers(
       const [x, y] = d3.pointer(event, svgRef.value!)
 
       //Unlock every single bubble
-      props.data.bubbles.forEach(b=>{
-        b.locked = false;
+      props.data.bubbles.forEach((b) => {
+        b.locked = false
       })
 
       // Adjust Y coordinate for scaling/offset AND INVERT Y-AXIS
@@ -193,7 +263,6 @@ function drawGroupDividers(
       const line = d3.select(this)
       let startX, startY
 
-
       const currentGroup = line.datum() as Group
       const currentIndex = groups.indexOf(currentGroup)
       const preGroup = currentIndex === 0 ? groups[groups.length - 1] : groups[currentIndex - 1]
@@ -205,8 +274,8 @@ function drawGroupDividers(
         currentGroup.locked = true
         preGroup.locked = true
 
-        currentGroup.isDragging = true;
-        preGroup.isDragging = true;
+        currentGroup.isDragging = true
+        preGroup.isDragging = true
 
         let clampedAngle = normalizedAngle
         console.log('currentIndex', currentIndex)
@@ -214,11 +283,18 @@ function drawGroupDividers(
         // Disable drag for first group's divider
         if (currentIndex === 0) return
         // Prevent the first group and last group go to other side when they through the boundary divier
-        if ((currentIndex === 1 && angle <= 0) || (currentIndex === groups.length-1 && angle >= 0)) return
+        if (
+          (currentIndex === 1 && angle <= 0) ||
+          (currentIndex === groups.length - 1 && angle >= 0)
+        )
+          return
 
         // For non-first groups, handle constraints
         const minBound = preGroup.startAngle! + MIN_ANGLE
-        const maxBound = currentIndex === groups.length - 1 ? currentGroup.endAngle! - MIN_ANGLE : nextGroup.startAngle! - MIN_ANGLE
+        const maxBound =
+          currentIndex === groups.length - 1
+            ? currentGroup.endAngle! - MIN_ANGLE
+            : nextGroup.startAngle! - MIN_ANGLE
 
         // Handle circular boundary wrap
         if (maxBound < minBound) {
@@ -239,22 +315,20 @@ function drawGroupDividers(
         currentGroup.startAngle = clampedAngle
         preGroup.endAngle = clampedAngle
 
-
-
         if (startLayer === 'None') {
-        startX = centerX
-        startY = centerY
-      } else {
-        // Use original y-axis for drawing (SVG coordinates)
-        startX = centerX + Math.cos(angle) * tracks[startLayer].inner
-        startY = centerY + -Math.sin(angle) * tracks[startLayer].inner * yScale + yOffset
-      }
+          startX = centerX
+          startY = centerY
+        } else {
+          // Use original y-axis for drawing (SVG coordinates)
+          startX = centerX + Math.cos(angle) * tracks[startLayer].inner
+          startY = centerY + -Math.sin(angle) * tracks[startLayer].inner * yScale + yOffset
+        }
 
-      // End point (outer radius)
-      const endX = centerX + Math.cos(angle) * tracks.operational.outer
-      const endY = centerY + -Math.sin(angle) * tracks.operational.outer * yScale + yOffset
+        // End point (outer radius)
+        const endX = centerX + Math.cos(angle) * tracks.operational.outer
+        const endY = centerY + -Math.sin(angle) * tracks.operational.outer * yScale + yOffset
 
-      line.attr('x1', startX).attr('y1', startY).attr('x2', endX).attr('y2', endY)
+        line.attr('x1', startX).attr('y1', startY).attr('x2', endX).attr('y2', endY)
       }
     })
     .on('end', function () {
@@ -262,14 +336,12 @@ function drawGroupDividers(
 
       const line = d3.select(this)
 
-
       const currentGroup = line.datum() as Group
       const currentIndex = groups.indexOf(currentGroup)
       const preGroup = currentIndex === 0 ? groups[groups.length - 1] : groups[currentIndex - 1]
 
-      currentGroup.isDragging = false;
-      preGroup.isDragging = false;
-
+      currentGroup.isDragging = false
+      preGroup.isDragging = false
     })
 
   // Draw dividers
@@ -378,7 +450,7 @@ function addGroupNames(svg: d3.Selection<SVGGElement, unknown, null, undefined>,
 
     // console.log("group.isDragging?", group.isDragging);
 
-    if ((!group.x || !group.y) || group.isDragging) {
+    if (!group.x || !group.y || group.isDragging) {
       const midAngle = (group.startAngle + group.endAngle) / 2
       const outerRadius = tracks.operational.outer + 20 // Offset outside the outer track
       x = centerX + outerRadius * Math.cos(midAngle)
@@ -577,69 +649,67 @@ const drawMap = () => {
 
   // Position bubbles along their orbits
   props.data.bubbles.forEach((bubble, i) => {
-  if (bubble.locked || !bubble.visible) return;
+    if (bubble.locked || !bubble.visible) return
 
-  let angle: number;
+    let angle: number
 
-  if (bubble.groupId) {
-    // Find the group this bubble belongs to
-    const group = updatedGroups.find((g) => g.id === bubble.groupId);
-    if (group && group.startAngle !== undefined && group.endAngle !== undefined) {
-      // Get all bubbles in the group for the same orbit (layer)
-      const groupBubbles = props.data.bubbles.filter(
-        (b) => b.groupId === group.id && b.layer === bubble.layer
-      );
+    if (bubble.groupId) {
+      // Find the group this bubble belongs to
+      const group = updatedGroups.find((g) => g.id === bubble.groupId)
+      if (group && group.startAngle !== undefined && group.endAngle !== undefined) {
+        // Get all bubbles in the group for the same orbit (layer)
+        const groupBubbles = props.data.bubbles.filter(
+          (b) => b.groupId === group.id && b.layer === bubble.layer,
+        )
 
-      const bubbleIndex = groupBubbles.findIndex((b) => b.id === bubble.id);
+        const bubbleIndex = groupBubbles.findIndex((b) => b.id === bubble.id)
 
-      // Calculate the angular range for the group
-      const sectorStart = group.startAngle;
-      const sectorEnd = group.endAngle;
-      const sectorSize = sectorEnd - sectorStart;
+        // Calculate the angular range for the group
+        const sectorStart = group.startAngle
+        const sectorEnd = group.endAngle
+        const sectorSize = sectorEnd - sectorStart
 
-      // Calculate the angular step based on bubbles in the same orbit
-      const angleStep = sectorSize / (groupBubbles.length + 1); // Leave padding at edges
+        // Calculate the angular step based on bubbles in the same orbit
+        const angleStep = sectorSize / (groupBubbles.length + 1) // Leave padding at edges
 
-      // Position the bubble within its orbit
-      angle = sectorStart + angleStep * (bubbleIndex + 1);
-    } else {
-      // Fallback for undefined groups
-      angle = (i * (2 * Math.PI)) / props.data.bubbles.length;
-    }
-  } else {
-     // Handle ungrouped bubbles
-     if (bubble.layer === 'mission') {
-      // Special logic for mission layer
-      const ungroupedMissionBubbles = props.data.bubbles.filter(
-        (b) => !b.groupId && b.layer === 'mission'
-      );
-
-      if (ungroupedMissionBubbles.length === 1) {
-        // If there's only one bubble, position it at the center
-        bubble.x = centerX;
-        bubble.y = centerY + yOffset;
-        return; // Skip the rest of the loop for this bubble
+        // Position the bubble within its orbit
+        angle = sectorStart + angleStep * (bubbleIndex + 1)
       } else {
-        // If there are multiple bubbles, distribute them evenly around the full circle
-        const bubbleIndex = ungroupedMissionBubbles.findIndex((b) => b.id === bubble.id);
-        angle = (bubbleIndex * (2 * Math.PI)) / ungroupedMissionBubbles.length;
+        // Fallback for undefined groups
+        angle = (i * (2 * Math.PI)) / props.data.bubbles.length
       }
     } else {
-      // For other layers, use the existing logic
-      const ungroupedBubbles = props.data.bubbles.filter((b) => !b.groupId);
-      const bubbleIndex = ungroupedBubbles.findIndex((b) => b.id === bubble.id);
+      // Handle ungrouped bubbles
+      if (bubble.layer === 'mission') {
+        // Special logic for mission layer
+        const ungroupedMissionBubbles = props.data.bubbles.filter(
+          (b) => !b.groupId && b.layer === 'mission',
+        )
 
-      angle = ((bubbleIndex + 1) * (2 * Math.PI)) / (ungroupedBubbles.length + 1);
+        if (ungroupedMissionBubbles.length === 1) {
+          // If there's only one bubble, position it at the center
+          bubble.x = centerX
+          bubble.y = centerY + yOffset
+          return // Skip the rest of the loop for this bubble
+        } else {
+          // If there are multiple bubbles, distribute them evenly around the full circle
+          const bubbleIndex = ungroupedMissionBubbles.findIndex((b) => b.id === bubble.id)
+          angle = (bubbleIndex * (2 * Math.PI)) / ungroupedMissionBubbles.length
+        }
+      } else {
+        // For other layers, use the existing logic
+        const ungroupedBubbles = props.data.bubbles.filter((b) => !b.groupId)
+        const bubbleIndex = ungroupedBubbles.findIndex((b) => b.id === bubble.id)
+
+        angle = ((bubbleIndex + 1) * (2 * Math.PI)) / (ungroupedBubbles.length + 1)
+      }
     }
-  }
 
-  // Calculate the bubble's position using its orbit radius
-  const radius = layerRadii[bubble.layer as keyof typeof layerRadii];
-  bubble.x = centerX + radius * Math.cos(angle);
-  bubble.y = centerY + yOffset + radius * -Math.sin(angle) * yScale;
-});
-
-
+    // Calculate the bubble's position using its orbit radius
+    const radius = layerRadii[bubble.layer as keyof typeof layerRadii]
+    bubble.x = centerX + radius * Math.cos(angle)
+    bubble.y = centerY + yOffset + radius * -Math.sin(angle) * yScale
+  })
 
   // Add group names
   addGroupNames(mapGroup, updatedGroups)
@@ -673,6 +743,8 @@ const drawMap = () => {
       .append('g')
       .datum(bubble) // Bind the bubble data to the element
       .attr('transform', `translate(${bubble.x},${bubble.y})`)
+      .attr('class', 'bubble-group')
+      .attr('data-bubble-id', bubble.id)
       .style('cursor', 'move')
       .on('contextmenu', (event: MouseEvent) => showContextMenu(event, bubble)) // Add right-click event
 
@@ -1339,6 +1411,16 @@ function lineIntersectsEllipse(
 
 <template>
   <div ref="containerRef" class="svg-container">
+    <svg
+      ref="svgRef"
+      :viewBox="`0 0 ${width} ${height}`"
+      preserveAspectRatio="xMidYMid meet"
+      @contextmenu.prevent="handleEmptyPositionRightClick"
+    >
+      <g></g>
+    </svg>
+
+    <!-- presentation controls -->
     <div
       class="presentation-controls"
       :class="{ 'show-controls': showControls }"
@@ -1375,8 +1457,12 @@ function lineIntersectsEllipse(
               </el-select> -->
               <select v-model="selectedGroup" @change="updateGroupVisibility" class="custom-select">
                 <option value="all">All</option>
-                <option v-for="(group, index) in props.data.groups" :key="group.id" :value="group.id">
-                  {{ group.name ||  `Group ${index+1}` }}
+                <option
+                  v-for="(group, index) in props.data.groups"
+                  :key="group.id"
+                  :value="group.id"
+                >
+                  {{ group.name || `Group ${index + 1}` }}
                 </option>
               </select>
             </el-col>
@@ -1388,10 +1474,7 @@ function lineIntersectsEllipse(
       </el-row>
     </div>
 
-    <svg ref="svgRef" :viewBox="`0 0 ${width} ${height}`" preserveAspectRatio="xMidYMid meet">
-      <g></g>
-    </svg>
-
+    <!-- zoom controls -->
     <div class="zoom-controls">
       <el-button @click="zoomIn" icon="Plus"></el-button>
       <el-button @click="zoomOut" icon="Minus"></el-button>
@@ -1405,6 +1488,7 @@ function lineIntersectsEllipse(
     </div>
   </div>
 
+  <!-- context menu for bubble updates -->
   <div
     v-if="contextMenuVisible"
     :style="{ top: `${contextMenuPosition.y}px`, left: `${contextMenuPosition.x}px` }"
@@ -1463,6 +1547,37 @@ function lineIntersectsEllipse(
         </li>
       </ul>
     </div>
+  </div>
+
+  <!-- context menu for create new bubble -->
+  <div
+    v-if="emptyPositionContextMenuVisible"
+    :style="{
+      top: `${emptyPositionContextMenuPosition.y}px`,
+      left: `${emptyPositionContextMenuPosition.x}px`,
+    }"
+    class="context-menu"
+  >
+    <h4>Create Bubble</h4>
+    <el-form @submit.prevent="createBubble">
+      <el-form-item label="Text">
+        <el-input v-model="newBubbleText" type="text" />
+      </el-form-item>
+      <el-form-item label="Group">
+        <el-select v-model="newBubbleGroup" placeholder="Select Group">
+          <el-option label="None" value=""></el-option>
+          <el-option
+            v-for="group in props.data.groups"
+            :key="group.id"
+            :label="group.name"
+            :value="group.id"
+          ></el-option>
+        </el-select>
+      </el-form-item>
+      <el-form-item>
+        <el-button type="primary" @click="createBubble">Create</el-button>
+      </el-form-item>
+    </el-form>
   </div>
 </template>
 <style>
