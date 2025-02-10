@@ -1492,7 +1492,7 @@ svg {
 
 .presentation-controls {
   position: fixed;
-  top: 0px;
+  bottom: 0px;
   right: 0px;
   left: 0px;
   padding: 5px 0;
