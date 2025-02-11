@@ -951,12 +951,11 @@ const drawMap = () => {
   ) {
     console.log('StartDrag: ', event.x, event.y)
     hideContextMenu()
+    //handleBubbleClick(d.id) // Set the target bubble
 
     // Check if the click is on the isCreatingRelationship mode, then create a relationship
     if (isCreatingRelationship.value) {
-      newRelationship.value.target = d.id
-      handleAddRelationship()
-      isCreatingRelationship.value = false // Exit relationship creation mode
+      handleBubbleClick(d.id);
     }
 
     d3.select(svgRef.value).on('.zoom', null) // Remove zoom event listeners
@@ -1321,6 +1320,13 @@ const isCreatingRelationship = ref(false)
 const startCreateRelationship = () => {
   if (selectedBubble.value) {
     console.log('Start Create Relationship', selectedBubble.value)
+
+    // Apply transparency to the selected bubble
+    const selectedBubbleElement = document.querySelector(`[data-bubble-id="${selectedBubble.value.id}"]`);
+    if (selectedBubbleElement) {
+      selectedBubbleElement.classList.add('transparent');
+    }
+
     newRelationship.value.source = selectedBubble.value.id
     contextMenuVisible.value = false // Hide the context menu
 
@@ -1339,6 +1345,12 @@ const handleAddRelationship = () => {
       target: newRelationship.value.target,
       type: newRelationship.value.type,
     })
+
+    // Remove the .transparent class and re-enable clicks on the source bubble
+    const sourceBubbleElement = document.querySelector(`[data-bubble-id="${newRelationship.value.source}"]`);
+    if (sourceBubbleElement) {
+      sourceBubbleElement.classList.remove('transparent');
+    }
 
     newRelationship.value.source = ''
     newRelationship.value.target = ''
@@ -1452,26 +1464,43 @@ const resetView = () => {
 const focusedBubbleId = ref<string | null>(null)
 
 const handleBubbleClick = (bubbleId: string) => {
-  console.log('clicked bubble', bubbleId)
+  console.log('clicked bubble', bubbleId);
 
-  if (isPresentationMode.value) {
+  if (isCreatingRelationship.value) {
+    if (bubbleId === newRelationship.value.source) {
+
+      // Prevent creating a relationship with the same bubble
+      console.log('Cannot create a relationship with the same bubble.');
+      return;
+    }
+
+      // Check if the relationship already exists
+      const relationshipExists = mapRelationships.value.some(
+      (rel) =>
+        (rel.source === newRelationship.value.source && rel.target === bubbleId) ||
+        (rel.source === bubbleId && rel.target === newRelationship.value.source)
+    );
+
+    if (relationshipExists) {
+      console.log('A relationship between these bubbles already exists.');
+      return; // Return false if the relationship already exists
+    }
+
+    newRelationship.value.target = bubbleId;
+    handleAddRelationship();
+    isCreatingRelationship.value = false; // Exit relationship creation mode
+  } else if (isPresentationMode.value) {
     if (focusedBubbleId.value === bubbleId) {
       // If the same bubble is clicked again, reset the focus
-      focusedBubbleId.value = null
+      focusedBubbleId.value = null;
     } else {
       // Set the clicked bubble as the focused bubble
-      focusedBubbleId.value = bubbleId
-    }
-  } else {
-    if (isCreatingRelationship.value) {
-      newRelationship.value.target = bubbleId
-      handleAddRelationship()
-      isCreatingRelationship.value = false // Exit relationship creation mode
+      focusedBubbleId.value = bubbleId;
     }
   }
 
-  drawMap()
-}
+  drawMap();
+};
 
 const getRelatedBubblesAndRelationships = (bubbleId: string) => {
   const relatedBubbles = new Set<string>()
