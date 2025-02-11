@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, onBeforeUnmount, watch, computed } from 'vue'
+import { ref, onMounted, onBeforeUnmount, watch, computed, nextTick } from 'vue'
 import * as d3 from 'd3'
 import type {
   ResultsMapData,
@@ -49,6 +49,7 @@ const zoom = d3
   .scaleExtent([0.1, 10]) // Set minimum and maximum zoom scale
   .on('zoom', (event) => {
     //console.log('onZoom...', event)
+    hideContextMenu()
 
     currentTransform = event.transform
 
@@ -64,37 +65,67 @@ const zoom = d3
 // Handle empty right-click
 const handleEmptyPositionRightClick = (event: MouseEvent) => {
   // Get raw click position
-  const [rawX, rawY] = d3.pointer(event, svgRef.value!)
+  const [rawX, rawY] = d3.pointer(event, svgRef.value!);
 
   // Use currentTransform or fallback to identity transform
-  const transform = currentTransform || { x: 0, y: 0, k: 1 }
+  const transform = currentTransform || { x: 0, y: 0, k: 1 };
 
   // Invert zoom transformation
-  const invertedX = (rawX - transform.x) / transform.k
-  const invertedY = (rawY - transform.y) / transform.k
+  const invertedX = (rawX - transform.x) / transform.k;
+  const invertedY = (rawY - transform.y) / transform.k;
 
   // Check if the click is on a bubble node
-  const target = event.target as SVGElement
-  const isBubbleNode = target.closest('g')?.classList.contains('bubble-group') // Add a class to bubble groups
+  const target = event.target as SVGElement;
+  const isBubbleNode = target.closest('g')?.classList.contains('bubble-group'); // Add a class to bubble groups
 
   if (isBubbleNode) {
     // Find the clicked bubble
-    const bubbleId = target.closest('g')?.getAttribute('data-bubble-id')
-    const clickedBubble = props.data.bubbles.find((bubble) => bubble.id === bubbleId)
+    const bubbleId = target.closest('g')?.getAttribute('data-bubble-id');
+    const clickedBubble = props.data.bubbles.find((bubble) => bubble.id === bubbleId);
 
     if (clickedBubble) {
       // Show the bubble context menu
-      showContextMenu(event, clickedBubble)
+      showContextMenu(event, clickedBubble);
     }
   } else if (isPointWithinLayers(invertedX, invertedY)) {
     hideContextMenu();
-    // Show the empty position context menu
-    newBubblePosition.value = { x: invertedX, y: invertedY }
 
-    emptyPositionContextMenuPosition.value = { x: event.clientX, y: event.clientY }
-    emptyPositionContextMenuVisible.value = true
+    // Set the empty position context menu position initially
+    newBubblePosition.value = { x: invertedX, y: invertedY };
+    emptyPositionContextMenuPosition.value = { x: event.clientX, y: event.clientY };
+    emptyPositionContextMenuVisible.value = true;
+
+    // Use nextTick to ensure the context menu is rendered before calculating its height
+    nextTick(() => {
+      const emptyContextMenuElement = document.querySelector('.empty-context-menu') as HTMLElement;
+      if (emptyContextMenuElement) {
+        const contextMenuHeight = Math.min(emptyContextMenuElement.clientHeight, 150);
+        const contextMenuWidth = emptyContextMenuElement.clientWidth + 80;
+
+        // Get the viewport dimensions
+        const viewportWidth = window.innerWidth;
+        const viewportHeight = window.innerHeight;
+
+        // Calculate the adjusted position
+        let x = event.clientX;
+        let y = event.clientY;
+
+        // Adjust the position if the context menu would go off the right edge of the screen
+        if (x + contextMenuWidth > viewportWidth) {
+          x = viewportWidth - contextMenuWidth;
+        }
+
+        // Adjust the position if the context menu would go off the bottom edge of the screen
+        if (y + contextMenuHeight > viewportHeight) {
+          y = viewportHeight - contextMenuHeight;
+        }
+
+        // Update the empty position context menu position
+        emptyPositionContextMenuPosition.value = { x, y };
+      }
+    });
   }
-}
+};
 
 const isPointWithinLayers = (x: number, y: number): boolean => {
   const dx = x - centerX
@@ -207,12 +238,44 @@ const removeRelationship = (relationship: Relationship) => {
 
 const showContextMenu = (event: MouseEvent, bubble: Bubble) => {
   hideContextMenu();
-  event.preventDefault()
-  selectedBubble.value = bubble
-  newText.value = bubble.text
-  contextMenuPosition.value = { x: event.clientX, y: event.clientY }
-  contextMenuVisible.value = true
-}
+  event.preventDefault();
+  selectedBubble.value = bubble;
+  newText.value = bubble.text;
+
+  // Set the context menu position initially
+  contextMenuPosition.value = { x: event.clientX, y: event.clientY };
+  contextMenuVisible.value = true;
+
+  // Use nextTick to ensure the context menu is rendered before calculating its height
+  nextTick(() => {
+    const contextMenuElement = document.querySelector('.bubble-context-menu') as HTMLElement;
+    if (contextMenuElement) {
+      const contextMenuHeight = contextMenuElement.clientHeight;
+      const contextMenuWidth = contextMenuElement.clientWidth + 50;
+
+      // Get the viewport dimensions
+      const viewportWidth = window.innerWidth;
+      const viewportHeight = window.innerHeight;
+
+      // Calculate the adjusted position
+      let x = event.clientX;
+      let y = event.clientY;
+
+      // Adjust the position if the context menu would go off the right edge of the screen
+      if (x + contextMenuWidth > viewportWidth) {
+        x = viewportWidth - contextMenuWidth;
+      }
+
+      // Adjust the position if the context menu would go off the bottom edge of the screen
+      if (y + contextMenuHeight > viewportHeight) {
+        y = viewportHeight - contextMenuHeight;
+      }
+
+      // Update the context menu position
+      contextMenuPosition.value = { x, y };
+    }
+  });
+};
 
 const hideContextMenu = () => {
   contextMenuVisible.value = false
@@ -887,6 +950,7 @@ const drawMap = () => {
     d: Bubble,
   ) {
     console.log('StartDrag: ', event.x, event.y)
+    hideContextMenu()
 
     // Check if the click is on the isCreatingRelationship mode, then create a relationship
     if (isCreatingRelationship.value) {
@@ -1629,7 +1693,7 @@ function lineIntersectsEllipse(
   <div
     v-if="contextMenuVisible"
     :style="{ top: `${contextMenuPosition.y}px`, left: `${contextMenuPosition.x}px` }"
-    class="context-menu"
+    class="context-menu bubble-context-menu"
   >
     <!-- <h4>Bubble</h4> -->
     <el-form @submit.prevent="updateBubbleText">
@@ -1704,7 +1768,7 @@ function lineIntersectsEllipse(
       top: `${emptyPositionContextMenuPosition.y}px`,
       left: `${emptyPositionContextMenuPosition.x}px`,
     }"
-    class="context-menu"
+    class="context-menu empty-context-menu"
   >
     <h4>Create Bubble</h4>
     <el-form @submit.prevent="createBubble">
