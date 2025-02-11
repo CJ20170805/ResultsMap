@@ -36,7 +36,7 @@ const addBubble = (bubble: Omit<Bubble, 'id'>) => {
 
 const addRelationship = (relationship: Omit<Relationship, 'id'>) => {
   if (!mapData.value) return
-  const newId = (mapData.value.relationships.length + 1).toString()
+  const newId = Date.now().toString()
   mapData.value.relationships.push({
     ...relationship,
     id: newId,

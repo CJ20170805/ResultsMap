@@ -8,6 +8,7 @@ import type {
   Group,
   LayerType,
   LayerColors,
+  RelationType,
 } from '@/types/ResultsMap'
 
 const props = defineProps<{
@@ -36,6 +37,7 @@ const emptyPositionContextMenuPosition = ref({ x: 0, y: 0 })
 const newBubbleText = ref('')
 const newBubbleGroup = ref('')
 const newBubblePosition = ref({ x: 0, y: 0 })
+
 
 let isDragging = false
 let currentTransform: { x: number; y: number; k: number }
@@ -795,6 +797,7 @@ const drawMap = () => {
   const BUBBLE_PADDING_Y = 25
 
   // Draw bubbles
+  const DRAG_THRESHOLD = 5; // Minimum pixel movement to consider it a drag
   const bubbleGroup = mapGroup.append('g')
   const bubbleRadii = new Map<string, { rx: number; ry: number }>()
   const drag = d3
@@ -818,11 +821,11 @@ const drawMap = () => {
       .attr('data-bubble-id', bubble.id)
       .style('cursor', 'move')
       .on('contextmenu', (event: MouseEvent) => showContextMenu(event, bubble)) // Add right-click event
+      .on('click', () => handleBubbleClick(bubble.id)) // Handle bubble click
 
     if (isPresentationMode.value) {
       g.classed('transparent', !!focusedBubbleId.value && !isRelated) // Apply transparency
         .classed('highlight', focusedBubbleId.value === bubble.id) // Highlight focused bubble
-        .on('click', () => handleBubbleClick(bubble.id)) // Handle bubble click
     } else {
       g.call(drag)
     }
@@ -872,6 +875,13 @@ const drawMap = () => {
     d: Bubble,
   ) {
     console.log('StartDrag: ', event.x, event.y)
+
+    // Check if the click is on the isCreatingRelationship mode, then create a relationship
+    if (isCreatingRelationship.value) {
+      newRelationship.value.target = d.id;
+      handleAddRelationship();
+      isCreatingRelationship.value = false; // Exit relationship creation mode
+    }
 
     d3.select(svgRef.value).on('.zoom', null) // Remove zoom event listeners
 
@@ -1223,6 +1233,43 @@ const resetZoom = () => {
   svg.transition().call(zoom.transform, d3.zoomIdentity)
 }
 
+// Create a new relationship
+
+const newRelationship = ref({
+  source: '',
+  target: '',
+  type: 'cause-effect' as RelationType,
+})
+
+const isCreatingRelationship = ref(false);
+
+const startCreateRelationship = () => {
+  if (selectedBubble.value) {
+    console.log('Start Create Relationship', selectedBubble.value);
+    newRelationship.value.source = selectedBubble.value.id;
+    contextMenuVisible.value = false; // Hide the context menu
+
+    // Enter a mode where the next bubble click will be the target
+    isCreatingRelationship.value = true;
+  }
+};
+
+const handleAddRelationship = () => {
+  if (newRelationship.value.source && newRelationship.value.target) {
+console.log('Add Relationship', newRelationship.value);
+
+    mapRelationships.value.push({
+      id: Date.now().toString(),
+      source: newRelationship.value.source,
+      target: newRelationship.value.target,
+      type: newRelationship.value.type,
+    });
+
+    newRelationship.value.source = '';
+    newRelationship.value.target = '';
+  }
+};
+
 // presentation mode functions
 // Define layers from outermost to innermost
 const layers = ['operational', 'process', 'strategic', 'mission']
@@ -1332,12 +1379,20 @@ const focusedBubbleId = ref<string | null>(null)
 const handleBubbleClick = (bubbleId: string) => {
   console.log('clicked bubble', bubbleId)
 
-  if (focusedBubbleId.value === bubbleId) {
+  if(isPresentationMode.value){
+    if (focusedBubbleId.value === bubbleId) {
     // If the same bubble is clicked again, reset the focus
-    focusedBubbleId.value = null
+      focusedBubbleId.value = null
+    } else {
+      // Set the clicked bubble as the focused bubble
+      focusedBubbleId.value = bubbleId
+    }
   } else {
-    // Set the clicked bubble as the focused bubble
-    focusedBubbleId.value = bubbleId
+    if (isCreatingRelationship.value) {
+      newRelationship.value.target = bubbleId;
+      handleAddRelationship();
+      isCreatingRelationship.value = false; // Exit relationship creation mode
+    }
   }
 
   drawMap()
@@ -1579,6 +1634,10 @@ function lineIntersectsEllipse(
         </el-popconfirm>
       </el-form-item>
     </el-form>
+
+     <!-- Add the "Create Relationship" button -->
+    <el-button type="primary" @click="startCreateRelationship">Create Relationship</el-button>
+
     <div v-if="selectedBubble">
       <h4
         v-if="
