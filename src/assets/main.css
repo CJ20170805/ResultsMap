@@ -12,3 +12,6 @@
   flex-direction: column;
 }
 
+.el-main{
+  padding: 0!important;
+}

@@ -38,7 +38,6 @@ const newBubbleText = ref('')
 const newBubbleGroup = ref('')
 const newBubblePosition = ref({ x: 0, y: 0 })
 
-
 let isDragging = false
 let currentTransform: { x: number; y: number; k: number }
 
@@ -88,6 +87,7 @@ const handleEmptyPositionRightClick = (event: MouseEvent) => {
       showContextMenu(event, clickedBubble)
     }
   } else if (isPointWithinLayers(invertedX, invertedY)) {
+    hideContextMenu();
     // Show the empty position context menu
     newBubblePosition.value = { x: invertedX, y: invertedY }
 
@@ -206,6 +206,7 @@ const removeRelationship = (relationship: Relationship) => {
 }
 
 const showContextMenu = (event: MouseEvent, bubble: Bubble) => {
+  hideContextMenu();
   event.preventDefault()
   selectedBubble.value = bubble
   newText.value = bubble.text
@@ -238,14 +239,26 @@ const confirmRemoveBubble = () => {
 
 const removeBubble = () => {
   if (selectedBubble.value) {
-    const index = props.data.bubbles.findIndex((b) => b.id === selectedBubble.value!.id)
-    if (index !== -1) {
-      mapBubbles.value.splice(index, 1)
-      drawMap()
-      hideContextMenu()
+    const bubbleId = selectedBubble.value.id;
+
+    // Remove the bubble from the bubbles array
+    const bubbleIndex = props.data.bubbles.findIndex((b) => b.id === bubbleId);
+    if (bubbleIndex !== -1) {
+      mapBubbles.value.splice(bubbleIndex, 1);
     }
+
+    for (let i = mapRelationships.value.length - 1; i >= 0; i--) {
+      const rel = mapRelationships.value[i];
+      if (rel.source === bubbleId || rel.target === bubbleId) {
+        mapRelationships.value.splice(i, 1); // Remove the relationship
+      }
+    }
+
+    // Redraw the map and hide the context menu
+    drawMap();
+    hideContextMenu();
   }
-}
+};
 
 // Define track boundaries with inner and outer radii
 const tracks = {
@@ -668,7 +681,7 @@ function addArrowsAndTitle(svg: d3.Selection<SVGGElement, unknown, null, undefin
 }
 
 const drawMap = () => {
-  //console.log('Map Data', props.data)
+  console.log('Map Data', props.data)
   if (!svgRef.value) return
 
   // Data saving
@@ -797,7 +810,6 @@ const drawMap = () => {
   const BUBBLE_PADDING_Y = 25
 
   // Draw bubbles
-  const DRAG_THRESHOLD = 5; // Minimum pixel movement to consider it a drag
   const bubbleGroup = mapGroup.append('g')
   const bubbleRadii = new Map<string, { rx: number; ry: number }>()
   const drag = d3
@@ -878,9 +890,9 @@ const drawMap = () => {
 
     // Check if the click is on the isCreatingRelationship mode, then create a relationship
     if (isCreatingRelationship.value) {
-      newRelationship.value.target = d.id;
-      handleAddRelationship();
-      isCreatingRelationship.value = false; // Exit relationship creation mode
+      newRelationship.value.target = d.id
+      handleAddRelationship()
+      isCreatingRelationship.value = false // Exit relationship creation mode
     }
 
     d3.select(svgRef.value).on('.zoom', null) // Remove zoom event listeners
@@ -1234,41 +1246,40 @@ const resetZoom = () => {
 }
 
 // Create a new relationship
-
 const newRelationship = ref({
   source: '',
   target: '',
   type: 'cause-effect' as RelationType,
 })
 
-const isCreatingRelationship = ref(false);
+const isCreatingRelationship = ref(false)
 
 const startCreateRelationship = () => {
   if (selectedBubble.value) {
-    console.log('Start Create Relationship', selectedBubble.value);
-    newRelationship.value.source = selectedBubble.value.id;
-    contextMenuVisible.value = false; // Hide the context menu
+    console.log('Start Create Relationship', selectedBubble.value)
+    newRelationship.value.source = selectedBubble.value.id
+    contextMenuVisible.value = false // Hide the context menu
 
     // Enter a mode where the next bubble click will be the target
-    isCreatingRelationship.value = true;
+    isCreatingRelationship.value = true
   }
-};
+}
 
 const handleAddRelationship = () => {
   if (newRelationship.value.source && newRelationship.value.target) {
-console.log('Add Relationship', newRelationship.value);
+    console.log('Add Relationship', newRelationship.value)
 
     mapRelationships.value.push({
       id: Date.now().toString(),
       source: newRelationship.value.source,
       target: newRelationship.value.target,
       type: newRelationship.value.type,
-    });
+    })
 
-    newRelationship.value.source = '';
-    newRelationship.value.target = '';
+    newRelationship.value.source = ''
+    newRelationship.value.target = ''
   }
-};
+}
 
 // presentation mode functions
 // Define layers from outermost to innermost
@@ -1379,9 +1390,9 @@ const focusedBubbleId = ref<string | null>(null)
 const handleBubbleClick = (bubbleId: string) => {
   console.log('clicked bubble', bubbleId)
 
-  if(isPresentationMode.value){
+  if (isPresentationMode.value) {
     if (focusedBubbleId.value === bubbleId) {
-    // If the same bubble is clicked again, reset the focus
+      // If the same bubble is clicked again, reset the focus
       focusedBubbleId.value = null
     } else {
       // Set the clicked bubble as the focused bubble
@@ -1389,9 +1400,9 @@ const handleBubbleClick = (bubbleId: string) => {
     }
   } else {
     if (isCreatingRelationship.value) {
-      newRelationship.value.target = bubbleId;
-      handleAddRelationship();
-      isCreatingRelationship.value = false; // Exit relationship creation mode
+      newRelationship.value.target = bubbleId
+      handleAddRelationship()
+      isCreatingRelationship.value = false // Exit relationship creation mode
     }
   }
 
@@ -1635,10 +1646,10 @@ function lineIntersectsEllipse(
       </el-form-item>
     </el-form>
 
-     <!-- Add the "Create Relationship" button -->
+    <!-- Add the "Create Relationship" button -->
     <el-button type="primary" @click="startCreateRelationship">Create Relationship</el-button>
 
-    <div v-if="selectedBubble">
+    <div class="relationship-list" v-if="selectedBubble">
       <h4
         v-if="
           props.data.relationships.filter(
@@ -1659,7 +1670,10 @@ function lineIntersectsEllipse(
             >[
             {{ props.data.bubbles.find((b) => b.id === relationship.target)?.text || '' }} ]</span
           >
-          <el-select
+
+          <el-row :gutter="10">
+            <el-col :span="16">
+              <el-select
             v-model="relationship.type"
             placeholder="Select"
             @change="(newType: string) => updateRelationshipType(relationship, newType)"
@@ -1671,9 +1685,13 @@ function lineIntersectsEllipse(
               :value="type"
             ></el-option>
           </el-select>
-          <el-button type="danger" @click="() => removeRelationship(relationship)"
+            </el-col>
+            <el-col :span="6">
+              <el-button type="danger" @click="() => removeRelationship(relationship)"
             >Delete</el-button
           >
+            </el-col>
+          </el-row>
         </li>
       </ul>
     </div>
@@ -1733,6 +1751,22 @@ svg {
   border-radius: 8px;
   background-color: #fff;
   transition: all 0.2s;
+}
+
+.relationship-list{
+  overflow: hidden;
+}
+
+.relationship-list h4{
+  margin: 10px 0 0 0;
+}
+
+.relationship-list ul {
+  list-style: none;
+  padding: 0 0 50px 0;
+  margin: 0;
+  max-height:  270px;
+  overflow: auto;
 }
 
 .custom-select {
@@ -1829,6 +1863,6 @@ svg {
 }
 
 .context-menu button {
-  margin-top: 5px;
+  margin-top: 0px;
 }
 </style>
