@@ -65,67 +65,67 @@ const zoom = d3
 // Handle empty right-click
 const handleEmptyPositionRightClick = (event: MouseEvent) => {
   // Get raw click position
-  const [rawX, rawY] = d3.pointer(event, svgRef.value!);
+  const [rawX, rawY] = d3.pointer(event, svgRef.value!)
 
   // Use currentTransform or fallback to identity transform
-  const transform = currentTransform || { x: 0, y: 0, k: 1 };
+  const transform = currentTransform || { x: 0, y: 0, k: 1 }
 
   // Invert zoom transformation
-  const invertedX = (rawX - transform.x) / transform.k;
-  const invertedY = (rawY - transform.y) / transform.k;
+  const invertedX = (rawX - transform.x) / transform.k
+  const invertedY = (rawY - transform.y) / transform.k
 
   // Check if the click is on a bubble node
-  const target = event.target as SVGElement;
-  const isBubbleNode = target.closest('g')?.classList.contains('bubble-group'); // Add a class to bubble groups
+  const target = event.target as SVGElement
+  const isBubbleNode = target.closest('g')?.classList.contains('bubble-group') // Add a class to bubble groups
 
   if (isBubbleNode) {
     // Find the clicked bubble
-    const bubbleId = target.closest('g')?.getAttribute('data-bubble-id');
-    const clickedBubble = props.data.bubbles.find((bubble) => bubble.id === bubbleId);
+    const bubbleId = target.closest('g')?.getAttribute('data-bubble-id')
+    const clickedBubble = props.data.bubbles.find((bubble) => bubble.id === bubbleId)
 
     if (clickedBubble) {
       // Show the bubble context menu
-      showContextMenu(event, clickedBubble);
+      showContextMenu(event, clickedBubble)
     }
   } else if (isPointWithinLayers(invertedX, invertedY)) {
-    hideContextMenu();
+    hideContextMenu()
 
     // Set the empty position context menu position initially
-    newBubblePosition.value = { x: invertedX, y: invertedY };
-    emptyPositionContextMenuPosition.value = { x: event.clientX, y: event.clientY };
-    emptyPositionContextMenuVisible.value = true;
+    newBubblePosition.value = { x: invertedX, y: invertedY }
+    emptyPositionContextMenuPosition.value = { x: event.clientX, y: event.clientY }
+    emptyPositionContextMenuVisible.value = true
 
     // Use nextTick to ensure the context menu is rendered before calculating its height
     nextTick(() => {
-      const emptyContextMenuElement = document.querySelector('.empty-context-menu') as HTMLElement;
+      const emptyContextMenuElement = document.querySelector('.empty-context-menu') as HTMLElement
       if (emptyContextMenuElement) {
-        const contextMenuHeight = Math.min(emptyContextMenuElement.clientHeight, 150);
-        const contextMenuWidth = emptyContextMenuElement.clientWidth + 80;
+        const contextMenuHeight = Math.min(emptyContextMenuElement.clientHeight, 150)
+        const contextMenuWidth = emptyContextMenuElement.clientWidth + 80
 
         // Get the viewport dimensions
-        const viewportWidth = window.innerWidth;
-        const viewportHeight = window.innerHeight;
+        const viewportWidth = window.innerWidth
+        const viewportHeight = window.innerHeight
 
         // Calculate the adjusted position
-        let x = event.clientX;
-        let y = event.clientY;
+        let x = event.clientX
+        let y = event.clientY
 
         // Adjust the position if the context menu would go off the right edge of the screen
         if (x + contextMenuWidth > viewportWidth) {
-          x = viewportWidth - contextMenuWidth;
+          x = viewportWidth - contextMenuWidth
         }
 
         // Adjust the position if the context menu would go off the bottom edge of the screen
         if (y + contextMenuHeight > viewportHeight) {
-          y = viewportHeight - contextMenuHeight;
+          y = viewportHeight - contextMenuHeight
         }
 
         // Update the empty position context menu position
-        emptyPositionContextMenuPosition.value = { x, y };
+        emptyPositionContextMenuPosition.value = { x, y }
       }
-    });
+    })
   }
-};
+}
 
 const isPointWithinLayers = (x: number, y: number): boolean => {
   const dx = x - centerX
@@ -237,45 +237,45 @@ const removeRelationship = (relationship: Relationship) => {
 }
 
 const showContextMenu = (event: MouseEvent, bubble: Bubble) => {
-  hideContextMenu();
-  event.preventDefault();
-  selectedBubble.value = bubble;
-  newText.value = bubble.text;
+  hideContextMenu()
+  event.preventDefault()
+  selectedBubble.value = bubble
+  newText.value = bubble.text
 
   // Set the context menu position initially
-  contextMenuPosition.value = { x: event.clientX, y: event.clientY };
-  contextMenuVisible.value = true;
+  contextMenuPosition.value = { x: event.clientX, y: event.clientY }
+  contextMenuVisible.value = true
 
   // Use nextTick to ensure the context menu is rendered before calculating its height
   nextTick(() => {
-    const contextMenuElement = document.querySelector('.bubble-context-menu') as HTMLElement;
+    const contextMenuElement = document.querySelector('.bubble-context-menu') as HTMLElement
     if (contextMenuElement) {
-      const contextMenuHeight = contextMenuElement.clientHeight;
-      const contextMenuWidth = contextMenuElement.clientWidth + 50;
+      const contextMenuHeight = contextMenuElement.clientHeight
+      const contextMenuWidth = contextMenuElement.clientWidth + 50
 
       // Get the viewport dimensions
-      const viewportWidth = window.innerWidth;
-      const viewportHeight = window.innerHeight;
+      const viewportWidth = window.innerWidth
+      const viewportHeight = window.innerHeight
 
       // Calculate the adjusted position
-      let x = event.clientX;
-      let y = event.clientY;
+      let x = event.clientX
+      let y = event.clientY
 
       // Adjust the position if the context menu would go off the right edge of the screen
       if (x + contextMenuWidth > viewportWidth) {
-        x = viewportWidth - contextMenuWidth;
+        x = viewportWidth - contextMenuWidth
       }
 
       // Adjust the position if the context menu would go off the bottom edge of the screen
       if (y + contextMenuHeight > viewportHeight) {
-        y = viewportHeight - contextMenuHeight;
+        y = viewportHeight - contextMenuHeight
       }
 
       // Update the context menu position
-      contextMenuPosition.value = { x, y };
+      contextMenuPosition.value = { x, y }
     }
-  });
-};
+  })
+}
 
 const hideContextMenu = () => {
   contextMenuVisible.value = false
@@ -302,26 +302,26 @@ const confirmRemoveBubble = () => {
 
 const removeBubble = () => {
   if (selectedBubble.value) {
-    const bubbleId = selectedBubble.value.id;
+    const bubbleId = selectedBubble.value.id
 
     // Remove the bubble from the bubbles array
-    const bubbleIndex = props.data.bubbles.findIndex((b) => b.id === bubbleId);
+    const bubbleIndex = props.data.bubbles.findIndex((b) => b.id === bubbleId)
     if (bubbleIndex !== -1) {
-      mapBubbles.value.splice(bubbleIndex, 1);
+      mapBubbles.value.splice(bubbleIndex, 1)
     }
 
     for (let i = mapRelationships.value.length - 1; i >= 0; i--) {
-      const rel = mapRelationships.value[i];
+      const rel = mapRelationships.value[i]
       if (rel.source === bubbleId || rel.target === bubbleId) {
-        mapRelationships.value.splice(i, 1); // Remove the relationship
+        mapRelationships.value.splice(i, 1) // Remove the relationship
       }
     }
 
     // Redraw the map and hide the context menu
-    drawMap();
-    hideContextMenu();
+    drawMap()
+    hideContextMenu()
   }
-};
+}
 
 // Define track boundaries with inner and outer radii
 const tracks = {
@@ -955,7 +955,7 @@ const drawMap = () => {
 
     // Check if the click is on the isCreatingRelationship mode, then create a relationship
     if (isCreatingRelationship.value) {
-      handleBubbleClick(d.id);
+      handleBubbleClick(d.id)
     }
 
     d3.select(svgRef.value).on('.zoom', null) // Remove zoom event listeners
@@ -1315,19 +1315,24 @@ const newRelationship = ref({
   type: 'cause-effect' as RelationType,
 })
 
+const newRelationshipType = ref<RelationType>('cause-effect')
+
 const isCreatingRelationship = ref(false)
 
-const startCreateRelationship = () => {
+const startCreateRelationship = (type: RelationType) => {
   if (selectedBubble.value) {
     console.log('Start Create Relationship', selectedBubble.value)
 
     // Apply transparency to the selected bubble
-    const selectedBubbleElement = document.querySelector(`[data-bubble-id="${selectedBubble.value.id}"]`);
+    const selectedBubbleElement = document.querySelector(
+      `[data-bubble-id="${selectedBubble.value.id}"]`,
+    )
     if (selectedBubbleElement) {
-      selectedBubbleElement.classList.add('transparent');
+      selectedBubbleElement.classList.add('transparent')
     }
 
     newRelationship.value.source = selectedBubble.value.id
+    newRelationship.value.type = type
     contextMenuVisible.value = false // Hide the context menu
 
     // Enter a mode where the next bubble click will be the target
@@ -1347,9 +1352,11 @@ const handleAddRelationship = () => {
     })
 
     // Remove the .transparent class and re-enable clicks on the source bubble
-    const sourceBubbleElement = document.querySelector(`[data-bubble-id="${newRelationship.value.source}"]`);
+    const sourceBubbleElement = document.querySelector(
+      `[data-bubble-id="${newRelationship.value.source}"]`,
+    )
     if (sourceBubbleElement) {
-      sourceBubbleElement.classList.remove('transparent');
+      sourceBubbleElement.classList.remove('transparent')
     }
 
     newRelationship.value.source = ''
@@ -1464,43 +1471,42 @@ const resetView = () => {
 const focusedBubbleId = ref<string | null>(null)
 
 const handleBubbleClick = (bubbleId: string) => {
-  console.log('clicked bubble', bubbleId);
+  console.log('clicked bubble', bubbleId)
 
   if (isCreatingRelationship.value) {
     if (bubbleId === newRelationship.value.source) {
-
       // Prevent creating a relationship with the same bubble
-      console.log('Cannot create a relationship with the same bubble.');
-      return;
+      console.log('Cannot create a relationship with the same bubble.')
+      return
     }
 
-      // Check if the relationship already exists
-      const relationshipExists = mapRelationships.value.some(
+    // Check if the relationship already exists
+    const relationshipExists = mapRelationships.value.some(
       (rel) =>
         (rel.source === newRelationship.value.source && rel.target === bubbleId) ||
-        (rel.source === bubbleId && rel.target === newRelationship.value.source)
-    );
+        (rel.source === bubbleId && rel.target === newRelationship.value.source),
+    )
 
     if (relationshipExists) {
-      console.log('A relationship between these bubbles already exists.');
-      return; // Return false if the relationship already exists
+      console.log('A relationship between these bubbles already exists.')
+      return // Return false if the relationship already exists
     }
 
-    newRelationship.value.target = bubbleId;
-    handleAddRelationship();
-    isCreatingRelationship.value = false; // Exit relationship creation mode
+    newRelationship.value.target = bubbleId
+    handleAddRelationship()
+    isCreatingRelationship.value = false // Exit relationship creation mode
   } else if (isPresentationMode.value) {
     if (focusedBubbleId.value === bubbleId) {
       // If the same bubble is clicked again, reset the focus
-      focusedBubbleId.value = null;
+      focusedBubbleId.value = null
     } else {
       // Set the clicked bubble as the focused bubble
-      focusedBubbleId.value = bubbleId;
+      focusedBubbleId.value = bubbleId
     }
   }
 
-  drawMap();
-};
+  drawMap()
+}
 
 const getRelatedBubblesAndRelationships = (bubbleId: string) => {
   const relatedBubbles = new Set<string>()
@@ -1724,12 +1730,13 @@ function lineIntersectsEllipse(
     :style="{ top: `${contextMenuPosition.y}px`, left: `${contextMenuPosition.x}px` }"
     class="context-menu bubble-context-menu"
   >
+    <el-divider> Bubble </el-divider>
     <!-- <h4>Bubble</h4> -->
-    <el-form @submit.prevent="updateBubbleText">
-      <el-form-item label="Text">
+    <el-form @submit.prevent="updateBubbleText" style="margin: 0 0 10px 0">
+      <el-form-item label="">
         <el-input v-model="newText" type="text" />
       </el-form-item>
-      <el-form-item>
+      <el-form-item class="margin-top-less">
         <el-button type="primary" @click="updateBubbleText">Update</el-button>
         <el-popconfirm title="Are you sure to remove this?" @confirm="confirmRemoveBubble">
           <template #reference>
@@ -1739,50 +1746,63 @@ function lineIntersectsEllipse(
       </el-form-item>
     </el-form>
 
+    <el-divider> Relationship </el-divider>
+    <!-- Add a select box for relationship types -->
+    <el-form-item label="">
+      <el-select v-model="newRelationshipType" placeholder="Select relationship type">
+        <el-option v-for="type in relationshipTypes" :key="type" :label="type" :value="type" />
+      </el-select>
+    </el-form-item>
+
     <!-- Add the "Create Relationship" button -->
-    <el-button type="primary" @click="startCreateRelationship">Create Relationship</el-button>
+    <el-button
+      type="primary"
+      class="margin-top-less"
+      @click="startCreateRelationship(newRelationshipType)"
+      >Create Relationship</el-button
+    >
 
     <div class="relationship-list" v-if="selectedBubble">
-      <h4
+      <!-- <h4
         v-if="
           props.data.relationships.filter(
             (rel) => rel.source === selectedBubble?.id || rel.target === selectedBubble?.id,
           ).length
         "
       >
-        Relationships
-      </h4>
+       &nbsp;  Relationships
+      </h4> -->
       <ul>
         <li
-          v-for="relationship in props.data.relationships.filter(
-            (rel) => rel.source === selectedBubble?.id || rel.target === selectedBubble?.id,
-          )"
+          v-for="relationship in props.data.relationships
+            .filter((rel) => rel.source === selectedBubble?.id || rel.target === selectedBubble?.id)
+            .reverse()"
           :key="relationship.id"
         >
-          <span
-            >[
-            {{ props.data.bubbles.find((b) => b.id === relationship.target)?.text || '' }} ]</span
+          <span class="text-ellipsis">
+             <el-icon  style="vertical-align: middle; margin-right: 2px;"><Link /></el-icon>
+            {{ props.data.bubbles.find((b) => b.id === relationship.target)?.text || '' }}</span
           >
 
           <el-row :gutter="10">
             <el-col :span="16">
               <el-select
-            v-model="relationship.type"
-            placeholder="Select"
-            @change="(newType: string) => updateRelationshipType(relationship, newType)"
-          >
-            <el-option
-              v-for="type in relationshipTypes"
-              :key="type"
-              :label="type"
-              :value="type"
-            ></el-option>
-          </el-select>
+                v-model="relationship.type"
+                placeholder="Select"
+                @change="(newType: string) => updateRelationshipType(relationship, newType)"
+              >
+                <el-option
+                  v-for="type in relationshipTypes"
+                  :key="type"
+                  :label="type"
+                  :value="type"
+                ></el-option>
+              </el-select>
             </el-col>
             <el-col :span="6">
               <el-button type="danger" @click="() => removeRelationship(relationship)"
-            >Delete</el-button
-          >
+                >Delete</el-button
+              >
             </el-col>
           </el-row>
         </li>
@@ -1799,15 +1819,17 @@ function lineIntersectsEllipse(
     }"
     class="context-menu empty-context-menu"
   >
-    <h4>Create Bubble</h4>
+    <el-divider> Bubble </el-divider>
     <el-form @submit.prevent="createBubble">
-      <el-form-item label="Text">
+      <el-form-item label="">
         <el-input v-model="newBubbleText" type="text" />
       </el-form-item>
       <el-form-item>
         <el-button type="primary" @click="createBubble">Create</el-button>
       </el-form-item>
     </el-form>
+
+    <el-divider> Group </el-divider>
   </div>
 </template>
 <style>
@@ -1819,6 +1841,9 @@ function lineIntersectsEllipse(
 .highlight {
   opacity: 1;
   stroke-width: 2px;
+}
+.el-divider--horizontal{
+  margin: 10px 0 20px;
 }
 </style>
 <style scoped>
@@ -1835,6 +1860,18 @@ svg {
   height: 100%;
 }
 
+.margin-top-less {
+  margin-top: -4px !important;
+}
+
+.text-ellipsis {
+  display: inline-block;
+  width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 .presentation-controls {
   position: fixed;
   bottom: 0px;
@@ -1846,11 +1883,12 @@ svg {
   transition: all 0.2s;
 }
 
-.relationship-list{
+.relationship-list {
+  margin: 10px 0 0 0;
   overflow: hidden;
 }
 
-.relationship-list h4{
+.relationship-list h4 {
   margin: 10px 0 0 0;
 }
 
@@ -1858,8 +1896,9 @@ svg {
   list-style: none;
   padding: 0 0 50px 0;
   margin: 0;
-  max-height:  270px;
-  overflow: auto;
+  max-height: 270px;
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 
 .custom-select {
@@ -1923,12 +1962,13 @@ svg {
 }
 
 .context-menu {
+  width: 250px;
   position: absolute;
   background-color: white;
   border: 1px solid #ccc;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
   z-index: 1000;
-  padding: 20px 10px 10px;
+  padding: 10px 10px 10px;
 }
 
 .context-menu ul {
@@ -1938,7 +1978,7 @@ svg {
 }
 
 .context-menu li {
-  padding: 8px 12px;
+  padding: 8px 8px;
   cursor: pointer;
 }
 
