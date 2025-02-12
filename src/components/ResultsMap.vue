@@ -12,7 +12,8 @@ import type {
 } from '@/types/ResultsMap'
 
 const props = defineProps<{
-  data: ResultsMapData
+  data: ResultsMapData,
+  onAddGroup: (group: Omit<Group, 'id'>) => void
 }>()
 
 const svgRef = ref<SVGElement | null>(null)
@@ -30,6 +31,7 @@ const selectedBubble = ref<Bubble | null>(null)
 const newText = ref('')
 const mapRelationships = ref(props.data.relationships)
 const mapBubbles = ref(props.data.bubbles)
+const mapGroups = ref(props.data.groups)
 
 // handle empty click
 const emptyPositionContextMenuVisible = ref(false)
@@ -89,6 +91,10 @@ const handleEmptyPositionRightClick = (event: MouseEvent) => {
     }
   } else if (isPointWithinLayers(invertedX, invertedY)) {
     hideContextMenu()
+
+    // Detect the group at the clicked position
+    const groupId = detectGroup(invertedX, invertedY);
+    currentGroup.value = props.data.groups.find((group) => group.id === groupId) || null;
 
     // Set the empty position context menu position initially
     newBubblePosition.value = { x: invertedX, y: invertedY }
@@ -1364,6 +1370,60 @@ const handleAddRelationship = () => {
   }
 }
 
+
+// Create a new group
+const newGroupName = ref<string>('');
+const currentGroup = ref<Group | null>(null);
+
+const createGroup = () => {
+  // if (!newGroupName.value) return;
+  props.onAddGroup({
+    name: newGroupName.value,
+    locked: false,
+    isDragging: false
+  })
+
+  // Clear the input field and hide the context menu
+  newGroupName.value = '';
+  emptyPositionContextMenuVisible.value = false;
+};
+
+const deleteCurrentGroup = () => {
+  if (currentGroup.value) {
+    // Remove the group from the groups array
+    const groupIndex = mapGroups.value.findIndex((group) => group.id === currentGroup.value?.id);
+    if (groupIndex !== -1) {
+      mapGroups.value.splice(groupIndex, 1); // Remove the group using splice
+    }
+
+    // Remove all bubbles associated with the group
+    for (let i = mapBubbles.value.length - 1; i >= 0; i--) {
+      if (mapBubbles.value[i].groupId === currentGroup.value?.id) {
+        mapBubbles.value.splice(i, 1); // Remove the bubble using splice
+      }
+    }
+
+    // Remove all relationships associated with the group's bubbles
+    const groupBubbleIds = mapBubbles.value
+      .filter((bubble) => bubble.groupId === currentGroup.value?.id)
+      .map((bubble) => bubble.id);
+
+    for (let i = mapRelationships.value.length - 1; i >= 0; i--) {
+      const rel = mapRelationships.value[i];
+      if (groupBubbleIds.includes(rel.source) || groupBubbleIds.includes(rel.target)) {
+        mapRelationships.value.splice(i, 1); // Remove the relationship using splice
+      }
+    }
+
+    // Clear the current group and hide the context menu
+    currentGroup.value = null;
+    emptyPositionContextMenuVisible.value = false;
+
+    // Redraw the map to reflect the changes
+    drawMap();
+  }
+};
+
 // presentation mode functions
 // Define layers from outermost to innermost
 const layers = ['operational', 'process', 'strategic', 'mission']
@@ -1737,10 +1797,10 @@ function lineIntersectsEllipse(
         <el-input v-model="newText" type="text" />
       </el-form-item>
       <el-form-item class="margin-top-less">
-        <el-button type="primary" @click="updateBubbleText">Update</el-button>
+        <el-button type="primary" style="width: 47%;" @click="updateBubbleText">Update</el-button>
         <el-popconfirm title="Are you sure to remove this?" @confirm="confirmRemoveBubble">
           <template #reference>
-            <el-button type="danger">Remove</el-button>
+            <el-button style="width: 47%;" type="danger">Remove</el-button>
           </template>
         </el-popconfirm>
       </el-form-item>
@@ -1758,6 +1818,7 @@ function lineIntersectsEllipse(
     <el-button
       type="primary"
       class="margin-top-less"
+      style="width: 100%; margin-top: 0px"
       @click="startCreateRelationship(newRelationshipType)"
       >Create Relationship</el-button
     >
@@ -1825,11 +1886,34 @@ function lineIntersectsEllipse(
         <el-input v-model="newBubbleText" type="text" />
       </el-form-item>
       <el-form-item>
-        <el-button type="primary" @click="createBubble">Create</el-button>
+        <el-button class="margin-top-less" type="primary"  style="width: 100%;margin-bottom: 10px;" @click="createBubble">Create</el-button>
       </el-form-item>
     </el-form>
 
     <el-divider> Group </el-divider>
+    <el-form @submit.prevent="createGroup">
+    <el-form-item label="">
+      <el-input v-model="newGroupName" type="text" placeholder="Enter group name" />
+    </el-form-item>
+    <el-form-item>
+      <el-button type="primary" class="margin-top-less"  style="width: 100%;" @click="createGroup">Create Group</el-button>
+    </el-form-item>
+
+    <el-popconfirm
+      :title="`Are you sure you want to delete the group '${currentGroup?.name}'' and all its bubbles?`"
+      @confirm="deleteCurrentGroup"
+    >
+      <template #reference>
+        <el-button
+          v-if="currentGroup"
+          type="danger"
+          style="width: 100%; margin-top: 10px"
+        >
+          Delete Current Group
+        </el-button>
+      </template>
+    </el-popconfirm>
+  </el-form>
   </div>
 </template>
 <style>

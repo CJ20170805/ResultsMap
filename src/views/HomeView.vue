@@ -69,7 +69,7 @@ const deleteGroup = (groupId: string) => {
   if (!mapData.value) return
 
   // Get the group to be deleted
-  const groupToDelete = mapData.value.groups.find(g=> g.id === groupId);
+  const groupToDelete = mapData.value.groups.find((g) => g.id === groupId)
   if (!groupToDelete) return
 
   mapData.value.bubbles.forEach((bubble) => {
@@ -94,14 +94,12 @@ const deleteGroup = (groupId: string) => {
       const sourceBubble = mapData.value.bubbles.find((bubble) => bubble.id === relationship.source)
       const targetBubble = mapData.value.bubbles.find((bubble) => bubble.id === relationship.target)
       // Keep the relationship only if neither source nor target is in the group
-      return (
-        (sourceBubble && targetBubble)
-      )
+      return sourceBubble && targetBubble
     }
   })
 
   // Delete the group itself
-  mapData.value.groups = mapData.value.groups.filter((group) => group.id !== groupId);
+  mapData.value.groups = mapData.value.groups.filter((group) => group.id !== groupId)
 }
 
 const changeGroupLevel = (groupLevel: LayerType) => {
@@ -149,7 +147,7 @@ const toggleAside = () => {
       </el-button>
       <!-- Main Content -->
       <el-main>
-        <ResultsMap :data="mapData" />
+        <ResultsMap :data="mapData" :onAddGroup="addGroup" />
       </el-main>
     </el-container>
   </div>
