@@ -105,7 +105,7 @@ const handleEmptyPositionRightClick = (event: MouseEvent) => {
     nextTick(() => {
       const emptyContextMenuElement = document.querySelector('.empty-context-menu') as HTMLElement
       if (emptyContextMenuElement) {
-        const contextMenuHeight = Math.min(emptyContextMenuElement.clientHeight, 150)
+        const contextMenuHeight = Math.min(emptyContextMenuElement.clientHeight, 350)
         const contextMenuWidth = emptyContextMenuElement.clientWidth + 80
 
         // Get the viewport dimensions
@@ -1899,6 +1899,12 @@ function lineIntersectsEllipse(
       <el-button type="primary" class="margin-top-less"  style="width: 100%;" @click="createGroup">Create Group</el-button>
     </el-form-item>
 
+    <template v-if="currentGroup">
+      <el-form-item label="">
+      <el-input v-model="currentGroup.name"   style="width: 100%; margin-top: 10px" type="text" placeholder="Enter group name" />
+    </el-form-item>
+    </template>
+
     <el-popconfirm
       :title="`Are you sure you want to delete the group '${currentGroup?.name}'' and all its bubbles?`"
       @confirm="deleteCurrentGroup"
@@ -1907,7 +1913,7 @@ function lineIntersectsEllipse(
         <el-button
           v-if="currentGroup"
           type="danger"
-          style="width: 100%; margin-top: 10px"
+          style="width: 100%; margin-top: 0px"
         >
           Delete Current Group
         </el-button>
