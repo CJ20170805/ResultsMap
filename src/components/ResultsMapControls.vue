@@ -52,7 +52,7 @@ const handleAddBubble = () => {
       layer: newBubble.value.layer,
       groupId: newBubble.value.groupId,
       locked: false,
-      visible: true
+      visible: true,
     })
     newBubble.value.text = ''
   }
@@ -60,15 +60,15 @@ const handleAddBubble = () => {
 
 const handleAddGroup = () => {
   //if (newGroup.value.name !== "") {
-    props.onAddGroup({
-      name: newGroup.value.name,
-      locked: false,
-      isDragging: false
-      //visible: true
-      //layers: newGroup.value.layers,
-    })
-    newGroup.value.name = ''
-    // newGroup.value.layers = []
+  props.onAddGroup({
+    name: newGroup.value.name,
+    locked: false,
+    isDragging: false,
+    //visible: true
+    //layers: newGroup.value.layers,
+  })
+  newGroup.value.name = ''
+  // newGroup.value.layers = []
   //}
 }
 
@@ -85,13 +85,12 @@ const handleAddRelationship = () => {
 }
 
 const handleGroupLayerChange = () => {
-  props.onChangeGroupLevel(groupLevel.value as LayerType);
+  props.onChangeGroupLevel(groupLevel.value as LayerType)
 }
-
 
 const deleteGroup = (groupId: string) => {
   if (groupId) {
-    props.onDeleteGroup(groupId);
+    props.onDeleteGroup(groupId)
     console.log(`Deleted group with ID: ${groupId}`)
   }
 }
@@ -117,6 +116,17 @@ const deleteGroup = (groupId: string) => {
                     :max="50"
                     label="Font Size"
                   ></el-input-number>
+                </el-form-item>
+                <!--  Date Picker  -->
+                <el-form-item>
+                  <label style="margin: 0 20px 0 0">Select Date: </label>
+                  <el-date-picker
+                    v-model="mapConfig.date"
+                    type="date"
+                    placeholder="Pick a date"
+                    format="DD MMMM YYYY"
+                    value-format="YYYY-MM-DD"
+                  ></el-date-picker>
                 </el-form-item>
               </el-form>
             </div>
@@ -233,7 +243,7 @@ const deleteGroup = (groupId: string) => {
                     <el-option
                       v-for="(group, index) in props.groups"
                       :key="group.id"
-                      :label="group.name || `Group ${index+1}`"
+                      :label="group.name || `Group ${index + 1}`"
                       :value="group.id"
                     ></el-option>
                   </el-select>
@@ -311,12 +321,12 @@ const deleteGroup = (groupId: string) => {
               <h3>Lines</h3>
               <el-form>
                 <el-form-item v-for="legend in legends.legendLines" :key="legend.type">
-                    <el-col :span="20">
-                      <el-input v-model="legend.text" placeholder="Legend Text"></el-input>
-                    </el-col>
-                    <el-col :span="4">
-                      <el-switch v-model="legend.visible"></el-switch>
-                    </el-col>
+                  <el-col :span="20">
+                    <el-input v-model="legend.text" placeholder="Legend Text"></el-input>
+                  </el-col>
+                  <el-col :span="4">
+                    <el-switch v-model="legend.visible"></el-switch>
+                  </el-col>
                 </el-form-item>
               </el-form>
             </div>
@@ -331,7 +341,7 @@ const deleteGroup = (groupId: string) => {
 .control-tabs > .el-tabs__content {
   padding: 2px 12px;
 }
-.el-form-item{
+.el-form-item {
   margin-bottom: 10px;
 }
 </style>
@@ -369,7 +379,7 @@ select[multiple] {
   height: 100px;
 }
 
-.color-label{
+.color-label {
   text-transform: capitalize;
   margin: 0 10px 0 0px;
 }

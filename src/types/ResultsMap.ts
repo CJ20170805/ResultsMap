@@ -11,7 +11,8 @@ export interface LayerColors {
 export interface MapConfig {
   title: string,
   titleFontSize: number,
-  layerColors: LayerColors
+  layerColors: LayerColors,
+  date: string,
 }
 
 export interface Group {

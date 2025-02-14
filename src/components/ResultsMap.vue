@@ -12,7 +12,7 @@ import type {
 } from '@/types/ResultsMap'
 
 const props = defineProps<{
-  data: ResultsMapData,
+  data: ResultsMapData
   onAddGroup: (group: Omit<Group, 'id'>) => void
 }>()
 
@@ -93,8 +93,8 @@ const handleEmptyPositionRightClick = (event: MouseEvent) => {
     hideContextMenu()
 
     // Detect the group at the clicked position
-    const groupId = detectGroup(invertedX, invertedY);
-    currentGroup.value = props.data.groups.find((group) => group.id === groupId) || null;
+    const groupId = detectGroup(invertedX, invertedY)
+    currentGroup.value = props.data.groups.find((group) => group.id === groupId) || null
 
     // Set the empty position context menu position initially
     newBubblePosition.value = { x: invertedX, y: invertedY }
@@ -200,6 +200,7 @@ const detectGroup = (x: number, y: number): string | null => {
   return group ? group.id : null
 }
 
+// Handle create new bubble
 const createBubble = () => {
   if (!newBubbleText.value) return
 
@@ -747,6 +748,29 @@ function addArrowsAndTitle(svg: d3.Selection<SVGGElement, unknown, null, undefin
     .style('font-weight', 'bold')
     .style('font-size', `${props.data.mapConfig.titleFontSize}px`)
     .style('fill', '#000')
+
+  // Add a timestamp at the bottom left corner
+  svg
+  .append('text')
+  .attr('x', '-.5%')
+  .attr('y', '97%')
+  .attr('text-anchor', 'end')
+  .attr('alignment-baseline', 'middle')
+  .text(
+    props.data.mapConfig.date
+      ? new Date(`${props.data.mapConfig.date}T00:00:00`).toLocaleDateString('en-GB', {
+          day: 'numeric',
+          month: 'long',
+          year: 'numeric',
+        })
+      : new Date().toLocaleDateString('en-GB', {
+          day: 'numeric',
+          month: 'long',
+          year: 'numeric',
+        }),
+  )
+  .style('font-size', '16px')
+  .style('fill', '#000');
 }
 
 const drawMap = () => {
@@ -1370,59 +1394,58 @@ const handleAddRelationship = () => {
   }
 }
 
-
 // Create a new group
-const newGroupName = ref<string>('');
-const currentGroup = ref<Group | null>(null);
+const newGroupName = ref<string>('')
+const currentGroup = ref<Group | null>(null)
 
 const createGroup = () => {
   // if (!newGroupName.value) return;
   props.onAddGroup({
     name: newGroupName.value,
     locked: false,
-    isDragging: false
+    isDragging: false,
   })
 
   // Clear the input field and hide the context menu
-  newGroupName.value = '';
-  emptyPositionContextMenuVisible.value = false;
-};
+  newGroupName.value = ''
+  emptyPositionContextMenuVisible.value = false
+}
 
 const deleteCurrentGroup = () => {
   if (currentGroup.value) {
     // Remove the group from the groups array
-    const groupIndex = mapGroups.value.findIndex((group) => group.id === currentGroup.value?.id);
+    const groupIndex = mapGroups.value.findIndex((group) => group.id === currentGroup.value?.id)
     if (groupIndex !== -1) {
-      mapGroups.value.splice(groupIndex, 1); // Remove the group using splice
+      mapGroups.value.splice(groupIndex, 1) // Remove the group using splice
     }
 
     // Remove all bubbles associated with the group
     for (let i = mapBubbles.value.length - 1; i >= 0; i--) {
       if (mapBubbles.value[i].groupId === currentGroup.value?.id) {
-        mapBubbles.value.splice(i, 1); // Remove the bubble using splice
+        mapBubbles.value.splice(i, 1) // Remove the bubble using splice
       }
     }
 
     // Remove all relationships associated with the group's bubbles
     const groupBubbleIds = mapBubbles.value
       .filter((bubble) => bubble.groupId === currentGroup.value?.id)
-      .map((bubble) => bubble.id);
+      .map((bubble) => bubble.id)
 
     for (let i = mapRelationships.value.length - 1; i >= 0; i--) {
-      const rel = mapRelationships.value[i];
+      const rel = mapRelationships.value[i]
       if (groupBubbleIds.includes(rel.source) || groupBubbleIds.includes(rel.target)) {
-        mapRelationships.value.splice(i, 1); // Remove the relationship using splice
+        mapRelationships.value.splice(i, 1) // Remove the relationship using splice
       }
     }
 
     // Clear the current group and hide the context menu
-    currentGroup.value = null;
-    emptyPositionContextMenuVisible.value = false;
+    currentGroup.value = null
+    emptyPositionContextMenuVisible.value = false
 
     // Redraw the map to reflect the changes
-    drawMap();
+    drawMap()
   }
-};
+}
 
 // presentation mode functions
 // Define layers from outermost to innermost
@@ -1797,10 +1820,10 @@ function lineIntersectsEllipse(
         <el-input v-model="newText" type="text" />
       </el-form-item>
       <el-form-item class="margin-top-less">
-        <el-button type="primary" style="width: 47%;" @click="updateBubbleText">Update</el-button>
+        <el-button type="primary" style="width: 47%" @click="updateBubbleText">Update</el-button>
         <el-popconfirm title="Are you sure to remove this?" @confirm="confirmRemoveBubble">
           <template #reference>
-            <el-button style="width: 47%;" type="danger">Remove</el-button>
+            <el-button style="width: 47%" type="danger">Remove</el-button>
           </template>
         </el-popconfirm>
       </el-form-item>
@@ -1841,7 +1864,7 @@ function lineIntersectsEllipse(
           :key="relationship.id"
         >
           <span class="text-ellipsis">
-             <el-icon  style="vertical-align: middle; margin-right: 2px;"><Link /></el-icon>
+            <el-icon style="vertical-align: middle; margin-right: 2px"><Link /></el-icon>
             {{ props.data.bubbles.find((b) => b.id === relationship.target)?.text || '' }}</span
           >
 
@@ -1886,40 +1909,49 @@ function lineIntersectsEllipse(
         <el-input v-model="newBubbleText" type="text" />
       </el-form-item>
       <el-form-item>
-        <el-button class="margin-top-less" type="primary"  style="width: 100%;margin-bottom: 10px;" @click="createBubble">Create</el-button>
+        <el-button
+          class="margin-top-less"
+          type="primary"
+          style="width: 100%; margin-bottom: 10px"
+          @click="createBubble"
+          >Create</el-button
+        >
       </el-form-item>
     </el-form>
 
     <el-divider> Group </el-divider>
     <el-form @submit.prevent="createGroup">
-    <el-form-item label="">
-      <el-input v-model="newGroupName" type="text" placeholder="Enter group name" />
-    </el-form-item>
-    <el-form-item>
-      <el-button type="primary" class="margin-top-less"  style="width: 100%;" @click="createGroup">Create Group</el-button>
-    </el-form-item>
-
-    <template v-if="currentGroup">
       <el-form-item label="">
-      <el-input v-model="currentGroup.name"   style="width: 100%; margin-top: 10px" type="text" placeholder="Enter group name" />
-    </el-form-item>
-    </template>
-
-    <el-popconfirm
-      :title="`Are you sure you want to delete the group '${currentGroup?.name}'' and all its bubbles?`"
-      @confirm="deleteCurrentGroup"
-    >
-      <template #reference>
-        <el-button
-          v-if="currentGroup"
-          type="danger"
-          style="width: 100%; margin-top: 0px"
+        <el-input v-model="newGroupName" type="text" placeholder="Enter group name" />
+      </el-form-item>
+      <el-form-item>
+        <el-button type="primary" class="margin-top-less" style="width: 100%" @click="createGroup"
+          >Create Group</el-button
         >
-          Delete Current Group
-        </el-button>
+      </el-form-item>
+
+      <template v-if="currentGroup">
+        <el-form-item label="">
+          <el-input
+            v-model="currentGroup.name"
+            style="width: 100%; margin-top: 10px"
+            type="text"
+            placeholder="Enter group name"
+          />
+        </el-form-item>
       </template>
-    </el-popconfirm>
-  </el-form>
+
+      <el-popconfirm
+        :title="`Are you sure you want to delete the group '${currentGroup?.name}'' and all its bubbles?`"
+        @confirm="deleteCurrentGroup"
+      >
+        <template #reference>
+          <el-button v-if="currentGroup" type="danger" style="width: 100%; margin-top: 0px">
+            Delete Current Group
+          </el-button>
+        </template>
+      </el-popconfirm>
+    </el-form>
   </div>
 </template>
 <style>
@@ -1932,7 +1964,7 @@ function lineIntersectsEllipse(
   opacity: 1;
   stroke-width: 2px;
 }
-.el-divider--horizontal{
+.el-divider--horizontal {
   margin: 10px 0 20px;
 }
 </style>
