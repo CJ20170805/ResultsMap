@@ -109,17 +109,18 @@ const deleteGroup = (groupId: string) => {
                   <el-input v-model="mapConfig.title" placeholder="Map Title"></el-input>
                 </el-form-item>
                 <el-form-item>
-                  <label style="margin: 0 20px 0 0">Title font size: </label>
+                  <label style="margin: 0 14px 0 0">Title Font Size: </label>
                   <el-input-number
                     v-model="mapConfig.titleFontSize"
                     :min="10"
                     :max="50"
+                    style="width: 220px;"
                     label="Font Size"
                   ></el-input-number>
                 </el-form-item>
                 <!--  Date Picker  -->
                 <el-form-item>
-                  <label style="margin: 0 20px 0 0">Select Date: </label>
+                  <label style="margin: 0 42px 0 0">Map Date: </label>
                   <el-date-picker
                     v-model="mapConfig.date"
                     type="date"
