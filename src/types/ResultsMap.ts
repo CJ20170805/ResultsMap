@@ -1,5 +1,6 @@
 export type LayerType = 'mission' | 'strategic' | 'process' | 'operational'
 export type RelationType = 'cause-effect' | 'companion' | 'conflict' | 'lead-lag'
+export type ExportType = 'png' | 'pdf' | 'json'
 
 export interface LayerColors {
   mission: string,

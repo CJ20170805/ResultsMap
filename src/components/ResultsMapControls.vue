@@ -7,6 +7,7 @@ import type {
   Relationship,
   Group,
   ResultsMapData,
+  ExportType,
 } from '@/types/ResultsMap'
 //import { mapActions } from 'pinia';
 
@@ -16,12 +17,16 @@ const props = defineProps<{
   onAddGroup: (group: Omit<Group, 'id'>) => void
   onDeleteGroup: (groupId: string) => void
   onChangeGroupLevel: (groupLevel: LayerType) => void
+  onExport: (type: ExportType) => void
   groups: Group[]
   mapData: ResultsMapData
 }>()
 
 const mapConfig = ref(props.mapData.mapConfig)
 const legends = ref(props.mapData.legends)
+
+
+const exportType = ref<ExportType>('png');
 
 const newBubble = ref({
   text: '',
@@ -94,6 +99,12 @@ const deleteGroup = (groupId: string) => {
     console.log(`Deleted group with ID: ${groupId}`)
   }
 }
+
+const handleExport = () => {
+  console.log('Exporting map...')
+  props.onExport(exportType.value)
+}
+
 </script>
 
 <template>
@@ -103,10 +114,11 @@ const deleteGroup = (groupId: string) => {
         <el-row :gutter="20">
           <el-col :span="24">
             <div class="control-section">
-              <h3>Map Title</h3>
+              <h3>Map Config</h3>
               <el-form>
                 <el-form-item>
-                  <el-input v-model="mapConfig.title" placeholder="Map Title"></el-input>
+                  <label style="margin: 0 14px 0 0">Title: </label>
+                  <el-input v-model="mapConfig.title" style="width: 80%;" placeholder="Map Title"></el-input>
                 </el-form-item>
                 <el-form-item>
                   <label style="margin: 0 14px 0 0">Title Font Size: </label>
@@ -147,6 +159,42 @@ const deleteGroup = (groupId: string) => {
             </div>
           </el-col>
         </el-row>
+
+       <!-- Import and Export Forms -->
+  <el-row :gutter="20">
+    <el-col :span="24">
+      <div class="control-section">
+        <h3>Import & Export Map</h3>
+        <el-form>
+          <!-- Import Form -->
+          <el-form-item>
+            <label style="margin: 0 14px 0 0">Import Map: </label>
+            <el-upload
+              action="#"
+              :auto-upload="false"
+              :on-change="handleFileUpload"
+              :show-file-list="false"
+            >
+              <el-button type="primary">Select a file</el-button>
+            </el-upload>
+          </el-form-item>
+
+          <!-- Export Form -->
+          <el-form-item>
+            <label style="margin: 0 14px 0 0">Export Type: </label>
+            <el-select v-model="exportType" placeholder="Select export type" style="width: 220px;">
+              <el-option label="PNG" value="png"></el-option>
+              <el-option label="PDF" value="pdf"></el-option>
+              <el-option label="Source Data (JSON)" value="json"></el-option>
+            </el-select>
+          </el-form-item>
+          <el-form-item>
+            <el-button type="primary" @click="handleExport">Export</el-button>
+          </el-form-item>
+        </el-form>
+      </div>
+    </el-col>
+  </el-row>
       </el-tab-pane>
       <el-tab-pane label="Group">
         <el-row :gutter="20">

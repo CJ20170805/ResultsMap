@@ -2,13 +2,14 @@
 import { ref, onMounted } from 'vue'
 import ResultsMap from '@/components/ResultsMap.vue'
 import ResultsMapControls from '@/components/ResultsMapControls.vue'
-import type { ResultsMapData, Bubble, Relationship, Group, LayerType } from '@/types/ResultsMap'
+import type { ResultsMapData, Bubble, Relationship, Group, LayerType, ExportType } from '@/types/ResultsMap'
 import { ArrowLeft, ArrowRight } from '@element-plus/icons-vue'
 import defaultMapData from '@/data/default'
 
 const showAside = ref(true)
 
 const mapData = ref<ResultsMapData | null>(null)
+const ResultsMapRef = ref<InstanceType<typeof ResultsMap> | null>(null);
 
 onMounted(() => {
   const localMapData = localStorage.getItem('MapData')
@@ -111,6 +112,17 @@ const changeGroupLevel = (groupLevel: LayerType) => {
 const toggleAside = () => {
   showAside.value = !showAside.value
 }
+
+const  exportMap = async (type: ExportType) => {
+  await ResultsMapRef.value?.resetZoom();
+  switch (type) {
+    case 'png':
+     ResultsMapRef.value?.exportMapAsImage();
+      break
+    default:
+      break
+  }
+}
 </script>
 
 <template>
@@ -135,6 +147,7 @@ const toggleAside = () => {
             :onDeleteGroup="deleteGroup"
             :groups="mapData.groups"
             :onChangeGroupLevel="changeGroupLevel"
+            :onExport="exportMap"
           />
         </div>
       </el-aside>
@@ -147,7 +160,7 @@ const toggleAside = () => {
       </el-button>
       <!-- Main Content -->
       <el-main>
-        <ResultsMap :data="mapData" :onAddGroup="addGroup" />
+        <ResultsMap ref="ResultsMapRef" :data="mapData" :onAddGroup="addGroup" />
       </el-main>
     </el-container>
   </div>

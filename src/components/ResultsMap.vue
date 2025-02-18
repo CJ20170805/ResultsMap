@@ -1337,9 +1337,16 @@ const zoomOut = () => {
 }
 
 const resetZoom = () => {
-  const svg = d3.select(svgRef.value!)
-  svg.transition().call(zoom.transform, d3.zoomIdentity)
-}
+  return new Promise<void>((resolve) => {
+    const svg = d3.select(svgRef.value!);
+    svg.transition()
+      .duration(300)
+      .call(zoom.transform, d3.zoomIdentity) // Reset zoom
+      .on('end', () => {
+        resolve();
+      });
+  });
+};
 
 // Create a new relationship
 const newRelationship = ref({
@@ -1632,43 +1639,9 @@ const handleClickOutside = (event: MouseEvent) => {
   }
 }
 
-function downloadSVGAsPNG(svgElement, filename = "export.png") {
-    const svgString = new XMLSerializer().serializeToString(svgElement);
-    const svgBlob = new Blob([svgString], { type: "image/svg+xml;charset=utf-8" });
-    const url = URL.createObjectURL(svgBlob);
-
-    const img = new Image();
-    img.onload = function () {
-        const canvas = document.createElement("canvas");
-        canvas.width = svgElement.clientWidth;
-        canvas.height = svgElement.clientHeight;
-        const ctx = canvas.getContext("2d");
-
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        ctx.drawImage(img, 0, 0);
-
-        URL.revokeObjectURL(url);
-        const pngURL = canvas.toDataURL("image/png");
-
-        // Create a download link
-        const a = document.createElement("a");
-        a.href = pngURL;
-        a.download = filename;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-    };
-    img.src = url;
-}
-
-
-
-
 //export image
 const exportMapAsImage = async () => {
   try {
-    // Get the SVG element
-   // const svgElement = svgRef.value;
     const svgElement = d3.select(svgRef.value).node() as SVGSVGElement;
     if (!svgElement) {
       console.error('SVG element not found');
@@ -1780,6 +1753,11 @@ function lineIntersectsEllipse(
 
   return (t1 >= 0 && t1 <= 1) || (t2 >= 0 && t2 <= 1)
 }
+
+defineExpose({
+  resetZoom,
+  exportMapAsImage,
+})
 </script>
 
 <template>
@@ -1858,7 +1836,6 @@ function lineIntersectsEllipse(
         :class="{ 'presentation-mode': isPresentationMode }"
         :icon="`${isPresentationMode ? 'Platform' : 'Monitor'}`"
       ></el-button>
-      <button @click="exportMapAsImage ">Download</button>
     </div>
   </div>
 
