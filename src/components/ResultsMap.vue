@@ -10,6 +10,8 @@ import type {
   LayerColors,
   RelationType,
 } from '@/types/ResultsMap'
+import saveSvgAsPng from 'save-svg-as-png';
+
 
 const props = defineProps<{
   data: ResultsMapData
@@ -18,7 +20,7 @@ const props = defineProps<{
 
 const svgRef = ref<SVGElement | null>(null)
 const containerRef = ref<HTMLDivElement | null>(null)
-const width = 1200
+const width = 1500
 const height = 1100
 const centerX = width / 2 + 50
 const centerY = height / 2 - 40
@@ -740,7 +742,7 @@ function addArrowsAndTitle(svg: d3.Selection<SVGGElement, unknown, null, undefin
   // Add title at the top of the map
   svg
     .append('text')
-    .attr('x', '55%')
+    .attr('x', '53%')
     .attr('y', 30)
     .attr('text-anchor', 'middle')
     .attr('alignment-baseline', 'middle')
@@ -751,26 +753,27 @@ function addArrowsAndTitle(svg: d3.Selection<SVGGElement, unknown, null, undefin
 
   // Add a timestamp at the bottom left corner
   svg
-  .append('text')
-  .attr('x', '-.5%')
-  .attr('y', '97%')
-  .attr('text-anchor', 'end')
-  .attr('alignment-baseline', 'middle')
-  .text(
-    props.data.mapConfig.date
-      ? new Date(`${props.data.mapConfig.date}T00:00:00`).toLocaleDateString('en-GB', {
-          day: 'numeric',
-          month: 'long',
-          year: 'numeric',
-        })
-      : new Date().toLocaleDateString('en-GB', {
-          day: 'numeric',
-          month: 'long',
-          year: 'numeric',
-        }),
-  )
-  .style('font-size', '16px')
-  .style('fill', '#000');
+    .append('text')
+    .attr('x', '2%')
+    .attr('y', '97%')
+    .attr('transform', 'translate(30, 0)')
+    .attr('text-anchor', 'middle')
+    .attr('alignment-baseline', 'middle')
+    .text(
+      props.data.mapConfig.date
+        ? new Date(`${props.data.mapConfig.date}T00:00:00`).toLocaleDateString('en-GB', {
+            day: 'numeric',
+            month: 'long',
+            year: 'numeric',
+          })
+        : new Date().toLocaleDateString('en-GB', {
+            day: 'numeric',
+            month: 'long',
+            year: 'numeric',
+          }),
+    )
+    .style('font-size', '16px')
+    .style('fill', '#000')
 }
 
 const drawMap = () => {
@@ -788,7 +791,7 @@ const drawMap = () => {
   // Create or select the <g> element for the map content
   let mapGroup: d3.Selection<SVGGElement, unknown, null, undefined> = svg.select('g.map-group')
   if (mapGroup.empty()) {
-    mapGroup = svg.append('g').attr('class', 'map-group')
+    mapGroup = svg.append('g').attr('class', 'map-group').attr('width', width).attr('height', height)
   }
 
   if (currentTransform) {
@@ -1173,7 +1176,7 @@ const drawMap = () => {
   const legendGroup = mapGroup
     .append('g')
     .attr('class', 'legend')
-    .attr('transform', `translate(-100, ${height - 500})`) // Adjust the position as needed
+    .attr('transform', `translate(30, ${height - 500})`) // Adjust the position as needed
 
   // Add background rectangle for legend
   legendGroup
@@ -1629,6 +1632,57 @@ const handleClickOutside = (event: MouseEvent) => {
   }
 }
 
+function downloadSVGAsPNG(svgElement, filename = "export.png") {
+    const svgString = new XMLSerializer().serializeToString(svgElement);
+    const svgBlob = new Blob([svgString], { type: "image/svg+xml;charset=utf-8" });
+    const url = URL.createObjectURL(svgBlob);
+
+    const img = new Image();
+    img.onload = function () {
+        const canvas = document.createElement("canvas");
+        canvas.width = svgElement.clientWidth;
+        canvas.height = svgElement.clientHeight;
+        const ctx = canvas.getContext("2d");
+
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(img, 0, 0);
+
+        URL.revokeObjectURL(url);
+        const pngURL = canvas.toDataURL("image/png");
+
+        // Create a download link
+        const a = document.createElement("a");
+        a.href = pngURL;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+    };
+    img.src = url;
+}
+
+
+
+
+//export image
+const exportMapAsImage = async () => {
+  try {
+    // Get the SVG element
+   // const svgElement = svgRef.value;
+    const svgElement = d3.select(svgRef.value).node() as SVGSVGElement;
+    if (!svgElement) {
+      console.error('SVG element not found');
+      return;
+    }
+     console.log("SVG element", svgElement, saveSvgAsPng);
+
+     saveSvgAsPng.saveSvgAsPng(svgElement, "diagram.png", {encorderOptions: 1});
+
+  } catch (error) {
+    console.error('Error exporting map as image:', error);
+  }
+};
+
 onMounted(() => {
   drawMap()
   document.addEventListener('click', handleClickOutside)
@@ -1804,6 +1858,7 @@ function lineIntersectsEllipse(
         :class="{ 'presentation-mode': isPresentationMode }"
         :icon="`${isPresentationMode ? 'Platform' : 'Monitor'}`"
       ></el-button>
+      <button @click="exportMapAsImage ">Download</button>
     </div>
   </div>
 
