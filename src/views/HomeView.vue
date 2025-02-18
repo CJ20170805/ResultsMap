@@ -129,6 +129,21 @@ const  exportMap = async (type: ExportType) => {
       break
   }
 }
+
+const importMap = (file: File) => {
+  console.log('importMap', file);
+
+  const reader = new FileReader()
+  reader.onload = (e) => {
+    const result = e.target?.result
+    if (typeof result === 'string') {
+      mapData.value = JSON.parse(result)
+      localStorage.setItem('MapData', JSON.stringify(mapData.value))
+    }
+  }
+  reader.readAsText(file)
+}
+
 </script>
 
 <template>
@@ -154,6 +169,7 @@ const  exportMap = async (type: ExportType) => {
             :groups="mapData.groups"
             :onChangeGroupLevel="changeGroupLevel"
             :onExport="exportMap"
+            :onImport="importMap"
           />
         </div>
       </el-aside>

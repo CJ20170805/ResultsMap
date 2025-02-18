@@ -18,6 +18,7 @@ const props = defineProps<{
   onDeleteGroup: (groupId: string) => void
   onChangeGroupLevel: (groupLevel: LayerType) => void
   onExport: (type: ExportType) => void
+  onImport: (file: File) => void
   groups: Group[]
   mapData: ResultsMapData
 }>()
@@ -105,6 +106,11 @@ const handleExport = () => {
   props.onExport(exportType.value)
 }
 
+const handleFileUpload = (file: any) => {
+  console.log('File uploaded:', file)
+  props.onImport(file.raw)
+}
+
 </script>
 
 <template>
@@ -171,6 +177,7 @@ const handleExport = () => {
             <label style="margin: 0 14px 0 0">Import Map: </label>
             <el-upload
               action="#"
+              accept=".json"
               :auto-upload="false"
               :on-change="handleFileUpload"
               :show-file-list="false"
@@ -182,13 +189,11 @@ const handleExport = () => {
           <!-- Export Form -->
           <el-form-item>
             <label style="margin: 0 14px 0 0">Export Type: </label>
-            <el-select v-model="exportType" placeholder="Select export type" style="width: 220px;">
+            <el-select v-model="exportType" placeholder="Select export type" style="width: 160px;margin: 0 10px 0 0;">
               <el-option label="PNG" value="png"></el-option>
               <el-option label="PDF" value="pdf"></el-option>
               <el-option label="Source Data (JSON)" value="json"></el-option>
             </el-select>
-          </el-form-item>
-          <el-form-item>
             <el-button type="primary" @click="handleExport">Export</el-button>
           </el-form-item>
         </el-form>
