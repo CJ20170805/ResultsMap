@@ -11,6 +11,8 @@ import type {
   RelationType,
 } from '@/types/ResultsMap'
 import saveSvgAsPng from 'save-svg-as-png';
+import { jsPDF } from 'jspdf';
+import { svg2pdf } from 'svg2pdf.js';
 
 
 const props = defineProps<{
@@ -649,7 +651,7 @@ function addArrowsAndTitle(svg: d3.Selection<SVGGElement, unknown, null, undefin
     .append('defs')
     .append('marker')
     .attr('id', 'arrow')
-    .attr('viewBox', '0 0 10 10')
+    .attr('viewBox', '0 0 12 12')
     .attr('refX', '5')
     .attr('refY', '5')
     .attr('markerWidth', '6')
@@ -664,7 +666,7 @@ function addArrowsAndTitle(svg: d3.Selection<SVGGElement, unknown, null, undefin
     .append('defs')
     .append('marker')
     .attr('id', 'dot')
-    .attr('viewBox', '0 0 10 10')
+    .attr('viewBox', '0 0 12 12')
     .attr('refX', '5')
     .attr('refY', '5')
     .attr('markerWidth', '6')
@@ -680,9 +682,9 @@ function addArrowsAndTitle(svg: d3.Selection<SVGGElement, unknown, null, undefin
     .append('defs')
     .append('marker')
     .attr('id', 'start-arrow')
-    .attr('viewBox', '0 0 10 10')
-    .attr('refX', '5')
-    .attr('refY', '5')
+    .attr('viewBox', '0 0 12 12')
+    .attr('refX', '4')
+    .attr('refY', '6')
     .attr('markerWidth', '6')
     .attr('markerHeight', '6')
     .attr('orient', 'auto-start-reverse')
@@ -710,8 +712,8 @@ function addArrowsAndTitle(svg: d3.Selection<SVGGElement, unknown, null, undefin
     .append('defs')
     .append('marker')
     .attr('id', 'start-line-arrow')
-    .attr('viewBox', '0 0 10 10')
-    .attr('refX', '4')
+    .attr('viewBox', '0 0 12 12')
+    .attr('refX', '2')
     .attr('refY', '5')
     .attr('markerWidth', '6')
     .attr('markerHeight', '6')
@@ -727,10 +729,10 @@ function addArrowsAndTitle(svg: d3.Selection<SVGGElement, unknown, null, undefin
     .append('defs')
     .append('marker')
     .attr('id', 'end-line-arrow')
-    .attr('viewBox', '0 0 10 10')
-    .attr('refX', '5')
+    .attr('viewBox', '0 0 14 12')
+    .attr('refX', '9')
     .attr('refY', '5')
-    .attr('markerWidth', '6')
+    .attr('markerWidth', '8')
     .attr('markerHeight', '6')
     .attr('orient', 'auto')
     .append('path')
@@ -742,7 +744,7 @@ function addArrowsAndTitle(svg: d3.Selection<SVGGElement, unknown, null, undefin
   // Add title at the top of the map
   svg
     .append('text')
-    .attr('x', '53%')
+    .attr('x', centerX)
     .attr('y', 30)
     .attr('text-anchor', 'middle')
     .attr('alignment-baseline', 'middle')
@@ -754,8 +756,8 @@ function addArrowsAndTitle(svg: d3.Selection<SVGGElement, unknown, null, undefin
   // Add a timestamp at the bottom left corner
   svg
     .append('text')
-    .attr('x', '2%')
-    .attr('y', '97%')
+    .attr('x', 30)
+    .attr('y', height-30)
     .attr('transform', 'translate(30, 0)')
     .attr('text-anchor', 'middle')
     .attr('alignment-baseline', 'middle')
@@ -1639,6 +1641,14 @@ const handleClickOutside = (event: MouseEvent) => {
   }
 }
 
+const generateFileName = (extension: string) => {
+  const currentDate = new Date()
+  const formattedDate = `${currentDate.getFullYear()}_${String(currentDate.getMonth() + 1).padStart(2, '0')}_${String(
+    currentDate.getDate(),
+  ).padStart(2, '0')}`
+  return `${props.data.mapConfig.title || 'map-export'}_${formattedDate}.${extension}`
+}
+
 //export image
 const exportMapAsImage = async () => {
   try {
@@ -1647,14 +1657,46 @@ const exportMapAsImage = async () => {
       console.error('SVG element not found');
       return;
     }
-     console.log("SVG element", svgElement, saveSvgAsPng);
 
-     saveSvgAsPng.saveSvgAsPng(svgElement, "diagram.png", {encorderOptions: 1});
+     saveSvgAsPng.saveSvgAsPng(svgElement, generateFileName('png'), {encorderOptions: 1, backgroundColor: "white"});
 
   } catch (error) {
     console.error('Error exporting map as image:', error);
   }
 };
+
+// export pdf
+const exportMapAsPDF = async (svgElement=d3.select(svgRef.value).node() as SVGSVGElement, filename = generateFileName('pdf')) => {
+  const pdf = new jsPDF({
+        orientation: "landscape", // Change to "portrait" if needed
+        unit: "px",
+        format: [svgElement.clientWidth, svgElement.clientHeight]
+    });
+
+    // Convert SVG to PDF vector format
+    await svg2pdf(svgElement, pdf, {
+        x: 0,
+        y: 0,
+        width: svgElement.clientWidth,
+        height: svgElement.clientHeight
+    });
+
+    pdf.save(filename);
+}
+
+//export json with a filename based on the current date
+const exportMapAsJson = () => {
+  const data = JSON.stringify(props.data, null, 2);
+  const filename = generateFileName('json');
+  const blob = new Blob([data], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+};
+
 
 onMounted(() => {
   drawMap()
@@ -1757,6 +1799,8 @@ function lineIntersectsEllipse(
 defineExpose({
   resetZoom,
   exportMapAsImage,
+  exportMapAsPDF,
+  exportMapAsJson,
 })
 </script>
 

@@ -119,6 +119,12 @@ const  exportMap = async (type: ExportType) => {
     case 'png':
      ResultsMapRef.value?.exportMapAsImage();
       break
+    case 'pdf':
+      ResultsMapRef.value?.exportMapAsPDF();
+      break
+    case 'json':
+      ResultsMapRef.value?.exportMapAsJson();
+      break
     default:
       break
   }
