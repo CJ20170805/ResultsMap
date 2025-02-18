@@ -1893,7 +1893,7 @@ defineExpose({
     <!-- <h4>Bubble</h4> -->
     <el-form @submit.prevent="updateBubbleText" style="margin: 0 0 10px 0">
       <el-form-item label="">
-        <el-input v-model="newText" type="text" />
+        <el-input v-model="newText" type="textarea" />
       </el-form-item>
       <el-form-item class="margin-top-less">
         <el-button type="primary" style="width: 47%" @click="updateBubbleText">Update</el-button>
@@ -1982,7 +1982,7 @@ defineExpose({
     <el-divider> Bubble </el-divider>
     <el-form @submit.prevent="createBubble">
       <el-form-item label="">
-        <el-input v-model="newBubbleText" type="text" />
+        <el-input v-model="newBubbleText" type="textarea" />
       </el-form-item>
       <el-form-item>
         <el-button
