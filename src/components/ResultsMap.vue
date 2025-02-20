@@ -22,11 +22,11 @@ const props = defineProps<{
 
 const svgRef = ref<SVGElement | null>(null)
 const containerRef = ref<HTMLDivElement | null>(null)
-const width = 1500
-const height = 1100
+const width = 1800
+const height = 1240
 const centerX = width / 2 + 50
 const centerY = height / 2 - 40
-const yScale = 0.9
+const yScale = 0.87
 const yOffset = 50
 
 const contextMenuVisible = ref(false)
@@ -336,10 +336,10 @@ const removeBubble = () => {
 
 // Define track boundaries with inner and outer radii
 const tracks = {
-  mission: { outer: 150, inner: 0 }, // Pink (innermost)
-  strategic: { outer: 280, inner: 150 }, // Green
-  process: { outer: 410, inner: 280 }, // Blue
-  operational: { outer: 540, inner: 410 }, // Orange (outermost)
+  mission: { outer: 170, inner: 0 }, // Pink (innermost)
+  strategic: { outer: 330, inner: 180 }, // Green
+  process: { outer: 480, inner: 330 }, // Blue
+  operational: { outer: 630, inner: 480 }, // Orange (outermost)
 }
 
 // Calculate the middle radius for bubble positioning
@@ -635,7 +635,7 @@ function addGroupNames(svg: d3.Selection<SVGGElement, unknown, null, undefined>,
       .attr('dominant-baseline', 'middle')
       .text(group.name)
       .style('font-weight', 'bold')
-      .style('font-size', '18px')
+      .style('font-size', '20px')
       .style('fill', '#000')
 
     if (!isPresentationMode.value) {
@@ -745,7 +745,7 @@ function addArrowsAndTitle(svg: d3.Selection<SVGGElement, unknown, null, undefin
   svg
     .append('text')
     .attr('x', centerX)
-    .attr('y', 30)
+    .attr('y', 40)
     .attr('text-anchor', 'middle')
     .attr('alignment-baseline', 'middle')
     .text(props.data.mapConfig.title)
@@ -756,7 +756,7 @@ function addArrowsAndTitle(svg: d3.Selection<SVGGElement, unknown, null, undefin
   // Add a timestamp at the bottom left corner
   svg
     .append('text')
-    .attr('x', 30)
+    .attr('x', 50)
     .attr('y', height-30)
     .attr('transform', 'translate(30, 0)')
     .attr('text-anchor', 'middle')
@@ -774,7 +774,7 @@ function addArrowsAndTitle(svg: d3.Selection<SVGGElement, unknown, null, undefin
             year: 'numeric',
           }),
     )
-    .style('font-size', '16px')
+    .style('font-size', '17px')
     .style('fill', '#000')
 }
 
@@ -945,7 +945,7 @@ const drawMap = () => {
       .attr('text-anchor', 'middle')
       .attr('alignment-baseline', 'middle')
       .attr('fill', '#000')
-      .attr('font-size', '12px')
+      .attr('font-size', '13px')
       .attr('font-weight', 'bold')
       .text(bubble.text)
       .call(wrap, TEXT_WIDTH)
@@ -1178,7 +1178,7 @@ const drawMap = () => {
   const legendGroup = mapGroup
     .append('g')
     .attr('class', 'legend')
-    .attr('transform', `translate(30, ${height - 500})`) // Adjust the position as needed
+    .attr('transform', `translate(50, ${height - 500})`) // Adjust the position as needed
 
   // Add background rectangle for legend
   legendGroup
@@ -1199,7 +1199,7 @@ const drawMap = () => {
     .attr('text-anchor', 'middle')
     .attr('alignment-baseline', 'middle')
     .text('Legend')
-    .style('font-size', '14px')
+    .style('font-size', '15px')
     .style('font-weight', 'bold')
     .style('fill', '#000')
 
@@ -1225,7 +1225,7 @@ const drawMap = () => {
       .attr('x', bubble.cx)
       .attr('text-anchor', 'middle')
       .attr('alignment-baseline', 'middle')
-      .style('font-size', '12px')
+      .style('font-size', '13px')
       .style('fill', '#000')
 
     const words = bubble.text.split(' ').filter((word) => word.trim() !== '')
@@ -1291,7 +1291,7 @@ const drawMap = () => {
         .attr('text-anchor', 'middle')
         .attr('alignment-baseline', 'middle')
         .text(line.text)
-        .style('font-size', '12px')
+        .style('font-size', '13px')
         .style('fill', '#000')
 
       const legendLine = legendGroup
@@ -1581,6 +1581,9 @@ const handleBubbleClick = (bubbleId: string) => {
         (rel.source === newRelationship.value.source && rel.target === bubbleId) ||
         (rel.source === bubbleId && rel.target === newRelationship.value.source),
     )
+
+    console.log("newRelationshipssss", newRelationship);
+
 
     if (relationshipExists) {
       console.log('A relationship between these bubbles already exists.')
