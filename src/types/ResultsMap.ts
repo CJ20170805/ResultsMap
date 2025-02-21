@@ -13,7 +13,7 @@ export interface MapConfig {
   title: string,
   titleFontSize: number,
   layerColors: LayerColors,
-  date: string,
+  date?: string,
 }
 
 export interface Group {

@@ -114,12 +114,58 @@ const handleFileUpload = (file: any) => {
 <template>
   <div class="controls-panel">
     <el-tabs type="card" class="control-tabs">
+      <el-tab-pane label="File">
+        <!-- Import and Export Forms -->
+        <el-row :gutter="20">
+          <el-col :span="24">
+            <div class="control-section">
+              <!-- <h3>Import & Export Map</h3> -->
+              <el-form style="margin: 5px 0 0 0;">
+                <!-- New Map Form -->
+                <el-form-item>
+                  <label style="margin: 0 26px 0 0">New Map: </label>
+                  <el-button type="primary">Create</el-button>
+                </el-form-item>
+
+                <!-- Import Form -->
+                <el-form-item>
+                  <label style="margin: 0 14px 0 0">Import Map: </label>
+                  <el-upload
+                    action="#"
+                    accept=".json"
+                    :auto-upload="false"
+                    :on-change="handleFileUpload"
+                    :show-file-list="false"
+                  >
+                    <el-button type="primary">Select a file</el-button>
+                  </el-upload>
+                </el-form-item>
+
+                <!-- Export Form -->
+                <el-form-item>
+                  <label style="margin: 0 14px 0 0">Export Map: </label>
+                  <el-select
+                    v-model="exportType"
+                    placeholder="Select export type"
+                    style="width: 160px; margin: 0 10px 0 0"
+                  >
+                    <el-option label="PNG" value="png"></el-option>
+                    <el-option label="PDF" value="pdf"></el-option>
+                    <el-option label="Source Data (JSON)" value="json"></el-option>
+                  </el-select>
+                  <el-button type="primary" @click="handleExport">Export</el-button>
+                </el-form-item>
+              </el-form>
+            </div>
+          </el-col>
+        </el-row>
+      </el-tab-pane>
       <el-tab-pane label="Map">
         <el-row :gutter="20">
           <el-col :span="24">
             <div class="control-section">
-              <h3>Map Config</h3>
-              <el-form>
+              <!-- <h3>Map Config</h3> -->
+              <el-form style="margin: 5px 0 0 0">
                 <el-form-item>
                   <label style="margin: 0 14px 0 0">Title: </label>
                   <el-input
@@ -153,7 +199,6 @@ const handleFileUpload = (file: any) => {
             </div>
           </el-col>
         </el-row>
-
         <el-row :gutter="20">
           <el-col :span="24">
             <div class="control-section">
@@ -167,47 +212,8 @@ const handleFileUpload = (file: any) => {
             </div>
           </el-col>
         </el-row>
-
-        <!-- Import and Export Forms -->
-        <el-row :gutter="20">
-          <el-col :span="24">
-            <div class="control-section">
-              <h3>Import & Export Map</h3>
-              <el-form>
-                <!-- Import Form -->
-                <el-form-item>
-                  <label style="margin: 0 14px 0 0">Import Map: </label>
-                  <el-upload
-                    action="#"
-                    accept=".json"
-                    :auto-upload="false"
-                    :on-change="handleFileUpload"
-                    :show-file-list="false"
-                  >
-                    <el-button type="primary">Select a file</el-button>
-                  </el-upload>
-                </el-form-item>
-
-                <!-- Export Form -->
-                <el-form-item>
-                  <label style="margin: 0 14px 0 0">Export Type: </label>
-                  <el-select
-                    v-model="exportType"
-                    placeholder="Select export type"
-                    style="width: 160px; margin: 0 10px 0 0"
-                  >
-                    <el-option label="PNG" value="png"></el-option>
-                    <el-option label="PDF" value="pdf"></el-option>
-                    <el-option label="Source Data (JSON)" value="json"></el-option>
-                  </el-select>
-                  <el-button type="primary" @click="handleExport">Export</el-button>
-                </el-form-item>
-              </el-form>
-            </div>
-          </el-col>
-        </el-row>
       </el-tab-pane>
-      <el-tab-pane label="Group">
+      <el-tab-pane label="Group" v-if="false">
         <el-row :gutter="20">
           <el-col :span="24">
             <div class="control-section">
@@ -278,7 +284,7 @@ const handleFileUpload = (file: any) => {
           </el-col>
         </el-row>
       </el-tab-pane>
-      <el-tab-pane label="Bubble">
+      <el-tab-pane label="Bubble" v-if="false">
         <el-row :gutter="20">
           <el-col :span="24">
             <div class="control-section">
@@ -316,7 +322,7 @@ const handleFileUpload = (file: any) => {
           </el-col>
         </el-row>
       </el-tab-pane>
-      <el-tab-pane label="Relationship">
+      <el-tab-pane label="Relationship" v-if="false">
         <el-row :gutter="20">
           <el-col :span="24">
             <div class="control-section">
@@ -400,6 +406,12 @@ const handleFileUpload = (file: any) => {
 <style>
 .control-tabs > .el-tabs__content {
   padding: 2px 12px;
+}
+.control-tabs .el-tabs__nav {
+  width: 100%;
+}
+.control-tabs  .el-tabs__item{
+  width: 33%;
 }
 .el-form-item {
   margin-bottom: 10px;
