@@ -19,6 +19,7 @@ const props = defineProps<{
   onChangeGroupLevel: (groupLevel: LayerType) => void
   onExport: (type: ExportType) => void
   onImport: (file: File) => void
+  onCreateNewMap: () => void
   groups: Group[]
   mapData: ResultsMapData
 }>()
@@ -109,6 +110,11 @@ const handleFileUpload = (file: any) => {
   console.log('File uploaded:', file)
   props.onImport(file.raw)
 }
+
+const createNewMap = () => {
+  console.log('Creating new map...')
+  props.onCreateNewMap()
+}
 </script>
 
 <template>
@@ -124,7 +130,7 @@ const handleFileUpload = (file: any) => {
                 <!-- New Map Form -->
                 <el-form-item>
                   <label style="margin: 0 26px 0 0">New Map: </label>
-                  <el-button type="primary">Create</el-button>
+                  <el-button type="primary" @click="createNewMap">Create</el-button>
                 </el-form-item>
 
                 <!-- Import Form -->
