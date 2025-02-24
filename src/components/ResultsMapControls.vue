@@ -18,7 +18,7 @@ const props = defineProps<{
   onDeleteGroup: (groupId: string) => void
   onChangeGroupLevel: (groupLevel: LayerType) => void
   onExport: (type: ExportType) => void
-  onImport: (file: File) => void
+  onImport: () => void
   onCreateNewMap: () => void
   groups: Group[]
   mapData: ResultsMapData
@@ -106,9 +106,9 @@ const handleExport = () => {
   props.onExport(exportType.value)
 }
 
-const handleFileUpload = (file: any) => {
-  console.log('File uploaded:', file)
-  props.onImport(file.raw)
+const handleFileUpload = () => {
+  console.log('File uploaded')
+  props.onImport()
 }
 
 const createNewMap = () => {
@@ -136,15 +136,7 @@ const createNewMap = () => {
                 <!-- Import Form -->
                 <el-form-item>
                   <label style="margin: 0 14px 0 0">Import Map: </label>
-                  <el-upload
-                    action="#"
-                    accept=".json"
-                    :auto-upload="false"
-                    :on-change="handleFileUpload"
-                    :show-file-list="false"
-                  >
-                    <el-button type="primary">Select a file</el-button>
-                  </el-upload>
+                  <el-button type="primary" @click="handleFileUpload">Select a file</el-button>
                 </el-form-item>
 
                 <!-- Export Form -->

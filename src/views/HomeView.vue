@@ -2,15 +2,23 @@
 import { ref, onMounted } from 'vue'
 import ResultsMap from '@/components/ResultsMap.vue'
 import ResultsMapControls from '@/components/ResultsMapControls.vue'
-import type { ResultsMapData, Bubble, Relationship, Group, LayerType, ExportType } from '@/types/ResultsMap'
+import type {
+  ResultsMapData,
+  Bubble,
+  Relationship,
+  Group,
+  LayerType,
+  ExportType,
+} from '@/types/ResultsMap'
 import { ArrowLeft, ArrowRight } from '@element-plus/icons-vue'
 import defaultMapData from '@/data/default'
-import { ElMessageBox } from 'element-plus';
+import { ElMessageBox } from 'element-plus'
 
 const showAside = ref(true)
 
 const mapData = ref<ResultsMapData | null>(null)
-const ResultsMapRef = ref<InstanceType<typeof ResultsMap> | null>(null);
+const ResultsMapRef = ref<InstanceType<typeof ResultsMap> | null>(null)
+const showFileDialog = ref(false)
 
 onMounted(async () => {
   // const localMapData = localStorage.getItem('MapData')
@@ -25,22 +33,25 @@ onMounted(async () => {
   //   localStorage.setItem('MapData', JSON.stringify(mapData.value))
   // }
 
-  try {
-    // Try to get the file handle from localStorage
-    fileHandle.value = await getFileHandleFromLocalStorage();
-    if (fileHandle.value) {
-      // Read the file content
-      const file = await fileHandle.value.getFile();
-      const fileContent = await file.text();
-      mapData.value = JSON.parse(fileContent);
-      console.log('Map data loaded from file:', mapData.value);
-    } else {
-      // No file handle found, prompt the user
-      promptUserForFile();
-    }
-  } catch (error) {
-    console.error('Error loading map data:', error);
-    promptUserForFile();
+  // Check if a file handle is stored in localStorage
+  //const fileHandleName = localStorage.getItem('fileHandleName');
+  // if (fileHandleName) {
+  //   // Inform the user that they need to reload the file
+  //   console.log('A file handle is stored. Please reload the file.');
+  // } else {
+  //   // No file handle found, prompt the user to create or import a file
+  //   promptUserForFile();
+  // }
+
+  const fileName = localStorage.getItem('fileHandleName')
+  console.log('current fileName: ', fileName)
+  if (fileName) {
+    // Show the dialog with the specific file name
+    //showFileDialog.value = true;
+    handleContinueWorking()
+  } else {
+    // No file name found, show the default dialog
+    showFileDialog.value = true
   }
 })
 
@@ -132,65 +143,200 @@ const toggleAside = () => {
   showAside.value = !showAside.value
 }
 
-const  exportMap = async (type: ExportType) => {
-  await ResultsMapRef.value?.resetZoom();
+const exportMap = async (type: ExportType) => {
+  await ResultsMapRef.value?.resetZoom()
   switch (type) {
     case 'png':
-     ResultsMapRef.value?.exportMapAsImage();
+      ResultsMapRef.value?.exportMapAsImage()
       break
     case 'pdf':
-      ResultsMapRef.value?.exportMapAsPDF();
+      ResultsMapRef.value?.exportMapAsPDF()
       break
     case 'json':
-      ResultsMapRef.value?.exportMapAsJson();
+      ResultsMapRef.value?.exportMapAsJson()
       break
     default:
       break
   }
 }
 
-const importMap = (file: File) => {
-  console.log('importMap', file);
+const importMap = () => {
+  console.log('importMap')
 
-  const reader = new FileReader()
-  reader.onload = (e) => {
-    const result = e.target?.result
-    if (typeof result === 'string') {
-      mapData.value = JSON.parse(result)
-      localStorage.setItem('MapData', JSON.stringify(mapData.value))
-    }
+  // const reader = new FileReader()
+  // reader.onload = (e) => {
+  //   const result = e.target?.result
+  //   if (typeof result === 'string') {
+  //     mapData.value = JSON.parse(result)
+  //     localStorage.setItem('MapData', JSON.stringify(mapData.value))
+  //   }
+  // }
+  // reader.readAsText(file)
+  importMapFromFile();
+}
+
+// Generate the dialog message dynamically
+const getDialogMessage = () => {
+  const fileName = localStorage.getItem('fileHandleName')
+  if (fileName) {
+    return `Do you want to continue working on ${fileName}?`
+  } else {
+    return 'Do you want to load an existing file or create a new one?'
   }
-  reader.readAsText(file)
+}
+
+// Handle "Continue Working" or "Load File" button click
+const handleLoadFile = async () => {
+  showFileDialog.value = false // Close the dialog
+  importMapFromFile()
+}
+
+// Handle "Create New File" button click
+const handleCreateNewFile = async () => {
+  showFileDialog.value = false // Close the dialog
+  await createNewMap() // Call the createNewMap function
+}
+
+// Handle dialog close
+const handleDialogClose = () => {
+  showFileDialog.value = false
+}
+
+// Handle "Continue Working" button click
+const handleContinueWorking = async () => {
+  showFileDialog.value = false // Close the dialog
+
+  try {
+    const fileName = localStorage.getItem('fileHandleName')
+    if (!fileName) {
+      console.error('No file name found in localStorage.')
+      return
+    }
+
+    const fileHandleInstance = await getFileHandleFromIndexedDB(fileName)
+    currentFileHandle.value = fileHandleInstance
+
+    // Request permission to access the file
+    const permission = await fileHandleInstance.requestPermission({ mode: 'readwrite' })
+    if (permission === 'granted') {
+      const file = await fileHandleInstance.getFile()
+      const fileContent = await file.text()
+      mapData.value = JSON.parse(fileContent)
+      console.log('Map data loaded from file:', mapData.value)
+    } else {
+      console.error('Permission denied')
+      // Notify the user that access was denied
+    }
+  } catch (error) {
+    console.error('Error loading file:', error)
+    // Notify the user that an error occurred
+  }
 }
 
 // Create a new map
 
-const fileHandle = ref<FileSystemFileHandle | null>(null);
+const currentFileHandle = ref<FileSystemFileHandle | null>(null)
+
+// Save the file name to localStorage
+const saveFileHandleToLocalStorage = (fileHandle: FileSystemFileHandle) => {
+  console.log('saveFileHandleToLocalStorage', fileHandle)
+  localStorage.setItem('fileHandleName', fileHandle.name)
+}
 
 // Save map data to file
-const saveMapDataToFile = async (createNew:boolean = false) => {
-  if (!fileHandle.value) {
-    console.warn('No file handle available.');
-    return;
+const saveMapDataToFile = async (createNew: boolean = false) => {
+
+  console.log('Current file handle:', currentFileHandle.value);
+  console.log('Current map data:', mapData.value);
+
+  if (!currentFileHandle.value) {
+    console.warn('No file handle available.')
+    return
   }
 
   try {
-    const writable = await fileHandle.value.createWritable();
-    const jsonData = JSON.stringify(createNew ? defaultMapData : mapData.value, null, 2);
-    await writable.write(jsonData);
-    await writable.close();
-    console.log('Map data saved to file.');
+    const writable = await currentFileHandle.value.createWritable()
+    const jsonData = JSON.stringify(createNew ? defaultMapData : mapData.value, null, 2)
+    console.log('jsonData', createNew ? defaultMapData : mapData.value, createNew)
+
+    await writable.write(jsonData)
+    await writable.close()
+    console.log('Map data saved to file.')
   } catch (error) {
-    console.error('Error saving map data:', error);
-    fileHandle.value = null;
+    console.error('Error saving map data:', error)
+    currentFileHandle.value = null
   }
-};
+}
+
+// Open IndexedDB
+const openIndexedDB = (): Promise<IDBDatabase> => {
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open('ResultsMapDB', 1)
+
+    request.onupgradeneeded = (event) => {
+      const db = (event.target as IDBOpenDBRequest).result
+      if (!db.objectStoreNames.contains('fileHandles')) {
+        db.createObjectStore('fileHandles', { keyPath: 'name' })
+      }
+    }
+
+    request.onsuccess = () => {
+      resolve(request.result)
+    }
+
+    request.onerror = () => {
+      reject(request.error)
+    }
+  })
+}
+
+const saveFileHandleToIndexedDB = async (fileHandle: FileSystemFileHandle) => {
+  const db = await openIndexedDB()
+  const transaction = db.transaction('fileHandles', 'readwrite')
+  const store = transaction.objectStore('fileHandles')
+
+  return new Promise<void>((resolve, reject) => {
+    const request = store.put({ name: fileHandle.name, handle: fileHandle })
+
+    request.onsuccess = () => {
+      console.log('File handle saved to IndexedDB.')
+      resolve()
+    }
+
+    request.onerror = () => {
+      reject(request.error)
+    }
+  })
+}
+
+const getFileHandleFromIndexedDB = async (fileName: string): Promise<FileSystemFileHandle> => {
+  const db = await openIndexedDB()
+  const transaction = db.transaction('fileHandles', 'readonly')
+  const store = transaction.objectStore('fileHandles')
+
+  return new Promise((resolve, reject) => {
+    const request = store.get(fileName)
+
+    request.onsuccess = () => {
+      if (request.result) {
+        console.log('File handle loaded from IndexedDB.')
+        resolve(request.result.handle)
+      } else {
+        reject(new Error('File handle not found in IndexedDB.'))
+      }
+    }
+
+    request.onerror = () => {
+      reject(request.error)
+    }
+  })
+}
 
 // Create a new file
 const createNewMap = async () => {
   try {
     // Prompt the user to save a new file
-    fileHandle.value = await window.showSaveFilePicker({
+    currentFileHandle.value = await window.showSaveFilePicker({
       suggestedName: 'results-map.json',
       types: [
         {
@@ -198,28 +344,34 @@ const createNewMap = async () => {
           accept: { 'application/json': ['.json'] },
         },
       ],
-    });
+    })
 
-   // Save the file name to localStorage
-   if (fileHandle.value) {
-    saveFileHandleToLocalStorage(fileHandle.value);
-   }
+     // Initialize with default data
+     mapData.value = JSON.parse(JSON.stringify(defaultMapData));
 
+    // Save the file name to localStorage
+    if (currentFileHandle.value) {
+      saveFileHandleToLocalStorage(currentFileHandle.value)
+    }
 
-    // Initialize with default data
-    mapData.value = defaultMapData;
+    // Force update the ResultsMap component
+    ResultsMapRef.value?.$forceUpdate()
 
     // Save the default data to the new file
-    await saveMapDataToFile();
-    console.log('New map file created and saved.');
+    await saveMapDataToFile(true)
+
+    // Save the file handle to IndexedDB
+    await saveFileHandleToIndexedDB(currentFileHandle.value as FileSystemFileHandle)
+    console.log('New map file created and saved.')
+
+    window.location.reload();
   } catch (error) {
-    console.error('Error creating new map:', error);
+    console.error('Error creating new map:', error)
   }
-};
+}
 
 const importMapFromFile = async () => {
-  console.log("importMapFromFile");
-
+  console.log('importMapFromFile')
   try {
     // Prompt the user to select a file
     const [fileHandle] = await window.showOpenFilePicker({
@@ -231,20 +383,41 @@ const importMapFromFile = async () => {
       ],
     });
 
-    console.log('File handle- import:', fileHandle);
+    mapData.value = null;
+
+    currentFileHandle.value = fileHandle;
 
     // Save the file name to localStorage
     saveFileHandleToLocalStorage(fileHandle);
 
-    // Read the file content
-    const file = await fileHandle.getFile();
-    const fileContent = await file.text();
-    mapData.value = JSON.parse(fileContent);
-    console.log('Map data imported from file:', mapData.value);
+    // Save the file handle to IndexedDB
+    await saveFileHandleToIndexedDB(fileHandle);
+
+    // Request permission to access the file
+    const permission = await fileHandle.requestPermission({ mode: 'readwrite' });
+    if (permission === 'granted') {
+      const file = await fileHandle.getFile();
+      const fileContent = await file.text();
+      mapData.value = JSON.parse(fileContent);
+      console.log('Map data loaded from file:', mapData.value);
+
+        // Force update the ResultsMap component
+        ResultsMapRef.value?.$forceUpdate();
+    } else {
+      console.error('Permission denied');
+      // Notify the user that access was denied
+      ElMessageBox.alert('Permission to access the file was denied.', 'Permission Denied', {
+        confirmButtonText: 'OK',
+      });
+    }
   } catch (error) {
-    console.error('Error importing map data:', error);
+    console.error('Error loading file:', error);
+    // Notify the user that an error occurred
+    ElMessageBox.alert('An error occurred while loading the file.', 'Error', {
+      confirmButtonText: 'OK',
+    });
   }
-};
+}
 
 const promptUserForFile = async () => {
   ElMessageBox.confirm(
@@ -255,20 +428,18 @@ const promptUserForFile = async () => {
       cancelButtonText: 'Import',
       distinguishCancelAndClose: true,
     },
-  ).then(async() => {
-    await createNewMap();
-  }).catch(async() => {
-    await importMapFromFile();
-  });
-};
-
-const saveFileHandleToLocalStorage = (fileHandle: FileSystemFileHandle) => {
-  localStorage.setItem('fileHandleName', fileHandle.name);
-};
+  )
+    .then(async () => {
+      await createNewMap()
+    })
+    .catch(async () => {
+      await importMapFromFile()
+    })
+}
 
 const getFileHandleFromLocalStorage = async () => {
-  const fileName = localStorage.getItem('fileHandleName');
-  if (!fileName) return null;
+  const fileName = localStorage.getItem('fileHandleName')
+  if (!fileName) return null
 
   try {
     // Prompt the user to select the file again
@@ -280,13 +451,13 @@ const getFileHandleFromLocalStorage = async () => {
         },
       ],
       suggestedName: fileName, // Suggest the file name
-    });
-    return fileHandle;
+    })
+    return fileHandle
   } catch (error) {
-    console.error('Error reacquiring file handle:', error);
-    return null;
+    console.error('Error reacquiring file handle:', error)
+    return null
   }
-};
+}
 </script>
 
 <template>
@@ -326,9 +497,23 @@ const getFileHandleFromLocalStorage = async () => {
       </el-button>
       <!-- Main Content -->
       <el-main>
+        <el-button type="primary" @click="saveMapDataToFile(false)">Save</el-button>
         <ResultsMap ref="ResultsMapRef" :data="mapData" :onAddGroup="addGroup" />
       </el-main>
     </el-container>
+
+    <el-dialog
+      v-model="showFileDialog"
+      title="Welcome to Results Map Builder"
+      width="30%"
+      :show-close="false"
+    >
+      <span>Select an option to continue:</span>
+      <template #footer>
+        <el-button type="primary" @click="handleLoadFile">Load Map</el-button>
+        <el-button type="success" @click="handleCreateNewFile">New Map</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
