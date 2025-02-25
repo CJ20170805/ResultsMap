@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, watch } from 'vue'
 import ResultsMap from '@/components/ResultsMap.vue'
 import ResultsMapControls from '@/components/ResultsMapControls.vue'
 import type {
@@ -55,6 +55,33 @@ onMounted(async () => {
     showFileDialog.value = true
   }
 })
+
+// Utility function to debounce a function call
+const debounce = (func: Function, delay: number) => {
+  let timeoutId: ReturnType<typeof setTimeout>;
+  return (...args: any[]) => {
+    clearTimeout(timeoutId);
+    timeoutId = setTimeout(() => func(...args), delay);
+  };
+};
+
+// Debounced auto-save function
+const autoSave = debounce(async () => {
+  if (mapData.value) {
+    console.log('Auto-saving map data...');
+    await saveMapDataToFile(false);
+  }
+}, 2000);
+
+// Watch for changes in mapData
+watch(
+  () => mapData.value,
+  () => {
+    autoSave(); // Trigger the debounced auto-save function
+  },
+  { deep: true } // Deep watch to detect nested changes
+);
+
 
 const addBubble = (bubble: Omit<Bubble, 'id'>) => {
   if (!mapData.value) return
@@ -337,11 +364,11 @@ const createNewMap = async () => {
   try {
     // Prompt the user to save a new file
     currentFileHandle.value = await window.showSaveFilePicker({
-      suggestedName: 'results-map.json',
+      suggestedName: 'untitled-map.resultsmap',
       types: [
         {
-          description: 'JSON Files',
-          accept: { 'application/json': ['.json'] },
+          description: 'Results Map',
+          accept: { 'application/json': ['.resultsmap'] },
         },
       ],
     })
@@ -379,8 +406,8 @@ const importMapFromFile = async () => {
     const [fileHandle] = await window.showOpenFilePicker({
       types: [
         {
-          description: 'JSON Files',
-          accept: { 'application/json': ['.json'] },
+          description: 'Results Map',
+          accept: { 'application/json': ['.resultsmap'] },
         },
       ],
     })
@@ -448,7 +475,7 @@ const getFileHandleFromLocalStorage = async () => {
     const [fileHandle] = await window.showOpenFilePicker({
       types: [
         {
-          description: 'JSON Files',
+          description: 'Results Map',
           accept: { 'application/json': ['.json'] },
         },
       ],
@@ -499,7 +526,6 @@ const getFileHandleFromLocalStorage = async () => {
       </el-button>
       <!-- Main Content -->
       <el-main>
-        <el-button type="primary" @click="saveMapDataToFile(false)">Save</el-button>
         <ResultsMap ref="ResultsMapRef" :data="mapData" :onAddGroup="addGroup" />
       </el-main>
     </el-container>
