@@ -13,6 +13,7 @@ import type {
 import { ArrowLeft, ArrowRight } from '@element-plus/icons-vue'
 import defaultMapData from '@/data/default'
 import { ElMessageBox } from 'element-plus'
+import { map } from 'd3'
 
 const showAside = ref(true)
 
@@ -172,7 +173,7 @@ const importMap = () => {
   //   }
   // }
   // reader.readAsText(file)
-  importMapFromFile();
+  importMapFromFile()
 }
 
 // Generate the dialog message dynamically
@@ -245,9 +246,8 @@ const saveFileHandleToLocalStorage = (fileHandle: FileSystemFileHandle) => {
 
 // Save map data to file
 const saveMapDataToFile = async (createNew: boolean = false) => {
-
-  console.log('Current file handle:', currentFileHandle.value);
-  console.log('Current map data:', mapData.value);
+  console.log('Current file handle:', currentFileHandle.value)
+  console.log('Current map data:', mapData.value)
 
   if (!currentFileHandle.value) {
     console.warn('No file handle available.')
@@ -346,16 +346,10 @@ const createNewMap = async () => {
       ],
     })
 
-     // Initialize with default data
-     mapData.value = JSON.parse(JSON.stringify(defaultMapData));
-
     // Save the file name to localStorage
     if (currentFileHandle.value) {
       saveFileHandleToLocalStorage(currentFileHandle.value)
     }
-
-    // Force update the ResultsMap component
-    ResultsMapRef.value?.$forceUpdate()
 
     // Save the default data to the new file
     await saveMapDataToFile(true)
@@ -364,7 +358,15 @@ const createNewMap = async () => {
     await saveFileHandleToIndexedDB(currentFileHandle.value as FileSystemFileHandle)
     console.log('New map file created and saved.')
 
-    window.location.reload();
+    mapData.value = null
+
+    // Initialize with default data
+    setTimeout(() => {
+      mapData.value = defaultMapData
+      console.log('New map data:', mapData.value, defaultMapData)
+      // Force update the ResultsMap component
+      //ResultsMapRef.value?.$forceUpdate()
+    }, 100)
   } catch (error) {
     console.error('Error creating new map:', error)
   }
@@ -381,41 +383,41 @@ const importMapFromFile = async () => {
           accept: { 'application/json': ['.json'] },
         },
       ],
-    });
+    })
 
-    mapData.value = null;
+    mapData.value = null
 
-    currentFileHandle.value = fileHandle;
+    currentFileHandle.value = fileHandle
 
     // Save the file name to localStorage
-    saveFileHandleToLocalStorage(fileHandle);
+    saveFileHandleToLocalStorage(fileHandle)
 
     // Save the file handle to IndexedDB
-    await saveFileHandleToIndexedDB(fileHandle);
+    await saveFileHandleToIndexedDB(fileHandle)
 
     // Request permission to access the file
-    const permission = await fileHandle.requestPermission({ mode: 'readwrite' });
+    const permission = await fileHandle.requestPermission({ mode: 'readwrite' })
     if (permission === 'granted') {
-      const file = await fileHandle.getFile();
-      const fileContent = await file.text();
-      mapData.value = JSON.parse(fileContent);
-      console.log('Map data loaded from file:', mapData.value);
+      const file = await fileHandle.getFile()
+      const fileContent = await file.text()
+      mapData.value = JSON.parse(fileContent)
+      console.log('Map data loaded from file:', mapData.value)
 
-        // Force update the ResultsMap component
-        ResultsMapRef.value?.$forceUpdate();
+      // Force update the ResultsMap component
+      ResultsMapRef.value?.$forceUpdate()
     } else {
-      console.error('Permission denied');
+      console.error('Permission denied')
       // Notify the user that access was denied
       ElMessageBox.alert('Permission to access the file was denied.', 'Permission Denied', {
         confirmButtonText: 'OK',
-      });
+      })
     }
   } catch (error) {
-    console.error('Error loading file:', error);
+    console.error('Error loading file:', error)
     // Notify the user that an error occurred
     ElMessageBox.alert('An error occurred while loading the file.', 'Error', {
       confirmButtonText: 'OK',
-    });
+    })
   }
 }
 
