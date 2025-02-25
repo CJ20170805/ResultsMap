@@ -1690,7 +1690,7 @@ const exportMapAsPDF = async (svgElement=d3.select(svgRef.value).node() as SVGSV
 //export json with a filename based on the current date
 const exportMapAsJson = () => {
   const data = JSON.stringify(props.data, null, 2);
-  const filename = generateFileName('json');
+  const filename = generateFileName('resultsmap');
   const blob = new Blob([data], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');

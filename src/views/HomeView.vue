@@ -58,30 +58,29 @@ onMounted(async () => {
 
 // Utility function to debounce a function call
 const debounce = (func: Function, delay: number) => {
-  let timeoutId: ReturnType<typeof setTimeout>;
+  let timeoutId: ReturnType<typeof setTimeout>
   return (...args: any[]) => {
-    clearTimeout(timeoutId);
-    timeoutId = setTimeout(() => func(...args), delay);
-  };
-};
+    clearTimeout(timeoutId)
+    timeoutId = setTimeout(() => func(...args), delay)
+  }
+}
 
 // Debounced auto-save function
 const autoSave = debounce(async () => {
   if (mapData.value) {
-    console.log('Auto-saving map data...');
-    await saveMapDataToFile(false);
+    console.log('Auto-saving map data...')
+    await saveMapDataToFile(false)
   }
-}, 2000);
+}, 2000)
 
 // Watch for changes in mapData
 watch(
   () => mapData.value,
   () => {
-    autoSave(); // Trigger the debounced auto-save function
+    autoSave() // Trigger the debounced auto-save function
   },
-  { deep: true } // Deep watch to detect nested changes
-);
-
+  { deep: true }, // Deep watch to detect nested changes
+)
 
 const addBubble = (bubble: Omit<Bubble, 'id'>) => {
   if (!mapData.value) return
@@ -271,6 +270,12 @@ const saveFileHandleToLocalStorage = (fileHandle: FileSystemFileHandle) => {
   localStorage.setItem('fileHandleName', fileHandle.name)
 }
 
+// Remove the file name from the localstorage
+const removeFileHandleToLocalStorage = () => {
+  console.log('removeFileHandleToLocalStorage')
+  localStorage.removeItem('fileHandleName')
+}
+
 // Save map data to file
 const saveMapDataToFile = async (createNew: boolean = false) => {
   console.log('Current file handle:', currentFileHandle.value)
@@ -437,12 +442,16 @@ const importMapFromFile = async () => {
       // Notify the user that access was denied
       ElMessageBox.alert('Permission to access the file was denied.', 'Permission Denied', {
         confirmButtonText: 'OK',
+      }).then(() => {
+        //Clear file name and reload page
+        removeFileHandleToLocalStorage()
+        window.location.reload()
       })
     }
   } catch (error) {
     console.error('Error loading file:', error)
     // Notify the user that an error occurred
-    ElMessageBox.alert('An error occurred while loading the file.', 'Error', {
+    await ElMessageBox.alert('An error occurred while loading the file.', 'Error', {
       confirmButtonText: 'OK',
     })
   }

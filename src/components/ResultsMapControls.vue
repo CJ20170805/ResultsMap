@@ -149,7 +149,7 @@ const createNewMap = () => {
                   >
                     <el-option label="PNG" value="png"></el-option>
                     <el-option label="PDF" value="pdf"></el-option>
-                    <el-option label="Source Data (JSON)" value="json"></el-option>
+                    <el-option label="Source Data" value="json"></el-option>
                   </el-select>
                   <el-button type="primary" @click="handleExport">Export</el-button>
                 </el-form-item>
