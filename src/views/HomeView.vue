@@ -44,17 +44,53 @@ onMounted(async () => {
   //   promptUserForFile();
   // }
 
-  const fileName = localStorage.getItem('fileHandleName')
-  console.log('current fileName: ', fileName)
+  const fileName = localStorage.getItem('fileHandleName');
   if (fileName) {
-    // Show the dialog with the specific file name
-    //showFileDialog.value = true;
-    handleContinueWorking()
+    // Check if the session flag exists
+    const isSameTab = sessionStorage.getItem('isSameTab') === 'true';
+
+    if (isSameTab) {
+      // Same tab (refresh), load the file directly
+      await handleContinueWorking();
+    } else {
+      // New tab, show the dialog
+      const confirmContinue = await ElMessageBox.confirm(
+        `Do you want to continue working on "${fileName}"?`,
+        'Continue Working',
+        {
+          confirmButtonText: 'Continue',
+          cancelButtonText: 'Start New',
+          distinguishCancelAndClose: true,
+          closeOnClickModal: false,
+          showClose: false,
+        }
+      ).catch(() => false);
+
+      if (confirmContinue) {
+        // User confirmed, load the file
+        await handleContinueWorking();
+      } else {
+        // User declined, clear the saved file name
+        resetPage();
+        showFileDialog.value = true; // Show the file dialog for new/import options
+      }
+    }
   } else {
     // No file name found, show the default dialog
-    showFileDialog.value = true
+    showFileDialog.value = true;
   }
+
+  // Set the session flag to indicate the tab is open
+  sessionStorage.setItem('isSameTab', 'true');
+
 })
+
+// onMounted(() => {
+//   // Clear the session flag when the tab is closed or refreshed
+//   window.addEventListener('beforeunload', () => {
+//     sessionStorage.removeItem('isSameTab');
+//   });
+// });
 
 // Utility function to debounce a function call
 const debounce = (func: Function, delay: number) => {
@@ -245,6 +281,8 @@ const handleContinueWorking = async () => {
 
     // Request permission to access the file
     const permission = await fileHandleInstance.requestPermission({ mode: 'readwrite' })
+    console.log('Permission:', permission);
+
     if (permission === 'granted') {
       const file = await fileHandleInstance.getFile()
       const fileContent = await file.text()
@@ -252,11 +290,13 @@ const handleContinueWorking = async () => {
       console.log('Map data loaded from file:', mapData.value)
     } else {
       console.error('Permission denied')
+      resetPage();
       // Notify the user that access was denied
     }
   } catch (error) {
     console.error('Error loading file:', error)
     // Notify the user that an error occurred
+    resetPage();
   }
 }
 
@@ -274,6 +314,11 @@ const saveFileHandleToLocalStorage = (fileHandle: FileSystemFileHandle) => {
 const removeFileHandleToLocalStorage = () => {
   console.log('removeFileHandleToLocalStorage')
   localStorage.removeItem('fileHandleName')
+}
+
+const resetPage = () => {
+  removeFileHandleToLocalStorage ();
+  window.location.reload()
 }
 
 // Save map data to file
@@ -401,6 +446,7 @@ const createNewMap = async () => {
     }, 100)
   } catch (error) {
     console.error('Error creating new map:', error)
+    resetPage();
   }
 }
 
@@ -443,17 +489,18 @@ const importMapFromFile = async () => {
       ElMessageBox.alert('Permission to access the file was denied.', 'Permission Denied', {
         confirmButtonText: 'OK',
       }).then(() => {
-        //Clear file name and reload page
-        removeFileHandleToLocalStorage()
-        window.location.reload()
+        resetPage();
       })
     }
   } catch (error) {
     console.error('Error loading file:', error)
     // Notify the user that an error occurred
-    await ElMessageBox.alert('An error occurred while loading the file.', 'Error', {
-      confirmButtonText: 'OK',
-    })
+    // ElMessageBox.alert('An error occurred while loading the file.', 'Error', {
+    //   confirmButtonText: 'OK',
+    // }).then(() => {
+    //   resetPage();
+    // })
+    resetPage();
   }
 }
 
@@ -544,6 +591,8 @@ const getFileHandleFromLocalStorage = async () => {
       title="Welcome to Results Map Builder"
       width="30%"
       :show-close="false"
+      :close-on-click-modal="false"
+      :close-on-press-escape="false"
     >
       <span>Select an option to continue:</span>
       <template #footer>
