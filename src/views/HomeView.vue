@@ -63,6 +63,9 @@ onMounted(async () => {
           distinguishCancelAndClose: true,
           closeOnClickModal: false,
           showClose: false,
+          top: '30vh',
+          modalClass: 'custom-modal-class',
+          customClass: 'custom-message-box-class',
         }
       ).catch(() => false);
 
@@ -590,14 +593,16 @@ const getFileHandleFromLocalStorage = async () => {
       v-model="showFileDialog"
       title="Welcome to Results Map Builder"
       width="30%"
+      top="32vh"
+      modal-class="custom-modal-class"
       :show-close="false"
       :close-on-click-modal="false"
       :close-on-press-escape="false"
     >
       <span>Select an option to continue:</span>
       <template #footer>
-        <el-button type="primary" @click="handleLoadFile">Load Map</el-button>
-        <el-button type="success" @click="handleCreateNewFile">New Map</el-button>
+        <el-button type="" @click="handleLoadFile">Load Map</el-button>
+        <el-button type="primary" @click="handleCreateNewFile">New Map</el-button>
       </template>
     </el-dialog>
   </div>
