@@ -13,7 +13,6 @@ import type {
 import { ArrowLeft, ArrowRight } from '@element-plus/icons-vue'
 import defaultMapData from '@/data/default'
 import { ElMessageBox } from 'element-plus'
-import { map } from 'd3'
 
 const showAside = ref(true)
 
@@ -44,48 +43,47 @@ onMounted(async () => {
   //   promptUserForFile();
   // }
 
-  const fileName = localStorage.getItem('fileHandleName');
+  const fileName = localStorage.getItem('fileHandleName')
   if (fileName) {
     // Check if the session flag exists
-    const isSameTab = sessionStorage.getItem('isSameTab') === 'true';
+    const isSameTab = sessionStorage.getItem('isSameTab') === 'true'
 
     if (isSameTab) {
       // Same tab (refresh), load the file directly
-      await handleContinueWorking();
+      await handleContinueWorking()
     } else {
       // New tab, show the dialog
       const confirmContinue = await ElMessageBox.confirm(
-        `Do you want to continue working on "${fileName}"?`,
-        'Continue Working',
+        `Do you want to continue working on "${fileName}"?`, // message
         {
+          title: 'Continue Working', // title is part of options
           confirmButtonText: 'Continue',
           cancelButtonText: 'Start New',
           distinguishCancelAndClose: true,
           closeOnClickModal: false,
           showClose: false,
-          top: '30vh',
-          modalClass: 'custom-modal-class',
+          //top: '30vh',
+         // modalClass: 'custom-modal-class',
           customClass: 'custom-message-box-class',
-        }
-      ).catch(() => false);
+        },
+      ).catch(() => false)
 
       if (confirmContinue) {
         // User confirmed, load the file
-        await handleContinueWorking();
+        await handleContinueWorking()
       } else {
         // User declined, clear the saved file name
-        resetPage();
-        showFileDialog.value = true; // Show the file dialog for new/import options
+        resetPage()
+        showFileDialog.value = true // Show the file dialog for new/import options
       }
     }
   } else {
     // No file name found, show the default dialog
-    showFileDialog.value = true;
+    showFileDialog.value = true
   }
 
   // Set the session flag to indicate the tab is open
-  sessionStorage.setItem('isSameTab', 'true');
-
+  sessionStorage.setItem('isSameTab', 'true')
 })
 
 // onMounted(() => {
@@ -96,7 +94,7 @@ onMounted(async () => {
 // });
 
 // Utility function to debounce a function call
-const debounce = (func: Function, delay: number) => {
+const debounce = (func: (...args: any[]) => void, delay: number): ((...args: any[]) => void) => {
   let timeoutId: ReturnType<typeof setTimeout>
   return (...args: any[]) => {
     clearTimeout(timeoutId)
@@ -242,14 +240,14 @@ const importMap = () => {
 }
 
 // Generate the dialog message dynamically
-const getDialogMessage = () => {
-  const fileName = localStorage.getItem('fileHandleName')
-  if (fileName) {
-    return `Do you want to continue working on ${fileName}?`
-  } else {
-    return 'Do you want to load an existing file or create a new one?'
-  }
-}
+// const getDialogMessage = () => {
+//   const fileName = localStorage.getItem('fileHandleName')
+//   if (fileName) {
+//     return `Do you want to continue working on ${fileName}?`
+//   } else {
+//     return 'Do you want to load an existing file or create a new one?'
+//   }
+// }
 
 // Handle "Continue Working" or "Load File" button click
 const handleLoadFile = async () => {
@@ -264,9 +262,9 @@ const handleCreateNewFile = async () => {
 }
 
 // Handle dialog close
-const handleDialogClose = () => {
-  showFileDialog.value = false
-}
+// const handleDialogClose = () => {
+//   showFileDialog.value = false
+// }
 
 // Handle "Continue Working" button click
 const handleContinueWorking = async () => {
@@ -284,7 +282,7 @@ const handleContinueWorking = async () => {
 
     // Request permission to access the file
     const permission = await fileHandleInstance.requestPermission({ mode: 'readwrite' })
-    console.log('Permission:', permission);
+    console.log('Permission:', permission)
 
     if (permission === 'granted') {
       const file = await fileHandleInstance.getFile()
@@ -293,13 +291,13 @@ const handleContinueWorking = async () => {
       console.log('Map data loaded from file:', mapData.value)
     } else {
       console.error('Permission denied')
-      resetPage();
+      resetPage()
       // Notify the user that access was denied
     }
   } catch (error) {
     console.error('Error loading file:', error)
     // Notify the user that an error occurred
-    resetPage();
+    resetPage()
   }
 }
 
@@ -320,7 +318,7 @@ const removeFileHandleToLocalStorage = () => {
 }
 
 const resetPage = () => {
-  removeFileHandleToLocalStorage ();
+  removeFileHandleToLocalStorage()
   window.location.reload()
 }
 
@@ -414,6 +412,11 @@ const getFileHandleFromIndexedDB = async (fileName: string): Promise<FileSystemF
 
 // Create a new file
 const createNewMap = async () => {
+  // Check if the method is available
+  if (!window.showSaveFilePicker) {
+    throw new Error('File System Access API is not supported in this browser.')
+  }
+
   try {
     // Prompt the user to save a new file
     currentFileHandle.value = await window.showSaveFilePicker({
@@ -449,12 +452,16 @@ const createNewMap = async () => {
     }, 100)
   } catch (error) {
     console.error('Error creating new map:', error)
-    resetPage();
+    resetPage()
   }
 }
 
 const importMapFromFile = async () => {
   console.log('importMapFromFile')
+  // Check if the method is available
+  if (!window.showOpenFilePicker) {
+    throw new Error('File System Access API is not supported in this browser.')
+  }
   try {
     // Prompt the user to select a file
     const [fileHandle] = await window.showOpenFilePicker({
@@ -492,7 +499,7 @@ const importMapFromFile = async () => {
       ElMessageBox.alert('Permission to access the file was denied.', 'Permission Denied', {
         confirmButtonText: 'OK',
       }).then(() => {
-        resetPage();
+        resetPage()
       })
     }
   } catch (error) {
@@ -503,49 +510,49 @@ const importMapFromFile = async () => {
     // }).then(() => {
     //   resetPage();
     // })
-    resetPage();
+    resetPage()
   }
 }
 
-const promptUserForFile = async () => {
-  ElMessageBox.confirm(
-    'No map file found. Do you want to create a new file or import an existing one?',
-    'Map File Not Found',
-    {
-      confirmButtonText: 'Create New',
-      cancelButtonText: 'Import',
-      distinguishCancelAndClose: true,
-    },
-  )
-    .then(async () => {
-      await createNewMap()
-    })
-    .catch(async () => {
-      await importMapFromFile()
-    })
-}
+// const promptUserForFile = async () => {
+//   ElMessageBox.confirm(
+//     'No map file found. Do you want to create a new file or import an existing one?',
+//     'Map File Not Found',
+//     {
+//       confirmButtonText: 'Create New',
+//       cancelButtonText: 'Import',
+//       distinguishCancelAndClose: true,
+//     },
+//   )
+//     .then(async () => {
+//       await createNewMap()
+//     })
+//     .catch(async () => {
+//       await importMapFromFile()
+//     })
+// }
 
-const getFileHandleFromLocalStorage = async () => {
-  const fileName = localStorage.getItem('fileHandleName')
-  if (!fileName) return null
+// const getFileHandleFromLocalStorage = async () => {
+//   const fileName = localStorage.getItem('fileHandleName')
+//   if (!fileName) return null
 
-  try {
-    // Prompt the user to select the file again
-    const [fileHandle] = await window.showOpenFilePicker({
-      types: [
-        {
-          description: 'Results Map',
-          accept: { 'application/json': ['.json'] },
-        },
-      ],
-      suggestedName: fileName, // Suggest the file name
-    })
-    return fileHandle
-  } catch (error) {
-    console.error('Error reacquiring file handle:', error)
-    return null
-  }
-}
+//   try {
+//     // Prompt the user to select the file again
+//     const [fileHandle] = await window.showOpenFilePicker({
+//       types: [
+//         {
+//           description: 'Results Map',
+//           accept: { 'application/json': ['.json'] },
+//         },
+//       ],
+//       suggestedName: fileName, // Suggest the file name
+//     })
+//     return fileHandle
+//   } catch (error) {
+//     console.error('Error reacquiring file handle:', error)
+//     return null
+//   }
+// }
 </script>
 
 <template>

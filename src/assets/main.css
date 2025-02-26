@@ -19,6 +19,11 @@
 .custom-modal-class {
   background-color: #fdfdfd!important;
 }
+
+.el-overlay {
+  background-color: #fdfdfd!important;
+}
+
 .custom-message-box-class{
   margin-top: -110px;
 }
