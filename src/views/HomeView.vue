@@ -13,12 +13,33 @@ import type {
 import { ArrowLeft, ArrowRight } from '@element-plus/icons-vue'
 import defaultMapData from '@/data/default'
 import { ElMessageBox } from 'element-plus'
+import type { ButtonInstance } from 'element-plus'
 
 const showAside = ref(true)
 
 const mapData = ref<ResultsMapData | null>(null)
 const ResultsMapRef = ref<InstanceType<typeof ResultsMap> | null>(null)
 const showFileDialog = ref(false)
+
+// Tour related state
+const showTour = ref(false)
+
+// Define the tour steps
+const tourSteps = [
+  {
+    target: "#loadButton",
+    title: 'Load Map',
+    description: 'Click this button to load an existing map file.',
+  },
+  {
+    target: "#newButton",
+    title: 'New Map',
+    description: 'Click this button to create a new map file.',
+  },
+]
+
+// Check if the user has seen the tour before
+const hasSeenTour = localStorage.getItem('hasSeenTour')
 
 onMounted(async () => {
   // const localMapData = localStorage.getItem('MapData')
@@ -84,6 +105,14 @@ onMounted(async () => {
 
   // Set the session flag to indicate the tab is open
   sessionStorage.setItem('isSameTab', 'true')
+
+  // Show the tour if the user hasn't seen it before
+  setTimeout(() => {
+    if (!hasSeenTour) {
+      showTour.value = true
+      //localStorage.setItem('hasSeenTour', 'true')
+    }
+  }, 1000)
 })
 
 // onMounted(() => {
@@ -608,10 +637,25 @@ const importMapFromFile = async () => {
     >
       <span>Select an option to continue:</span>
       <template #footer>
-        <el-button type="" @click="handleLoadFile">Load Map</el-button>
-        <el-button type="primary" @click="handleCreateNewFile">New Map</el-button>
+        <el-space>
+        <el-button id="loadButton" type="" @click="handleLoadFile">Load Map</el-button>
+        <el-button id="newButton" type="primary" @click="handleCreateNewFile">New Map</el-button>
+        </el-space>
       </template>
     </el-dialog>
+
+
+     <!-- Tour Dialogue -->
+     <el-tour v-model="showTour" :z-index="2005">
+      <el-tour-step
+        v-for="(step, index) in tourSteps"
+        :key="index"
+        :target="step.target"
+        :title="step.title"
+        :description="step.description"
+      />
+    </el-tour>
+
   </div>
 </template>
 
