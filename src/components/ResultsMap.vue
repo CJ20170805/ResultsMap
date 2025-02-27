@@ -14,6 +14,8 @@ import saveSvgAsPng from 'save-svg-as-png';
 import { jsPDF } from 'jspdf';
 import { svg2pdf } from 'svg2pdf.js';
 
+import logoImage from '@/assets/logo.png';
+
 
 const props = defineProps<{
   data: ResultsMapData
@@ -776,6 +778,15 @@ function addArrowsAndTitle(svg: d3.Selection<SVGGElement, unknown, null, undefin
     )
     .style('font-size', '17px')
     .style('fill', '#000')
+
+  // Add a logo at the bottom right corner
+  svg
+    .append('image')
+    .attr('x', width - 300)
+    .attr('y', height - 170)
+    .attr('width', 280)
+    .attr('height', 200)
+    .attr('xlink:href', logoImage)
 }
 
 const drawMap = () => {
