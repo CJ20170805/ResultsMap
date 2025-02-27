@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, watch } from 'vue'
+import { ref, onMounted, watch, inject } from 'vue'
 import ResultsMap from '@/components/ResultsMap.vue'
 import ResultsMapControls from '@/components/ResultsMapControls.vue'
 import type {
@@ -13,7 +13,7 @@ import type {
 import { ArrowLeft, ArrowRight } from '@element-plus/icons-vue'
 import defaultMapData from '@/data/default'
 import { ElMessageBox } from 'element-plus'
-import type { ButtonInstance } from 'element-plus'
+import type { TourGuideClient } from '@sjmc11/tourguidejs/src/Tour'
 
 const showAside = ref(true)
 
@@ -21,49 +21,36 @@ const mapData = ref<ResultsMapData | null>(null)
 const ResultsMapRef = ref<InstanceType<typeof ResultsMap> | null>(null)
 const showFileDialog = ref(false)
 
-// Tour related state
-const showTour = ref(false)
-
 // Define the tour steps
-const tourSteps = [
-  {
-    target: "#loadButton",
-    title: 'Load Map',
-    description: 'Click this button to load an existing map file.',
-  },
-  {
-    target: "#newButton",
-    title: 'New Map',
-    description: 'Click this button to create a new map file.',
-  },
-]
+const tour = inject<TourGuideClient>('tourGuide')
 
 // Check if the user has seen the tour before
 const hasSeenTour = localStorage.getItem('hasSeenTour')
+const tourSteps = [
+  {
+    target: '#loadButton',
+    title: 'Load Map',
+    content: 'Click this button to load an existing map file.',
+  },
+  {
+    target: '#newButton',
+    title: 'New Map',
+    content: 'Click this button to create a new map file.',
+  },
+]
+
+const startATour = async () => {
+  console.log('startATour', tour, hasSeenTour)
+
+  if (tour) {
+    tour.setOptions({ steps: tourSteps })
+    if (!hasSeenTour) {
+      tour.start()
+    }
+  }
+}
 
 onMounted(async () => {
-  // const localMapData = localStorage.getItem('MapData')
-  // if (localMapData) {
-  //   console.log('???/')
-
-  //   mapData.value = JSON.parse(localMapData)
-
-  //   console.log('LocalMapData:', JSON.parse(localMapData))
-  // } else {
-  //   mapData.value = defaultMapData
-  //   localStorage.setItem('MapData', JSON.stringify(mapData.value))
-  // }
-
-  // Check if a file handle is stored in localStorage
-  //const fileHandleName = localStorage.getItem('fileHandleName');
-  // if (fileHandleName) {
-  //   // Inform the user that they need to reload the file
-  //   console.log('A file handle is stored. Please reload the file.');
-  // } else {
-  //   // No file handle found, prompt the user to create or import a file
-  //   promptUserForFile();
-  // }
-
   const fileName = localStorage.getItem('fileHandleName')
   if (fileName) {
     // Check if the session flag exists
@@ -84,7 +71,7 @@ onMounted(async () => {
           closeOnClickModal: false,
           showClose: false,
           //top: '30vh',
-         // modalClass: 'custom-modal-class',
+          // modalClass: 'custom-modal-class',
           customClass: 'custom-message-box-class',
         },
       ).catch(() => false)
@@ -106,12 +93,9 @@ onMounted(async () => {
   // Set the session flag to indicate the tab is open
   sessionStorage.setItem('isSameTab', 'true')
 
-  // Show the tour if the user hasn't seen it before
+  // Start the tour
   setTimeout(() => {
-    if (!hasSeenTour) {
-      showTour.value = true
-      //localStorage.setItem('hasSeenTour', 'true')
-    }
+    startATour()
   }, 1000)
 })
 
@@ -609,6 +593,7 @@ const importMapFromFile = async () => {
             :onExport="exportMap"
             :onImport="importMap"
             :onCreateNewMap="createNewMap"
+            :tour="tour"
           />
         </div>
       </el-aside>
@@ -634,28 +619,16 @@ const importMapFromFile = async () => {
       :show-close="false"
       :close-on-click-modal="false"
       :close-on-press-escape="false"
+      :z-index="1000"
     >
       <span>Select an option to continue:</span>
       <template #footer>
         <el-space>
-        <el-button id="loadButton" type="" @click="handleLoadFile">Load Map</el-button>
-        <el-button id="newButton" type="primary" @click="handleCreateNewFile">New Map</el-button>
+          <el-button id="loadButton" type="" @click="handleLoadFile">Load Map</el-button>
+          <el-button id="newButton" type="primary" @click="handleCreateNewFile">New Map</el-button>
         </el-space>
       </template>
     </el-dialog>
-
-
-     <!-- Tour Dialogue -->
-     <el-tour v-model="showTour" :z-index="2005">
-      <el-tour-step
-        v-for="(step, index) in tourSteps"
-        :key="index"
-        :target="step.target"
-        :title="step.title"
-        :description="step.description"
-      />
-    </el-tour>
-
   </div>
 </template>
 

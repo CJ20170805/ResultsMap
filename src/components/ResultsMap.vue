@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, onBeforeUnmount, watch, computed, nextTick } from 'vue'
+import { ref, onMounted, onBeforeUnmount, watch, computed, nextTick, inject } from 'vue'
 import * as d3 from 'd3'
 import type {
   ResultsMapData,
@@ -10,10 +10,10 @@ import type {
   LayerColors,
   RelationType,
 } from '@/types/ResultsMap'
-import saveSvgAsPng from 'save-svg-as-png';
-import { jsPDF } from 'jspdf';
-import { svg2pdf } from 'svg2pdf.js';
-
+import saveSvgAsPng from 'save-svg-as-png'
+import { jsPDF } from 'jspdf'
+import { svg2pdf } from 'svg2pdf.js'
+import type { TourGuideClient } from '@sjmc11/tourguidejs/src/Tour'
 
 const props = defineProps<{
   data: ResultsMapData
@@ -757,7 +757,7 @@ function addArrowsAndTitle(svg: d3.Selection<SVGGElement, unknown, null, undefin
   svg
     .append('text')
     .attr('x', 50)
-    .attr('y', height-30)
+    .attr('y', height - 30)
     .attr('transform', 'translate(30, 0)')
     .attr('text-anchor', 'middle')
     .attr('alignment-baseline', 'middle')
@@ -793,7 +793,11 @@ const drawMap = () => {
   // Create or select the <g> element for the map content
   let mapGroup: d3.Selection<SVGGElement, unknown, null, undefined> = svg.select('g.map-group')
   if (mapGroup.empty()) {
-    mapGroup = svg.append('g').attr('class', 'map-group').attr('width', width).attr('height', height)
+    mapGroup = svg
+      .append('g')
+      .attr('class', 'map-group')
+      .attr('width', width)
+      .attr('height', height)
   }
 
   if (currentTransform) {
@@ -1340,15 +1344,16 @@ const zoomOut = () => {
 
 const resetZoom = () => {
   return new Promise<void>((resolve) => {
-    const svg = d3.select(svgRef.value!);
-    svg.transition()
+    const svg = d3.select(svgRef.value!)
+    svg
+      .transition()
       .duration(300)
       .call(zoom.transform, d3.zoomIdentity) // Reset zoom
       .on('end', () => {
-        resolve();
-      });
-  });
-};
+        resolve()
+      })
+  })
+}
 
 // Create a new relationship
 const newRelationship = ref({
@@ -1582,8 +1587,7 @@ const handleBubbleClick = (bubbleId: string) => {
         (rel.source === bubbleId && rel.target === newRelationship.value.source),
     )
 
-    console.log("newRelationshipssss", newRelationship);
-
+    console.log('newRelationshipssss', newRelationship)
 
     if (relationshipExists) {
       console.log('A relationship between these bubbles already exists.')
@@ -1655,51 +1659,104 @@ const generateFileName = (extension: string) => {
 //export image
 const exportMapAsImage = async () => {
   try {
-    const svgElement = d3.select(svgRef.value).node() as SVGSVGElement;
+    const svgElement = d3.select(svgRef.value).node() as SVGSVGElement
     if (!svgElement) {
-      console.error('SVG element not found');
-      return;
+      console.error('SVG element not found')
+      return
     }
 
-     saveSvgAsPng.saveSvgAsPng(svgElement, generateFileName('png'), {encorderOptions: 1, backgroundColor: "white"});
-
+    saveSvgAsPng.saveSvgAsPng(svgElement, generateFileName('png'), {
+      encorderOptions: 1,
+      backgroundColor: 'white',
+    })
   } catch (error) {
-    console.error('Error exporting map as image:', error);
+    console.error('Error exporting map as image:', error)
   }
-};
+}
 
 // export pdf
-const exportMapAsPDF = async (svgElement=d3.select(svgRef.value).node() as SVGSVGElement, filename = generateFileName('pdf')) => {
+const exportMapAsPDF = async (
+  svgElement = d3.select(svgRef.value).node() as SVGSVGElement,
+  filename = generateFileName('pdf'),
+) => {
   const pdf = new jsPDF({
-        orientation: "landscape", // Change to "portrait" if needed
-        unit: "px",
-        format: [svgElement.clientWidth, svgElement.clientHeight]
-    });
+    orientation: 'landscape', // Change to "portrait" if needed
+    unit: 'px',
+    format: [svgElement.clientWidth, svgElement.clientHeight],
+  })
 
-    // Convert SVG to PDF vector format
-    await svg2pdf(svgElement, pdf, {
-        x: 0,
-        y: 0,
-        width: svgElement.clientWidth,
-        height: svgElement.clientHeight
-    });
+  // Convert SVG to PDF vector format
+  await svg2pdf(svgElement, pdf, {
+    x: 0,
+    y: 0,
+    width: svgElement.clientWidth,
+    height: svgElement.clientHeight,
+  })
 
-    pdf.save(filename);
+  pdf.save(filename)
 }
 
 //export json with a filename based on the current date
 const exportMapAsJson = () => {
-  const data = JSON.stringify(props.data, null, 2);
-  const filename = generateFileName('resultsmap');
-  const blob = new Blob([data], { type: 'application/json' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = filename;
-  a.click();
-  URL.revokeObjectURL(url);
-};
+  const data = JSON.stringify(props.data, null, 2)
+  const filename = generateFileName('resultsmap')
+  const blob = new Blob([data], { type: 'application/json' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = filename
+  a.click()
+  URL.revokeObjectURL(url)
+}
 
+// Tour related
+
+const tour = inject<TourGuideClient>('tourGuide')
+
+const startATour = () => {
+  // Configure the tour
+  if (tour) {
+    tour.setOptions({
+      steps: [
+        {
+          title: 'Zoom In',
+          content: 'Click this button to zoom in on the map for a closer view.',
+          target: '#zoomInButton', // Target the zoom-in button
+        },
+        {
+          title: 'Zoom Out',
+          content: 'Click this button to zoom out on the map for a wider view.',
+          target: '#zoomOutButton', // Target the zoom-out button
+        },
+        {
+          title: 'Reset Zoom',
+          content: 'Click this button to reset the map zoom to the default level.',
+          target: '#resetZoomButton', // Target the reset zoom button
+        },
+        {
+          title: 'Presentation Mode',
+          content:
+            'Click this button to toggle presentation mode, which hides unnecessary controls for a cleaner view.',
+          target: '#presentationModeButton', // Target the presentation mode button
+        },
+      ],
+      hidePrev: true,
+      backdropClass: 'custom-backdrop-class',
+    })
+
+    // tour.onBeforeStepChange(() => {
+    //   console.log(`Before Changing to step: ${tour.activeStep}`)
+    // })
+
+    // tour.onFinish(() => {
+    //   console.log('Tour finished')
+    // })
+
+    setTimeout(() => {
+      // tour.start()
+    }, 1000)
+  }
+}
 
 onMounted(() => {
   drawMap()
@@ -1707,6 +1764,8 @@ onMounted(() => {
   document.addEventListener('fullscreenchange', handleFullscreenChange)
   document.addEventListener('webkitfullscreenchange', handleFullscreenChange) // Safari
   document.addEventListener('msfullscreenchange', handleFullscreenChange) // IE/Edge
+
+  //startATour()
 })
 
 onBeforeUnmount(() => {
@@ -1874,10 +1933,11 @@ defineExpose({
 
     <!-- zoom controls -->
     <div class="zoom-controls">
-      <el-button @click="zoomIn" icon="Plus"></el-button>
-      <el-button @click="zoomOut" icon="Minus"></el-button>
-      <el-button @click="resetZoom" icon="RefreshRight"></el-button>
+      <el-button id="zoomInButton" @click="zoomIn" icon="Plus"></el-button>
+      <el-button id="zoomOutButton" @click="zoomOut" icon="Minus"></el-button>
+      <el-button id="resetZoomButton" @click="resetZoom" icon="RefreshRight"></el-button>
       <el-button
+        id="presentationModeButton"
         style="margin: 15px 0 0 0"
         @click="togglePresentationMode"
         :class="{ 'presentation-mode': isPresentationMode }"
@@ -1944,7 +2004,13 @@ defineExpose({
         >
           <span class="text-ellipsis">
             <el-icon style="vertical-align: middle; margin-right: 2px"><Link /></el-icon>
-            {{props.data.bubbles.find((b) => selectedBubble?.id === relationship.target?  b.id === relationship.source :  b.id === relationship.target)?.text }}</span
+            {{
+              props.data.bubbles.find((b) =>
+                selectedBubble?.id === relationship.target
+                  ? b.id === relationship.source
+                  : b.id === relationship.target,
+              )?.text
+            }}</span
           >
 
           <el-row :gutter="10">
