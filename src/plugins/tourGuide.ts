@@ -12,7 +12,7 @@ export default {
         steps: [],
         hidePrev: true,
         backdropClass: "custom-backdrop-class",
-        dialogZ: 3000
+        dialogZ: 3000,
       })
     }
     app.provide('tourGuide', tour)

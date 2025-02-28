@@ -95,7 +95,7 @@ onMounted(async () => {
 
   // Start the tour
   setTimeout(() => {
-    startATour()
+   // startATour()
   }, 1000)
 })
 

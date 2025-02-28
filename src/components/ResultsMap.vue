@@ -13,6 +13,7 @@ import type {
 import saveSvgAsPng from 'save-svg-as-png'
 import { jsPDF } from 'jspdf'
 import { svg2pdf } from 'svg2pdf.js'
+import { ElMessageBox, ElMessage } from 'element-plus'
 import type { TourGuideClient } from '@sjmc11/tourguidejs/src/Tour'
 
 const props = defineProps<{
@@ -132,6 +133,12 @@ const handleEmptyPositionRightClick = (event: MouseEvent) => {
 
         // Update the empty position context menu position
         emptyPositionContextMenuPosition.value = { x, y }
+
+        // start a context menu tour
+       // messageInstance.close();
+       if(!hasSeenTour){
+         startSecondTour();
+       }
       }
     })
   }
@@ -231,6 +238,15 @@ const createBubble = () => {
   // Reset form and hide context menu
   newBubbleText.value = ''
   emptyPositionContextMenuVisible.value = false
+
+  // Detect if the new bubble is created in the tour
+  if (!hasSeenTour && mapBubbles.value.length > 1) {
+    isTwoBubbleCreated.value = true
+    messageInstance?.close()
+
+    // start the bubble creation tour
+    startCreateRelationshipTour()
+  }
 }
 
 // Handle bubble right-click
@@ -1384,6 +1400,7 @@ const startCreateRelationship = (type: RelationType) => {
 
     // Enter a mode where the next bubble click will be the target
     isCreatingRelationship.value = true
+
   }
 }
 
@@ -1426,6 +1443,15 @@ const createGroup = () => {
   // Clear the input field and hide the context menu
   newGroupName.value = ''
   emptyPositionContextMenuVisible.value = false
+
+  // Detect if the new group is created in the tour
+  if (!hasSeenTour) {
+    isNewGroupCreated.value = true
+    messageInstance?.close()
+
+    // start the bubble creation tour
+    startCreateBubbleTour()
+  }
 }
 
 const deleteCurrentGroup = () => {
@@ -1597,6 +1623,12 @@ const handleBubbleClick = (bubbleId: string) => {
     newRelationship.value.target = bubbleId
     handleAddRelationship()
     isCreatingRelationship.value = false // Exit relationship creation mode
+
+    // Detect if the new relationship is created in the tour
+    if(!hasSeenTour) {
+      isNewRelationshipCreated.value = true;
+      messageInstance?.close();
+    }
   } else if (isPresentationMode.value) {
     if (focusedBubbleId.value === bubbleId) {
       // If the same bubble is clicked again, reset the focus
@@ -1642,8 +1674,11 @@ const getRelatedBubblesAndRelationships = (bubbleId: string) => {
 }
 
 const handleClickOutside = (event: MouseEvent) => {
+  console.log('click outside');
+
   const contextMenuElement = document.querySelector('.context-menu')
-  if (contextMenuElement && !contextMenuElement.contains(event.target as Node)) {
+  const tourButton = document.querySelector('.tg-dialog-btn');
+  if (contextMenuElement && !contextMenuElement.contains(event.target as Node) && !tourButton?.contains(event.target as Node)) {
     hideContextMenu()
   }
 }
@@ -1710,8 +1745,13 @@ const exportMapAsJson = () => {
 }
 
 // Tour related
-
+const hasSeenTour = localStorage.getItem('hasSeenTour') || false
 const tour = inject<TourGuideClient>('tourGuide')
+
+let messageInstance: any = null
+const isNewGroupCreated = ref(false)
+const isTwoBubbleCreated = ref(false)
+const isNewRelationshipCreated = ref(false)
 
 const startATour = () => {
   // Configure the tour
@@ -1748,13 +1788,128 @@ const startATour = () => {
     //   console.log(`Before Changing to step: ${tour.activeStep}`)
     // })
 
-    // tour.onFinish(() => {
-    //   console.log('Tour finished')
-    // })
+    tour.onFinish(() => {
+      console.log('Tour finished')
+
+      // Show a message box to inform the user about the next steps
+      ElMessageBox.confirm(
+        'You can now create groups by right-clicking on the map.',
+        'Create Groups',
+        {
+          //title: 'Next Steps',
+          confirmButtonText: 'Continue',
+          cancelButtonText: 'Quit',
+          type: 'info',
+          customClass: 'custom-message-box-class',
+        },
+      )
+        .then(() => {
+          // Start the second tour
+          // startSecondTour();
+          messageInstance = ElMessage({
+            type: 'info',
+            message: 'Please right-click the map to create a group',
+            duration: 0, // Make the message persistent
+          })
+        })
+        .catch(() => {
+          ElMessage({
+            type: 'info',
+            message:
+              'You can always right-click on the map to create or delete groups and bubbles.',
+          })
+        })
+    })
 
     setTimeout(() => {
-      // tour.start()
+      tour.start()
     }, 1000)
+  }
+}
+
+const startCreateBubbleTour = () => {
+  // Show a message box to inform the user about the next steps
+  ElMessageBox.confirm('You can now create bubbles by right-clicking on the map.', 'Create Bubbles', {
+    //title: 'Next Steps',
+    confirmButtonText: 'Continue',
+    cancelButtonText: 'Quit',
+    type: 'info',
+    customClass: 'custom-message-box-class',
+  })
+    .then(() => {
+      // Start the second tour
+      // startSecondTour();
+      messageInstance = ElMessage({
+        type: 'info',
+        message: 'Please right-click the map to create bubbles, ensuring at least two bubbles are placed on the map.',
+        duration: 0, // Make the message persistent
+      })
+    })
+    .catch(() => {
+      ElMessage({
+        type: 'info',
+        message: 'You can always right-click on the map to create or delete groups and bubbles.',
+      })
+    })
+}
+
+const startCreateRelationshipTour = () => {
+  // Show a message box to inform the user about the next steps
+  ElMessageBox.confirm('You can now create relationships by right-clicking the bubble.', 'Create Relationship', {
+    //title: 'Next Steps',
+    confirmButtonText: 'Continue',
+    cancelButtonText: 'Quit',
+    type: 'info',
+    customClass: 'custom-message-box-class',
+  })
+    .then(() => {
+      // Start the second tour
+      // startSecondTour();
+      messageInstance = ElMessage({
+        type: 'info',
+        message: 'Please right-click the bubble to create a new relationship',
+        duration: 0, // Make the message persistent
+      })
+    })
+    .catch(() => {
+      ElMessage({
+        type: 'info',
+        message: 'You can always right-click on the map to create or delete groups and bubbles.',
+      })
+    })
+}
+
+const startSecondTour = () => {
+  if (tour) {
+    tour.setOptions({
+      steps: [
+        {
+          title: 'Create a Bubble',
+          content:
+            'Use the context menu to create a new bubble by entering text and clicking "Create".',
+          target: '#createBubble', // Target the context menu for empty positions
+        },
+        {
+          title: 'Create or Delete a Group',
+          content: 'You can also create or delete a group using the context menu.',
+          target: '#createGroup', // Target the context menu for empty positions
+        },
+      ],
+      hidePrev: true,
+      backdropClass: 'custom-backdrop-class',
+    })
+
+    // Handle the end of the second tour
+    tour.onFinish(() => {
+      console.log('Second tour finished')
+      // ElMessage({
+      //   type: 'success',
+      //   message: 'You are now ready to create bubbles and groups!',
+      // })
+    })
+
+    // Start the second tour
+    tour.start()
   }
 }
 
@@ -1765,7 +1920,7 @@ onMounted(() => {
   document.addEventListener('webkitfullscreenchange', handleFullscreenChange) // Safari
   document.addEventListener('msfullscreenchange', handleFullscreenChange) // IE/Edge
 
-  //startATour()
+  startATour()
 })
 
 onBeforeUnmount(() => {
@@ -2048,55 +2203,58 @@ defineExpose({
     }"
     class="context-menu empty-context-menu"
   >
-    <el-divider> Bubble </el-divider>
-    <el-form @submit.prevent="createBubble">
-      <el-form-item label="">
-        <el-input v-model="newBubbleText" autosize type="textarea" />
-      </el-form-item>
-      <el-form-item>
-        <el-button
-          class="margin-top-less"
-          type="primary"
-          style="width: 100%; margin-bottom: 10px"
-          @click="createBubble"
-          >Create</el-button
-        >
-      </el-form-item>
-    </el-form>
-
-    <el-divider> Group </el-divider>
-    <el-form @submit.prevent="createGroup">
-      <el-form-item label="">
-        <el-input v-model="newGroupName" type="text" placeholder="Enter group name" />
-      </el-form-item>
-      <el-form-item>
-        <el-button type="primary" class="margin-top-less" style="width: 100%" @click="createGroup"
-          >Create Group</el-button
-        >
-      </el-form-item>
-
-      <template v-if="currentGroup">
+    <div id="createBubble">
+      <el-divider> Bubble </el-divider>
+      <el-form @submit.prevent="createBubble">
         <el-form-item label="">
-          <el-input
-            v-model="currentGroup.name"
-            style="width: 100%; margin-top: 10px"
-            type="text"
-            placeholder="Enter group name"
-          />
+          <el-input v-model="newBubbleText" autosize type="textarea" />
         </el-form-item>
-      </template>
+        <el-form-item>
+          <el-button
+            class="margin-top-less"
+            type="primary"
+            style="width: 100%; margin-bottom: 10px"
+            @click="createBubble"
+            >Create</el-button
+          >
+        </el-form-item>
+      </el-form>
+    </div>
+    <div id="createGroup">
+      <el-divider> Group </el-divider>
+      <el-form @submit.prevent="createGroup">
+        <el-form-item label="">
+          <el-input v-model="newGroupName" type="text" placeholder="Enter group name" />
+        </el-form-item>
+        <el-form-item>
+          <el-button type="primary" class="margin-top-less" style="width: 100%" @click="createGroup"
+            >Create Group</el-button
+          >
+        </el-form-item>
 
-      <el-popconfirm
-        :title="`Are you sure you want to delete the group '${currentGroup?.name}'' and all its bubbles?`"
-        @confirm="deleteCurrentGroup"
-      >
-        <template #reference>
-          <el-button v-if="currentGroup" type="danger" style="width: 100%; margin-top: 0px">
-            Delete Current Group
-          </el-button>
+        <template v-if="currentGroup">
+          <el-form-item label="">
+            <el-input
+              v-model="currentGroup.name"
+              style="width: 100%; margin-top: 10px"
+              type="text"
+              placeholder="Enter group name"
+            />
+          </el-form-item>
         </template>
-      </el-popconfirm>
-    </el-form>
+
+        <el-popconfirm
+          :title="`Are you sure you want to delete the group '${currentGroup?.name}'' and all its bubbles?`"
+          @confirm="deleteCurrentGroup"
+        >
+          <template #reference>
+            <el-button v-if="currentGroup" type="danger" style="width: 100%; margin-top: 0px">
+              Delete Current Group
+            </el-button>
+          </template>
+        </el-popconfirm>
+      </el-form>
+    </div>
   </div>
 </template>
 <style>

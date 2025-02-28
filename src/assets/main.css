@@ -17,10 +17,10 @@
 }
 
 .custom-modal-class {
-  background-color: #fdfdfd!important;
+  background-color: rgba(20, 20, 21, 0.4)!important;
 }
 
-.el-overlay {
+.home-container .el-overlay {
   background-color: #fdfdfd!important;
 }
 
