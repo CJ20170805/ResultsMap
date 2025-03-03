@@ -135,10 +135,10 @@ const handleEmptyPositionRightClick = (event: MouseEvent) => {
         emptyPositionContextMenuPosition.value = { x, y }
 
         // start a context menu tour
-       // messageInstance.close();
-       if(!hasSeenTour){
-         startSecondTour();
-       }
+        // messageInstance.close();
+        if (!hasSeenTour) {
+          startCreationMenuTour()
+        }
       }
     })
   }
@@ -300,6 +300,10 @@ const showContextMenu = (event: MouseEvent, bubble: Bubble) => {
 
       // Update the context menu position
       contextMenuPosition.value = { x, y }
+
+      if (!hasSeenTour) {
+        startUpdateMenuTour()
+      }
     }
   })
 }
@@ -1400,7 +1404,6 @@ const startCreateRelationship = (type: RelationType) => {
 
     // Enter a mode where the next bubble click will be the target
     isCreatingRelationship.value = true
-
   }
 }
 
@@ -1625,9 +1628,9 @@ const handleBubbleClick = (bubbleId: string) => {
     isCreatingRelationship.value = false // Exit relationship creation mode
 
     // Detect if the new relationship is created in the tour
-    if(!hasSeenTour) {
-      isNewRelationshipCreated.value = true;
-      messageInstance?.close();
+    if (!hasSeenTour) {
+      isNewRelationshipCreated.value = true
+      messageInstance?.close()
     }
   } else if (isPresentationMode.value) {
     if (focusedBubbleId.value === bubbleId) {
@@ -1674,11 +1677,15 @@ const getRelatedBubblesAndRelationships = (bubbleId: string) => {
 }
 
 const handleClickOutside = (event: MouseEvent) => {
-  console.log('click outside');
+  console.log('click outside')
 
   const contextMenuElement = document.querySelector('.context-menu')
-  const tourButton = document.querySelector('.tg-dialog-btn');
-  if (contextMenuElement && !contextMenuElement.contains(event.target as Node) && !tourButton?.contains(event.target as Node)) {
+  const tourButton = document.querySelector('.tg-dialog-btn')
+  if (
+    contextMenuElement &&
+    !contextMenuElement.contains(event.target as Node) &&
+    !tourButton?.contains(event.target as Node)
+  ) {
     hideContextMenu()
   }
 }
@@ -1805,7 +1812,7 @@ const startATour = () => {
       )
         .then(() => {
           // Start the second tour
-          // startSecondTour();
+          // startCreationMenuTour();
           messageInstance = ElMessage({
             type: 'info',
             message: 'Please right-click the map to create a group',
@@ -1829,19 +1836,24 @@ const startATour = () => {
 
 const startCreateBubbleTour = () => {
   // Show a message box to inform the user about the next steps
-  ElMessageBox.confirm('You can now create bubbles by right-clicking on the map.', 'Create Bubbles', {
-    //title: 'Next Steps',
-    confirmButtonText: 'Continue',
-    cancelButtonText: 'Quit',
-    type: 'info',
-    customClass: 'custom-message-box-class',
-  })
+  ElMessageBox.confirm(
+    'You can now create bubbles by right-clicking on the map.',
+    'Create Bubbles',
+    {
+      //title: 'Next Steps',
+      confirmButtonText: 'Continue',
+      cancelButtonText: 'Quit',
+      type: 'info',
+      customClass: 'custom-message-box-class',
+    },
+  )
     .then(() => {
       // Start the second tour
-      // startSecondTour();
+      // startCreationMenuTour();
       messageInstance = ElMessage({
         type: 'info',
-        message: 'Please right-click the map to create bubbles, ensuring at least two bubbles are placed on the map.',
+        message:
+          'Please right-click the map to create bubbles, ensuring at least two bubbles are placed on the map.',
         duration: 0, // Make the message persistent
       })
     })
@@ -1855,16 +1867,20 @@ const startCreateBubbleTour = () => {
 
 const startCreateRelationshipTour = () => {
   // Show a message box to inform the user about the next steps
-  ElMessageBox.confirm('You can now create relationships by right-clicking the bubble.', 'Create Relationship', {
-    //title: 'Next Steps',
-    confirmButtonText: 'Continue',
-    cancelButtonText: 'Quit',
-    type: 'info',
-    customClass: 'custom-message-box-class',
-  })
+  ElMessageBox.confirm(
+    'You can now create relationships by right-clicking the bubble.',
+    'Create Relationship',
+    {
+      //title: 'Next Steps',
+      confirmButtonText: 'Continue',
+      cancelButtonText: 'Quit',
+      type: 'info',
+      customClass: 'custom-message-box-class',
+    },
+  )
     .then(() => {
       // Start the second tour
-      // startSecondTour();
+      // startCreationMenuTour();
       messageInstance = ElMessage({
         type: 'info',
         message: 'Please right-click the bubble to create a new relationship',
@@ -1879,7 +1895,44 @@ const startCreateRelationshipTour = () => {
     })
 }
 
-const startSecondTour = () => {
+const startUpdateMenuTour = () => {
+  if (tour) {
+    tour.setOptions({
+      steps: [
+        {
+          title: 'Bubble Section',
+          content:
+            'In this section, you can update the text of the bubble or remove it from the map. Use the "Update" button to save changes or the "Remove" button to delete the bubble.',
+          target: '#updateBubbles',
+        },
+        {
+          title: 'Relationship Section',
+          content:
+            'In this section, you can create new relationships between bubbles or manage existing ones. Use the dropdown to select a relationship type, then click "Create Relationship". For existing relationships, you can update their type or delete them.',
+          target: '#manageRelationships',
+        },
+      ],
+      hidePrev: true,
+      backdropClass: 'custom-backdrop-class',
+    })
+
+    // Handle the end of the second tour
+    tour.onFinish(() => {
+      console.log('Second tour finished')
+      // ElMessage({
+      //   type: 'success',
+      //   message: 'You are now ready to create bubbles and groups!',
+      // })
+    })
+
+    // Start the tour
+    setTimeout(() => {
+      tour.start()
+    }, 300)
+  }
+}
+
+const startCreationMenuTour = () => {
   if (tour) {
     tour.setOptions({
       steps: [
@@ -2107,41 +2160,44 @@ defineExpose({
     :style="{ top: `${contextMenuPosition.y}px`, left: `${contextMenuPosition.x}px` }"
     class="context-menu bubble-context-menu"
   >
-    <el-divider> Bubble </el-divider>
-    <!-- <h4>Bubble</h4> -->
-    <el-form @submit.prevent="updateBubbleText" style="margin: 0 0 10px 0">
+    <div id="updateBubbles">
+      <el-divider> Bubble </el-divider>
+      <!-- <h4>Bubble</h4> -->
+      <el-form @submit.prevent="updateBubbleText">
+        <el-form-item label="">
+          <el-input v-model="newText" autosize type="textarea" />
+        </el-form-item>
+        <el-form-item class="margin-top-less">
+          <el-button type="primary" style="width: 47%" @click="updateBubbleText">Update</el-button>
+          <el-popconfirm title="Are you sure to remove this?" @confirm="confirmRemoveBubble">
+            <template #reference>
+              <el-button style="width: 47%" type="danger">Remove</el-button>
+            </template>
+          </el-popconfirm>
+        </el-form-item>
+      </el-form>
+    </div>
+
+    <div id="manageRelationships" style="margin-top: 20px;">
+      <el-divider> Relationship </el-divider>
+      <!-- Add a select box for relationship types -->
       <el-form-item label="">
-        <el-input v-model="newText" autosize type="textarea" />
+        <el-select v-model="newRelationshipType" placeholder="Select relationship type">
+          <el-option v-for="type in relationshipTypes" :key="type" :label="type" :value="type" />
+        </el-select>
       </el-form-item>
-      <el-form-item class="margin-top-less">
-        <el-button type="primary" style="width: 47%" @click="updateBubbleText">Update</el-button>
-        <el-popconfirm title="Are you sure to remove this?" @confirm="confirmRemoveBubble">
-          <template #reference>
-            <el-button style="width: 47%" type="danger">Remove</el-button>
-          </template>
-        </el-popconfirm>
-      </el-form-item>
-    </el-form>
 
-    <el-divider> Relationship </el-divider>
-    <!-- Add a select box for relationship types -->
-    <el-form-item label="">
-      <el-select v-model="newRelationshipType" placeholder="Select relationship type">
-        <el-option v-for="type in relationshipTypes" :key="type" :label="type" :value="type" />
-      </el-select>
-    </el-form-item>
+      <!-- Add the "Create Relationship" button -->
+      <el-button
+        type="primary"
+        class="margin-top-less"
+        style="width: 100%; margin-top: 0px"
+        @click="startCreateRelationship(newRelationshipType)"
+        >Create Relationship</el-button
+      >
 
-    <!-- Add the "Create Relationship" button -->
-    <el-button
-      type="primary"
-      class="margin-top-less"
-      style="width: 100%; margin-top: 0px"
-      @click="startCreateRelationship(newRelationshipType)"
-      >Create Relationship</el-button
-    >
-
-    <div class="relationship-list" v-if="selectedBubble">
-      <!-- <h4
+      <div class="relationship-list" v-if="selectedBubble">
+        <!-- <h4
         v-if="
           props.data.relationships.filter(
             (rel) => rel.source === selectedBubble?.id || rel.target === selectedBubble?.id,
@@ -2150,47 +2206,50 @@ defineExpose({
       >
        &nbsp;  Relationships
       </h4> -->
-      <ul>
-        <li
-          v-for="relationship in props.data.relationships
-            .filter((rel) => rel.source === selectedBubble?.id || rel.target === selectedBubble?.id)
-            .reverse()"
-          :key="relationship.id"
-        >
-          <span class="text-ellipsis">
-            <el-icon style="vertical-align: middle; margin-right: 2px"><Link /></el-icon>
-            {{
-              props.data.bubbles.find((b) =>
-                selectedBubble?.id === relationship.target
-                  ? b.id === relationship.source
-                  : b.id === relationship.target,
-              )?.text
-            }}</span
+        <ul>
+          <li
+            v-for="relationship in props.data.relationships
+              .filter(
+                (rel) => rel.source === selectedBubble?.id || rel.target === selectedBubble?.id,
+              )
+              .reverse()"
+            :key="relationship.id"
           >
+            <span class="text-ellipsis">
+              <el-icon style="vertical-align: middle; margin-right: 2px"><Link /></el-icon>
+              {{
+                props.data.bubbles.find((b) =>
+                  selectedBubble?.id === relationship.target
+                    ? b.id === relationship.source
+                    : b.id === relationship.target,
+                )?.text
+              }}</span
+            >
 
-          <el-row :gutter="10">
-            <el-col :span="16">
-              <el-select
-                v-model="relationship.type"
-                placeholder="Select"
-                @change="(newType: string) => updateRelationshipType(relationship, newType)"
-              >
-                <el-option
-                  v-for="type in relationshipTypes"
-                  :key="type"
-                  :label="type"
-                  :value="type"
-                ></el-option>
-              </el-select>
-            </el-col>
-            <el-col :span="6">
-              <el-button type="danger" @click="() => removeRelationship(relationship)"
-                >Delete</el-button
-              >
-            </el-col>
-          </el-row>
-        </li>
-      </ul>
+            <el-row :gutter="10">
+              <el-col :span="16">
+                <el-select
+                  v-model="relationship.type"
+                  placeholder="Select"
+                  @change="(newType: string) => updateRelationshipType(relationship, newType)"
+                >
+                  <el-option
+                    v-for="type in relationshipTypes"
+                    :key="type"
+                    :label="type"
+                    :value="type"
+                  ></el-option>
+                </el-select>
+              </el-col>
+              <el-col :span="6">
+                <el-button type="danger" @click="() => removeRelationship(relationship)"
+                  >Delete</el-button
+                >
+              </el-col>
+            </el-row>
+          </li>
+        </ul>
+      </div>
     </div>
   </div>
 
@@ -2213,14 +2272,14 @@ defineExpose({
           <el-button
             class="margin-top-less"
             type="primary"
-            style="width: 100%; margin-bottom: 10px"
+            style="width: 100%"
             @click="createBubble"
             >Create</el-button
           >
         </el-form-item>
       </el-form>
     </div>
-    <div id="createGroup">
+    <div id="createGroup" style="margin-top: 20px">
       <el-divider> Group </el-divider>
       <el-form @submit.prevent="createGroup">
         <el-form-item label="">
