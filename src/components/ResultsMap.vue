@@ -15,6 +15,9 @@ import { jsPDF } from 'jspdf'
 import { svg2pdf } from 'svg2pdf.js'
 import { ElMessageBox, ElMessage } from 'element-plus'
 import type { TourGuideClient } from '@sjmc11/tourguidejs/src/Tour'
+import createGroupGif from "@/assets/gif/create-group.gif"
+import createBubbleGif from "@/assets/gif/create-bubble.gif"
+import createRelationshipGif from "@/assets/gif/create-relationship.gif"
 
 const props = defineProps<{
   data: ResultsMapData
@@ -1760,6 +1763,7 @@ const isNewGroupCreated = ref(false)
 const isTwoBubbleCreated = ref(false)
 const isNewRelationshipCreated = ref(false)
 
+
 const startATour = () => {
   // Configure the tour
   if (tour) {
@@ -1800,14 +1804,15 @@ const startATour = () => {
 
       // Show a message box to inform the user about the next steps
       ElMessageBox.confirm(
-        'You can now create groups by right-clicking on the map.',
+        `You can now create groups by right-clicking on the map. <br /> <img style="width: 100%; margin-top: 10px;" src="${createGroupGif}"/>`,
         'Create Groups',
         {
           //title: 'Next Steps',
           confirmButtonText: 'Continue',
           cancelButtonText: 'Quit',
-          type: 'info',
+          type: "",
           customClass: 'custom-message-box-class',
+          dangerouslyUseHTMLString: true,
         },
       )
         .then(() => {
@@ -1837,13 +1842,14 @@ const startATour = () => {
 const startCreateBubbleTour = () => {
   // Show a message box to inform the user about the next steps
   ElMessageBox.confirm(
-    'You can now create bubbles by right-clicking on the map.',
+    `You can now create bubbles by right-clicking on the map.  <br /> <img style="width: 100%; margin-top: 10px;" src="${createBubbleGif}"/>`,
     'Create Bubbles',
     {
       //title: 'Next Steps',
       confirmButtonText: 'Continue',
       cancelButtonText: 'Quit',
-      type: 'info',
+      type: '',
+      dangerouslyUseHTMLString: true,
       customClass: 'custom-message-box-class',
     },
   )
@@ -1868,13 +1874,14 @@ const startCreateBubbleTour = () => {
 const startCreateRelationshipTour = () => {
   // Show a message box to inform the user about the next steps
   ElMessageBox.confirm(
-    'You can now create relationships by right-clicking the bubble.',
+    `You can now create relationships by right-clicking the bubble.  <br /> <img style="width: 100%; margin-top: 10px;" src="${createRelationshipGif}"/>`,
     'Create Relationship',
     {
       //title: 'Next Steps',
       confirmButtonText: 'Continue',
       cancelButtonText: 'Quit',
-      type: 'info',
+      type: '',
+      dangerouslyUseHTMLString: true,
       customClass: 'custom-message-box-class',
     },
   )
