@@ -14,6 +14,7 @@ import { ArrowLeft, ArrowRight } from '@element-plus/icons-vue'
 import defaultMapData from '@/data/default'
 import { ElMessageBox } from 'element-plus'
 import type { TourGuideClient } from '@sjmc11/tourguidejs/src/Tour'
+import { map } from 'd3'
 
 const showAside = ref(true)
 
@@ -48,6 +49,10 @@ const startATour = async () => {
       tour.start()
     }
   }
+}
+
+const continueTour = () => {
+  ResultsMapRef.value?.startATour()
 }
 
 onMounted(async () => {
@@ -95,7 +100,7 @@ onMounted(async () => {
 
   // Start the tour
   setTimeout(() => {
-   // startATour()
+    startATour()
   }, 1000)
 })
 
@@ -339,6 +344,7 @@ const resetPage = () => {
 const saveMapDataToFile = async (createNew: boolean = false) => {
   console.log('Current file handle:', currentFileHandle.value)
   console.log('Current map data:', mapData.value)
+  console.log('Default map data:', defaultMapData)
 
   if (!currentFileHandle.value) {
     console.warn('No file handle available.')
@@ -458,7 +464,7 @@ const createNewMap = async () => {
 
     // Initialize with default data
     setTimeout(() => {
-      mapData.value = defaultMapData
+      mapData.value = JSON.parse(JSON.stringify(defaultMapData))
       console.log('New map data:', mapData.value, defaultMapData)
       // Force update the ResultsMap component
       //ResultsMapRef.value?.$forceUpdate()
@@ -566,6 +572,17 @@ const importMapFromFile = async () => {
 //     return null
 //   }
 // }
+
+const resetDataToDefault = () => {
+  saveMapDataToFile(true)
+  console.log('resetDataToDefault', mapData.value, defaultMapData);
+
+  //update the ResultsMap component
+  mapData.value = null
+  setTimeout(() => {
+    mapData.value = JSON.parse(JSON.stringify(defaultMapData))
+  }, 300)
+}
 </script>
 
 <template>
@@ -593,7 +610,7 @@ const importMapFromFile = async () => {
             :onExport="exportMap"
             :onImport="importMap"
             :onCreateNewMap="createNewMap"
-            :tour="tour"
+            :onContinueTour="continueTour"
           />
         </div>
       </el-aside>
@@ -606,7 +623,12 @@ const importMapFromFile = async () => {
       </el-button>
       <!-- Main Content -->
       <el-main>
-        <ResultsMap ref="ResultsMapRef" :data="mapData" :onAddGroup="addGroup" />
+        <ResultsMap
+          ref="ResultsMapRef"
+          :data="mapData"
+          :onAddGroup="addGroup"
+          :onResetDataToDefault="resetDataToDefault"
+        />
       </el-main>
     </el-container>
 

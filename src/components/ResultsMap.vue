@@ -15,13 +15,14 @@ import { jsPDF } from 'jspdf'
 import { svg2pdf } from 'svg2pdf.js'
 import { ElMessageBox, ElMessage } from 'element-plus'
 import type { TourGuideClient } from '@sjmc11/tourguidejs/src/Tour'
-import createGroupGif from "@/assets/gif/create-group.gif"
-import createBubbleGif from "@/assets/gif/create-bubble.gif"
-import createRelationshipGif from "@/assets/gif/create-relationship.gif"
+import createGroupGif from '@/assets/gif/create-group.gif'
+import createBubbleGif from '@/assets/gif/create-bubble.gif'
+import createRelationshipGif from '@/assets/gif/create-relationship.gif'
 
 const props = defineProps<{
   data: ResultsMapData
   onAddGroup: (group: Omit<Group, 'id'>) => void
+  onResetDataToDefault: () => void
 }>()
 
 const svgRef = ref<SVGElement | null>(null)
@@ -139,7 +140,7 @@ const handleEmptyPositionRightClick = (event: MouseEvent) => {
 
         // start a context menu tour
         // messageInstance.close();
-        if (!hasSeenTour) {
+        if (!hasSeenTour && !isFirstBubbleCreated.value) {
           startCreationMenuTour()
         }
       }
@@ -242,6 +243,7 @@ const createBubble = () => {
   newBubbleText.value = ''
   emptyPositionContextMenuVisible.value = false
 
+  isFirstBubbleCreated.value = true
   // Detect if the new bubble is created in the tour
   if (!hasSeenTour && mapBubbles.value.length > 1) {
     isTwoBubbleCreated.value = true
@@ -1504,12 +1506,36 @@ const selectedGroup = ref('all')
 const isPresentationMode = ref(false)
 const showControls = ref(false)
 
+
 const currentLayer = computed(() => layers[currentLayerIndex.value])
 
 const togglePresentationMode = () => {
+  const hasSeenPresentationMode = localStorage.getItem('hasSeenPresentationMode')
+
   isPresentationMode.value = !isPresentationMode.value
   if (isPresentationMode.value) {
-    enterFullscreen()
+
+    if (!hasSeenPresentationMode) {
+      ElMessageBox.confirm(
+        'Tip: In presentation mode, move your mouse to the bottom to show the control bar',
+        'Presentation Mode',
+        {
+          confirmButtonText: 'Ok',
+          showCancelButton: false,
+          type: 'info',
+        },
+      )
+        .then(() => {
+          localStorage.setItem('hasSeenPresentationMode', 'true')
+          enterFullscreen()
+        })
+        .catch(() => {
+          return
+        })
+    } else {
+      enterFullscreen()
+    }
+
   } else {
     exitFullscreen()
   }
@@ -1634,6 +1660,26 @@ const handleBubbleClick = (bubbleId: string) => {
     if (!hasSeenTour) {
       isNewRelationshipCreated.value = true
       messageInstance?.close()
+
+      // show a finish dialog
+      ElMessageBox.confirm(
+        'You have successfully created a relationship. Do you want to create a new map from scratch or continue working on the current one?',
+        'Tour finished',
+        {
+          confirmButtonText: 'Create New Map',
+          cancelButtonText: 'Continue Editing',
+          type: 'success',
+        },
+      )
+        .then(() => {
+          localStorage.setItem('hasSeenTour', 'true')
+          // set data to default
+          props.onResetDataToDefault()
+        })
+        .catch(() => {
+          localStorage.setItem('hasSeenTour', 'true')
+          return
+        })
     }
   } else if (isPresentationMode.value) {
     if (focusedBubbleId.value === bubbleId) {
@@ -1755,14 +1801,14 @@ const exportMapAsJson = () => {
 }
 
 // Tour related
-const hasSeenTour = localStorage.getItem('hasSeenTour') || false
+const hasSeenTour = localStorage.getItem('hasSeenTour')
 const tour = inject<TourGuideClient>('tourGuide')
 
 let messageInstance: any = null
 const isNewGroupCreated = ref(false)
+const isFirstBubbleCreated = ref(false) // close the message box after the first bubble is created
 const isTwoBubbleCreated = ref(false)
 const isNewRelationshipCreated = ref(false)
-
 
 const startATour = () => {
   // Configure the tour
@@ -1810,7 +1856,7 @@ const startATour = () => {
           //title: 'Next Steps',
           confirmButtonText: 'Continue',
           cancelButtonText: 'Quit',
-          type: "",
+          type: '',
           customClass: 'custom-message-box-class',
           dangerouslyUseHTMLString: true,
         },
@@ -1835,7 +1881,7 @@ const startATour = () => {
 
     setTimeout(() => {
       tour.start()
-    }, 1000)
+    }, 400)
   }
 }
 
@@ -1979,8 +2025,6 @@ onMounted(() => {
   document.addEventListener('fullscreenchange', handleFullscreenChange)
   document.addEventListener('webkitfullscreenchange', handleFullscreenChange) // Safari
   document.addEventListener('msfullscreenchange', handleFullscreenChange) // IE/Edge
-
-  startATour()
 })
 
 onBeforeUnmount(() => {
@@ -2078,6 +2122,7 @@ defineExpose({
   exportMapAsImage,
   exportMapAsPDF,
   exportMapAsJson,
+  startATour,
 })
 </script>
 
@@ -2185,7 +2230,7 @@ defineExpose({
       </el-form>
     </div>
 
-    <div id="manageRelationships" style="margin-top: 20px;">
+    <div id="manageRelationships" style="margin-top: 20px">
       <el-divider> Relationship </el-divider>
       <!-- Add a select box for relationship types -->
       <el-form-item label="">

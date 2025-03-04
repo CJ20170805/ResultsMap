@@ -21,6 +21,7 @@ const props = defineProps<{
   onExport: (type: ExportType) => void
   onImport: () => void
   onCreateNewMap: () => void
+  onContinueTour: () => void
   groups: Group[]
   mapData: ResultsMapData
 }>()
@@ -56,7 +57,9 @@ const relationTypes: RelationType[] = ['cause-effect', 'companion', 'conflict', 
 const currentTab = ref<string>('File')
 
 // Initialize TourGuideJS
+const hasSeenTour = localStorage.getItem('hasSeenTour')
 const tour = inject<TourGuideClient>('tourGuide')
+const isFinished = ref(false);
 
 const startATour = () => {
   // Configure the tour
@@ -70,7 +73,7 @@ const startATour = () => {
       {
         title: 'Map Tab',
         content:
-          'This is the Map tab where you can configure the map title, date, and layer colors.',
+          'This is the Map tab where you can configure the map title, date, layer colors, and group divider level.',
         target: '#mapTab',
       },
       {
@@ -80,11 +83,12 @@ const startATour = () => {
       },
     ]
 
-    tour.setOptions({ steps })
+    tour.setOptions({ steps, finishLabel: 'Continue' })
 
     tour.onBeforeStepChange(() => {
       console.log(`Before Changing to step: ${tour.activeStep}`)
-      switch (tour.activeStep) {
+      if(!isFinished.value) {
+        switch (tour.activeStep) {
         case 0:
           currentTab.value = 'Map'
           break
@@ -95,22 +99,29 @@ const startATour = () => {
           currentTab.value = 'File'
           break
       }
+      }
+
     })
 
     tour.onFinish(() => {
       console.log('Tour finished')
 
       currentTab.value = 'File'
+
+      isFinished.value = true;
+      props.onContinueTour();
     })
 
-    setTimeout(() => {
-      //tour.start()
-    }, 1000)
+    tour.start()
   }
 }
 
 onMounted(() => {
-  //startATour();
+  if (!hasSeenTour && tour){
+    setTimeout(() => {
+      startATour()
+    }, 1000)
+  }
 })
 
 const handleAddBubble = () => {
