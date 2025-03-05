@@ -18,6 +18,7 @@ import type { TourGuideClient } from '@sjmc11/tourguidejs/src/Tour'
 import createGroupGif from '@/assets/gif/create-group.gif'
 import createBubbleGif from '@/assets/gif/create-bubble.gif'
 import createRelationshipGif from '@/assets/gif/create-relationship.gif'
+import QuestionSvg from '@/assets/svg/question.svg'
 
 const props = defineProps<{
   data: ResultsMapData
@@ -1506,7 +1507,6 @@ const selectedGroup = ref('all')
 const isPresentationMode = ref(false)
 const showControls = ref(false)
 
-
 const currentLayer = computed(() => layers[currentLayerIndex.value])
 
 const togglePresentationMode = () => {
@@ -1514,7 +1514,6 @@ const togglePresentationMode = () => {
 
   isPresentationMode.value = !isPresentationMode.value
   if (isPresentationMode.value) {
-
     if (!hasSeenPresentationMode) {
       ElMessageBox.confirm(
         'Tip: In presentation mode, move your mouse to the bottom to show the control bar',
@@ -1535,7 +1534,6 @@ const togglePresentationMode = () => {
     } else {
       enterFullscreen()
     }
-
   } else {
     exitFullscreen()
   }
@@ -1800,6 +1798,12 @@ const exportMapAsJson = () => {
   URL.revokeObjectURL(url)
 }
 
+// open help page
+const openHelpCenter = () => {
+  const helpUrl = window.location.origin + '/#/help'
+  window.open(helpUrl, '_blank')
+}
+
 // Tour related
 const hasSeenTour = localStorage.getItem('hasSeenTour')
 const tour = inject<TourGuideClient>('tourGuide')
@@ -1835,6 +1839,11 @@ const startATour = () => {
           content:
             'Click this button to toggle presentation mode, which hides unnecessary controls for a cleaner view.',
           target: '#presentationModeButton', // Target the presentation mode button
+        },
+        {
+          title: 'Help Center Button',
+          content: 'Click this button to open the Help Center in a new tab.',
+          target: '#helpCenterButton', // Target the help center button
         },
       ],
       hidePrev: true,
@@ -2203,6 +2212,11 @@ defineExpose({
         :class="{ 'presentation-mode': isPresentationMode }"
         :icon="`${isPresentationMode ? 'Platform' : 'Monitor'}`"
       ></el-button>
+      <el-button id="helpCenterButton" style="margin: 4px 0 0 0" @click="openHelpCenter">
+        <template #icon>
+          <img :src="QuestionSvg" alt="Custom Question Icon" style="height: 18px" />
+        </template>
+      </el-button>
     </div>
   </div>
 
