@@ -352,7 +352,7 @@ const removeFileHandleToLocalStorage = () => {
 const resetPage = () => {
   console.log("ResetPage");
 
-  removeFileHandleToLocalStorage()
+  //removeFileHandleToLocalStorage()
   window.location.reload()
 }
 

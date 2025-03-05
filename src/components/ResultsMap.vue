@@ -19,8 +19,7 @@ import createGroupGif from '@/assets/gif/create-group.gif'
 import createBubbleGif from '@/assets/gif/create-bubble.gif'
 import createRelationshipGif from '@/assets/gif/create-relationship.gif'
 import QuestionSvg from '@/assets/svg/question.svg'
-import logoImage from '@/assets/logo.png';
-
+import logoImage from '@/assets/logo.png'
 
 const props = defineProps<{
   data: ResultsMapData
@@ -687,7 +686,7 @@ function addArrowsAndTitle(svg: d3.Selection<SVGGElement, unknown, null, undefin
     .attr('orient', 'auto-start-reverse')
     .append('path')
     .attr('d', 'M 0 0 L 10 5 L 0 10 z')
-    .attr('fill', '#666')
+    .attr('fill', '#000')
 
   // Define dot marker
   svg
@@ -703,7 +702,7 @@ function addArrowsAndTitle(svg: d3.Selection<SVGGElement, unknown, null, undefin
     .attr('cx', '5')
     .attr('cy', '5')
     .attr('r', '3')
-    .attr('fill', '#666')
+    .attr('fill', '#000')
 
   // Define start arrow marker for conflict
   svg
@@ -718,7 +717,7 @@ function addArrowsAndTitle(svg: d3.Selection<SVGGElement, unknown, null, undefin
     .attr('orient', 'auto-start-reverse')
     .append('path')
     .attr('d', 'M 0 0 L 10 5 L 0 10 z')
-    .attr('fill', '#666')
+    .attr('fill', '#000')
 
   // Define end arrow marker for conflict
   svg
@@ -733,7 +732,7 @@ function addArrowsAndTitle(svg: d3.Selection<SVGGElement, unknown, null, undefin
     .attr('orient', 'auto')
     .append('path')
     .attr('d', 'M 0 0 L 10 5 L 0 10 z')
-    .attr('fill', '#666')
+    .attr('fill', '#000')
 
   // Define start line arrow marker
   svg
@@ -749,7 +748,7 @@ function addArrowsAndTitle(svg: d3.Selection<SVGGElement, unknown, null, undefin
     .append('path')
     .attr('d', 'M 0 5 L 10 5 M 5 0 L 0 5 L 5 10')
     .attr('fill', 'none')
-    .attr('stroke', '#666')
+    .attr('stroke', '#000')
     .attr('stroke-width', 1.5)
 
   // Define end line arrow marker
@@ -766,7 +765,7 @@ function addArrowsAndTitle(svg: d3.Selection<SVGGElement, unknown, null, undefin
     .append('path')
     .attr('d', 'M 0 5 L 10 5 M 5 0 L 10 5 L 5 10')
     .attr('fill', 'none')
-    .attr('stroke', '#666')
+    .attr('stroke', '#000')
     .attr('stroke-width', 1.5)
 
   // Add title at the top of the map
@@ -814,6 +813,16 @@ function addArrowsAndTitle(svg: d3.Selection<SVGGElement, unknown, null, undefin
     .attr('height', 120)
     .attr('xlink:href', logoImage)
 }
+
+
+// For legend explanation dialog
+const legendExplanationDialogVisible = ref(false);
+const showLegendExplanationDialog = () => {
+  legendExplanationDialogVisible.value = true;
+};
+const handleLegendExplanationDialogClose = () => {
+  legendExplanationDialogVisible.value = false;
+};
 
 const drawMap = () => {
   console.log('Map Data', props.data)
@@ -1127,7 +1136,7 @@ const drawMap = () => {
         .attr('y1', startY)
         .attr('x2', endX)
         .attr('y2', endY)
-        .attr('stroke', '#666')
+        .attr('stroke', '#000')
         .attr('stroke-width', 1.5)
         .attr('fill', 'none')
 
@@ -1197,7 +1206,7 @@ const drawMap = () => {
         .append('path')
         .attr('data-relationship-id', rel.id) // Add a unique identifier
         .attr('d', `M ${startX} ${startY} Q ${controlX} ${controlY} ${endX} ${endY}`)
-        .attr('stroke', '#666')
+        .attr('stroke', '#000')
         .attr('stroke-width', 1.5)
         .attr('fill', 'none')
 
@@ -1321,6 +1330,32 @@ const drawMap = () => {
     }
   })
 
+
+  // Add a circle border around the question mark icon
+legendGroup
+  .append('circle')
+  .attr('cx', 100) // Adjust the position to match the question mark's x position
+  .attr('cy', 0 + 304) // Adjust the position to match the question mark's y position
+  .attr('r', 10) // Radius of the circle (adjust as needed)
+  .attr('fill', 'none') // No fill
+  .attr('stroke', '#409eff') // Border color
+  .attr('stroke-width', 1.5); // Border thickness
+
+  // Add a question mark icon next to the legend lines group
+legendGroup
+  .append('text')
+  .attr('x', 100) // Adjust the position as needed
+  .attr('y',  0 + 306) // Adjust the position as needed
+  .attr('text-anchor', 'middle')
+  .attr('alignment-baseline', 'middle')
+  .text('?')
+  .style('font-size', '15px')
+  .style('fill', '#409eff')
+  .style('cursor', 'pointer')
+  .on('click', () => {
+    showLegendExplanationDialog();
+  });
+
   // Add vertical legend lines with text at the top
   let currentY = 0
   props.data.legends.legendLines.forEach((line) => {
@@ -1328,7 +1363,7 @@ const drawMap = () => {
       legendGroup
         .append('text')
         .attr('x', line.x)
-        .attr('y', line.y - currentY)
+        .attr('y', line.y - currentY - 4)
         .attr('text-anchor', 'middle')
         .attr('alignment-baseline', 'middle')
         .text(line.text)
@@ -1337,12 +1372,52 @@ const drawMap = () => {
 
       const legendLine = legendGroup
         .append('line')
-        .attr('x1', line.x - line.length)
+        .attr('x1', line.x - line.length + 3)
         .attr('y1', line.y + 12 - currentY)
-        .attr('x2', line.x + line.length)
+        .attr('x2', line.x + line.length - 3)
         .attr('y2', line.y + 12 - currentY)
         .attr('stroke', line.color)
         .attr('stroke-width', 1.5)
+
+      // Add a circle with "A" on the left side of the arrow
+      legendGroup
+        .append('circle')
+        .attr('cx', line.x - line.length - 7) // Adjust the position as needed
+        .attr('cy', line.y + 12 - currentY)
+        .attr('r', 8) // Radius of the circle
+        .attr('fill', 'white')
+        .attr('stroke', line.color)
+        .attr('stroke-width', 1.5)
+
+      legendGroup
+        .append('text')
+        .attr('x', line.x - line.length - 7)
+        .attr('y', line.y + 13 - currentY)
+        .attr('text-anchor', 'middle')
+        .attr('alignment-baseline', 'middle')
+        .text('A')
+        .style('font-size', '12px')
+        .style('fill', line.color)
+
+      // Add a circle with "B" on the right side of the arrow
+      legendGroup
+        .append('circle')
+        .attr('cx', line.x + line.length + 7) // Adjust the position as needed
+        .attr('cy', line.y + 12 - currentY)
+        .attr('r', 8) // Radius of the circle
+        .attr('fill', 'white')
+        .attr('stroke', line.color)
+        .attr('stroke-width', 1.5)
+
+      legendGroup
+        .append('text')
+        .attr('x', line.x + line.length + 7)
+        .attr('y', line.y + 13 - currentY)
+        .attr('text-anchor', 'middle')
+        .attr('alignment-baseline', 'middle')
+        .text('B')
+        .style('font-size', '12px')
+        .style('fill', line.color)
 
       if (line.type === 'Cause-Effect') {
         // Add arrow marker
@@ -1811,9 +1886,9 @@ const exportMapAsJson = () => {
 
 // open help page
 const openHelpCenter = () => {
-  const currentUrl = window.location.href;
-  const helpUrl = currentUrl.replace(/\/[^\/]*$/, '/help'); // Replace the current path with '/#/help'
-  window.open(helpUrl, '_blank');
+  const currentUrl = window.location.href
+  const helpUrl = currentUrl.replace(/\/[^\/]*$/, '/help') // Replace the current path with '/#/help'
+  window.open(helpUrl, '_blank')
 }
 
 // Tour related
@@ -2040,6 +2115,7 @@ const startCreationMenuTour = () => {
   }
 }
 
+
 onMounted(() => {
   drawMap()
   document.addEventListener('click', handleClickOutside)
@@ -2231,6 +2307,24 @@ defineExpose({
       </el-button>
     </div>
   </div>
+
+  <!-- legends explanation-->
+
+  <el-dialog
+  v-model="legendExplanationDialogVisible"
+  title="Relationship Types Explanation"
+  width="30%"
+  top="35vh"
+  :modal="false"
+  :before-close="handleLegendExplanationDialogClose"
+>
+  <ul class="legend-explanation">
+    <li><strong>Cause-Effect</strong>: if A improves, then B improves.</li>
+    <li><strong>Companion</strong>: no sense improving A without B.</li>
+    <li><strong>Conflict</strong>: if A improves, B gets worse.</li>
+    <li><strong>Lead-Lag</strong>: if A improves, then B will improve but later.</li>
+  </ul>
+</el-dialog>
 
   <!-- context menu for bubble updates -->
   <div
@@ -2424,6 +2518,22 @@ svg {
 
 .margin-top-less {
   margin-top: -4px !important;
+}
+
+.legend-explanation strong{
+  font-size: 14px;
+  color: #000;
+  font-weight: bold;
+}
+
+.legend-explanation{
+  padding: 0 30px;
+}
+
+.legend-explanation li{
+  font-size: 14px;
+  color: #000;
+  line-height: 26px;
 }
 
 .text-ellipsis {
