@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, onBeforeUnmount, watch, computed, nextTick } from 'vue'
+import { ref, onMounted, onBeforeUnmount, watch, computed, nextTick, inject } from 'vue'
 import * as d3 from 'd3'
 import type {
   ResultsMapData,
@@ -10,16 +10,22 @@ import type {
   LayerColors,
   RelationType,
 } from '@/types/ResultsMap'
-import saveSvgAsPng from 'save-svg-as-png';
-import { jsPDF } from 'jspdf';
-import { svg2pdf } from 'svg2pdf.js';
-
+import saveSvgAsPng from 'save-svg-as-png'
+import { jsPDF } from 'jspdf'
+import { svg2pdf } from 'svg2pdf.js'
+import { ElMessageBox, ElMessage } from 'element-plus'
+import type { TourGuideClient } from '@sjmc11/tourguidejs/src/Tour'
+import createGroupGif from '@/assets/gif/create-group.gif'
+import createBubbleGif from '@/assets/gif/create-bubble.gif'
+import createRelationshipGif from '@/assets/gif/create-relationship.gif'
+import QuestionSvg from '@/assets/svg/question.svg'
 import logoImage from '@/assets/logo.png';
 
 
 const props = defineProps<{
   data: ResultsMapData
   onAddGroup: (group: Omit<Group, 'id'>) => void
+  onResetDataToDefault: () => void
 }>()
 
 const svgRef = ref<SVGElement | null>(null)
@@ -134,6 +140,12 @@ const handleEmptyPositionRightClick = (event: MouseEvent) => {
 
         // Update the empty position context menu position
         emptyPositionContextMenuPosition.value = { x, y }
+
+        // start a context menu tour
+        // messageInstance.close();
+        if (!hasSeenTour && !isFirstBubbleCreated.value) {
+          startCreationMenuTour()
+        }
       }
     })
   }
@@ -233,6 +245,16 @@ const createBubble = () => {
   // Reset form and hide context menu
   newBubbleText.value = ''
   emptyPositionContextMenuVisible.value = false
+
+  isFirstBubbleCreated.value = true
+  // Detect if the new bubble is created in the tour
+  if (!hasSeenTour && mapBubbles.value.length > 1) {
+    isTwoBubbleCreated.value = true
+    messageInstance?.close()
+
+    // start the bubble creation tour
+    startCreateRelationshipTour()
+  }
 }
 
 // Handle bubble right-click
@@ -286,6 +308,10 @@ const showContextMenu = (event: MouseEvent, bubble: Bubble) => {
 
       // Update the context menu position
       contextMenuPosition.value = { x, y }
+
+      if (!hasSeenTour) {
+        startUpdateMenuTour()
+      }
     }
   })
 }
@@ -759,7 +785,7 @@ function addArrowsAndTitle(svg: d3.Selection<SVGGElement, unknown, null, undefin
   svg
     .append('text')
     .attr('x', 50)
-    .attr('y', height-30)
+    .attr('y', height - 30)
     .attr('transform', 'translate(30, 0)')
     .attr('text-anchor', 'middle')
     .attr('alignment-baseline', 'middle')
@@ -804,7 +830,11 @@ const drawMap = () => {
   // Create or select the <g> element for the map content
   let mapGroup: d3.Selection<SVGGElement, unknown, null, undefined> = svg.select('g.map-group')
   if (mapGroup.empty()) {
-    mapGroup = svg.append('g').attr('class', 'map-group').attr('width', width).attr('height', height)
+    mapGroup = svg
+      .append('g')
+      .attr('class', 'map-group')
+      .attr('width', width)
+      .attr('height', height)
   }
 
   if (currentTransform) {
@@ -1351,15 +1381,16 @@ const zoomOut = () => {
 
 const resetZoom = () => {
   return new Promise<void>((resolve) => {
-    const svg = d3.select(svgRef.value!);
-    svg.transition()
+    const svg = d3.select(svgRef.value!)
+    svg
+      .transition()
       .duration(300)
       .call(zoom.transform, d3.zoomIdentity) // Reset zoom
       .on('end', () => {
-        resolve();
-      });
-  });
-};
+        resolve()
+      })
+  })
+}
 
 // Create a new relationship
 const newRelationship = ref({
@@ -1432,6 +1463,15 @@ const createGroup = () => {
   // Clear the input field and hide the context menu
   newGroupName.value = ''
   emptyPositionContextMenuVisible.value = false
+
+  // Detect if the new group is created in the tour
+  if (!hasSeenTour) {
+    isNewGroupCreated.value = true
+    messageInstance?.close()
+
+    // start the bubble creation tour
+    startCreateBubbleTour()
+  }
 }
 
 const deleteCurrentGroup = () => {
@@ -1481,9 +1521,30 @@ const showControls = ref(false)
 const currentLayer = computed(() => layers[currentLayerIndex.value])
 
 const togglePresentationMode = () => {
+  const hasSeenPresentationMode = localStorage.getItem('hasSeenPresentationMode')
+
   isPresentationMode.value = !isPresentationMode.value
   if (isPresentationMode.value) {
-    enterFullscreen()
+    if (!hasSeenPresentationMode) {
+      ElMessageBox.confirm(
+        'Tip: In presentation mode, move your mouse to the bottom to show the control bar',
+        'Presentation Mode',
+        {
+          confirmButtonText: 'Ok',
+          showCancelButton: false,
+          type: 'info',
+        },
+      )
+        .then(() => {
+          localStorage.setItem('hasSeenPresentationMode', 'true')
+          enterFullscreen()
+        })
+        .catch(() => {
+          return
+        })
+    } else {
+      enterFullscreen()
+    }
   } else {
     exitFullscreen()
   }
@@ -1593,8 +1654,7 @@ const handleBubbleClick = (bubbleId: string) => {
         (rel.source === bubbleId && rel.target === newRelationship.value.source),
     )
 
-    console.log("newRelationshipssss", newRelationship);
-
+    console.log('newRelationshipssss', newRelationship)
 
     if (relationshipExists) {
       console.log('A relationship between these bubbles already exists.')
@@ -1604,6 +1664,32 @@ const handleBubbleClick = (bubbleId: string) => {
     newRelationship.value.target = bubbleId
     handleAddRelationship()
     isCreatingRelationship.value = false // Exit relationship creation mode
+
+    // Detect if the new relationship is created in the tour
+    if (!hasSeenTour) {
+      isNewRelationshipCreated.value = true
+      messageInstance?.close()
+
+      // show a finish dialog
+      ElMessageBox.confirm(
+        'You have successfully created a relationship. Do you want to create a new map from scratch or continue working on the current one?',
+        'Tour finished',
+        {
+          confirmButtonText: 'Create New Map',
+          cancelButtonText: 'Continue Editing',
+          type: 'success',
+        },
+      )
+        .then(() => {
+          localStorage.setItem('hasSeenTour', 'true')
+          // set data to default
+          props.onResetDataToDefault()
+        })
+        .catch(() => {
+          localStorage.setItem('hasSeenTour', 'true')
+          return
+        })
+    }
   } else if (isPresentationMode.value) {
     if (focusedBubbleId.value === bubbleId) {
       // If the same bubble is clicked again, reset the focus
@@ -1649,8 +1735,15 @@ const getRelatedBubblesAndRelationships = (bubbleId: string) => {
 }
 
 const handleClickOutside = (event: MouseEvent) => {
+  console.log('click outside')
+
   const contextMenuElement = document.querySelector('.context-menu')
-  if (contextMenuElement && !contextMenuElement.contains(event.target as Node)) {
+  const tourButton = document.querySelector('.tg-dialog-btn')
+  if (
+    contextMenuElement &&
+    !contextMenuElement.contains(event.target as Node) &&
+    !tourButton?.contains(event.target as Node)
+  ) {
     hideContextMenu()
   }
 }
@@ -1666,51 +1759,285 @@ const generateFileName = (extension: string) => {
 //export image
 const exportMapAsImage = async () => {
   try {
-    const svgElement = d3.select(svgRef.value).node() as SVGSVGElement;
+    const svgElement = d3.select(svgRef.value).node() as SVGSVGElement
     if (!svgElement) {
-      console.error('SVG element not found');
-      return;
+      console.error('SVG element not found')
+      return
     }
 
-     saveSvgAsPng.saveSvgAsPng(svgElement, generateFileName('png'), {encorderOptions: 1, backgroundColor: "white"});
-
+    saveSvgAsPng.saveSvgAsPng(svgElement, generateFileName('png'), {
+      encorderOptions: 1,
+      backgroundColor: 'white',
+    })
   } catch (error) {
-    console.error('Error exporting map as image:', error);
+    console.error('Error exporting map as image:', error)
   }
-};
+}
 
 // export pdf
-const exportMapAsPDF = async (svgElement=d3.select(svgRef.value).node() as SVGSVGElement, filename = generateFileName('pdf')) => {
+const exportMapAsPDF = async (
+  svgElement = d3.select(svgRef.value).node() as SVGSVGElement,
+  filename = generateFileName('pdf'),
+) => {
   const pdf = new jsPDF({
-        orientation: "landscape", // Change to "portrait" if needed
-        unit: "px",
-        format: [svgElement.clientWidth, svgElement.clientHeight]
-    });
+    orientation: 'landscape', // Change to "portrait" if needed
+    unit: 'px',
+    format: [svgElement.clientWidth, svgElement.clientHeight],
+  })
 
-    // Convert SVG to PDF vector format
-    await svg2pdf(svgElement, pdf, {
-        x: 0,
-        y: 0,
-        width: svgElement.clientWidth,
-        height: svgElement.clientHeight
-    });
+  // Convert SVG to PDF vector format
+  await svg2pdf(svgElement, pdf, {
+    x: 0,
+    y: 0,
+    width: svgElement.clientWidth,
+    height: svgElement.clientHeight,
+  })
 
-    pdf.save(filename);
+  pdf.save(filename)
 }
 
 //export json with a filename based on the current date
 const exportMapAsJson = () => {
-  const data = JSON.stringify(props.data, null, 2);
-  const filename = generateFileName('resultsmap');
-  const blob = new Blob([data], { type: 'application/json' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = filename;
-  a.click();
-  URL.revokeObjectURL(url);
-};
+  const data = JSON.stringify(props.data, null, 2)
+  const filename = generateFileName('resultsmap')
+  const blob = new Blob([data], { type: 'application/json' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = filename
+  a.click()
+  URL.revokeObjectURL(url)
+}
 
+// open help page
+const openHelpCenter = () => {
+  const helpUrl = window.location.origin + '/#/help'
+  window.open(helpUrl, '_blank')
+}
+
+// Tour related
+const hasSeenTour = localStorage.getItem('hasSeenTour')
+const tour = inject<TourGuideClient>('tourGuide')
+
+let messageInstance: any = null
+const isNewGroupCreated = ref(false)
+const isFirstBubbleCreated = ref(false) // close the message box after the first bubble is created
+const isTwoBubbleCreated = ref(false)
+const isNewRelationshipCreated = ref(false)
+
+const startATour = () => {
+  // Configure the tour
+  if (tour) {
+    tour.setOptions({
+      steps: [
+        {
+          title: 'Zoom In',
+          content: 'Click this button to zoom in on the map for a closer view.',
+          target: '#zoomInButton', // Target the zoom-in button
+        },
+        {
+          title: 'Zoom Out',
+          content: 'Click this button to zoom out on the map for a wider view.',
+          target: '#zoomOutButton', // Target the zoom-out button
+        },
+        {
+          title: 'Reset Zoom',
+          content: 'Click this button to reset the map zoom to the default level.',
+          target: '#resetZoomButton', // Target the reset zoom button
+        },
+        {
+          title: 'Presentation Mode',
+          content:
+            'Click this button to toggle presentation mode, which hides unnecessary controls for a cleaner view.',
+          target: '#presentationModeButton', // Target the presentation mode button
+        },
+        {
+          title: 'Help Center Button',
+          content: 'Click this button to open the Help Center in a new tab.',
+          target: '#helpCenterButton', // Target the help center button
+        },
+      ],
+      hidePrev: true,
+      backdropClass: 'custom-backdrop-class',
+    })
+
+    // tour.onBeforeStepChange(() => {
+    //   console.log(`Before Changing to step: ${tour.activeStep}`)
+    // })
+
+    tour.onFinish(() => {
+      console.log('Tour finished')
+
+      // Show a message box to inform the user about the next steps
+      ElMessageBox.confirm(
+        `You can now create groups by right-clicking on the map. <br /> <img style="width: 100%; margin-top: 10px;" src="${createGroupGif}"/>`,
+        'Create Groups',
+        {
+          //title: 'Next Steps',
+          confirmButtonText: 'Continue',
+          cancelButtonText: 'Quit',
+          type: '',
+          customClass: 'custom-message-box-class',
+          dangerouslyUseHTMLString: true,
+        },
+      )
+        .then(() => {
+          // Start the second tour
+          // startCreationMenuTour();
+          messageInstance = ElMessage({
+            type: 'info',
+            message: 'Please right-click the map to create a group',
+            duration: 0, // Make the message persistent
+          })
+        })
+        .catch(() => {
+          ElMessage({
+            type: 'info',
+            message:
+              'You can always right-click on the map to create or delete groups and bubbles.',
+          })
+        })
+    })
+
+    setTimeout(() => {
+      tour.start()
+    }, 400)
+  }
+}
+
+const startCreateBubbleTour = () => {
+  // Show a message box to inform the user about the next steps
+  ElMessageBox.confirm(
+    `You can now create bubbles by right-clicking on the map.  <br /> <img style="width: 100%; margin-top: 10px;" src="${createBubbleGif}"/>`,
+    'Create Bubbles',
+    {
+      //title: 'Next Steps',
+      confirmButtonText: 'Continue',
+      cancelButtonText: 'Quit',
+      type: '',
+      dangerouslyUseHTMLString: true,
+      customClass: 'custom-message-box-class',
+    },
+  )
+    .then(() => {
+      // Start the second tour
+      // startCreationMenuTour();
+      messageInstance = ElMessage({
+        type: 'info',
+        message:
+          'Please right-click the map to create bubbles, ensuring at least two bubbles are placed on the map.',
+        duration: 0, // Make the message persistent
+      })
+    })
+    .catch(() => {
+      ElMessage({
+        type: 'info',
+        message: 'You can always right-click on the map to create or delete groups and bubbles.',
+      })
+    })
+}
+
+const startCreateRelationshipTour = () => {
+  // Show a message box to inform the user about the next steps
+  ElMessageBox.confirm(
+    `You can now create relationships by right-clicking the bubble.  <br /> <img style="width: 100%; margin-top: 10px;" src="${createRelationshipGif}"/>`,
+    'Create Relationship',
+    {
+      //title: 'Next Steps',
+      confirmButtonText: 'Continue',
+      cancelButtonText: 'Quit',
+      type: '',
+      dangerouslyUseHTMLString: true,
+      customClass: 'custom-message-box-class',
+    },
+  )
+    .then(() => {
+      // Start the second tour
+      // startCreationMenuTour();
+      messageInstance = ElMessage({
+        type: 'info',
+        message: 'Please right-click the bubble to create a new relationship',
+        duration: 0, // Make the message persistent
+      })
+    })
+    .catch(() => {
+      ElMessage({
+        type: 'info',
+        message: 'You can always right-click on the map to create or delete groups and bubbles.',
+      })
+    })
+}
+
+const startUpdateMenuTour = () => {
+  if (tour) {
+    tour.setOptions({
+      steps: [
+        {
+          title: 'Bubble Section',
+          content:
+            'In this section, you can update the text of the bubble or remove it from the map. Use the "Update" button to save changes or the "Remove" button to delete the bubble.',
+          target: '#updateBubbles',
+        },
+        {
+          title: 'Relationship Section',
+          content:
+            'In this section, you can create new relationships between bubbles or manage existing ones. Use the dropdown to select a relationship type, then click "Create Relationship". For existing relationships, you can update their type or delete them.',
+          target: '#manageRelationships',
+        },
+      ],
+      hidePrev: true,
+      backdropClass: 'custom-backdrop-class',
+    })
+
+    // Handle the end of the second tour
+    tour.onFinish(() => {
+      console.log('Second tour finished')
+      // ElMessage({
+      //   type: 'success',
+      //   message: 'You are now ready to create bubbles and groups!',
+      // })
+    })
+
+    // Start the tour
+    setTimeout(() => {
+      tour.start()
+    }, 300)
+  }
+}
+
+const startCreationMenuTour = () => {
+  if (tour) {
+    tour.setOptions({
+      steps: [
+        {
+          title: 'Create a Bubble',
+          content:
+            'Use the context menu to create a new bubble by entering text and clicking "Create".',
+          target: '#createBubble', // Target the context menu for empty positions
+        },
+        {
+          title: 'Create or Delete a Group',
+          content: 'You can also create or delete a group using the context menu.',
+          target: '#createGroup', // Target the context menu for empty positions
+        },
+      ],
+      hidePrev: true,
+      backdropClass: 'custom-backdrop-class',
+    })
+
+    // Handle the end of the second tour
+    tour.onFinish(() => {
+      console.log('Second tour finished')
+      // ElMessage({
+      //   type: 'success',
+      //   message: 'You are now ready to create bubbles and groups!',
+      // })
+    })
+
+    // Start the second tour
+    tour.start()
+  }
+}
 
 onMounted(() => {
   drawMap()
@@ -1815,6 +2142,7 @@ defineExpose({
   exportMapAsImage,
   exportMapAsPDF,
   exportMapAsJson,
+  startATour,
 })
 </script>
 
@@ -1885,15 +2213,21 @@ defineExpose({
 
     <!-- zoom controls -->
     <div class="zoom-controls">
-      <el-button @click="zoomIn" icon="Plus"></el-button>
-      <el-button @click="zoomOut" icon="Minus"></el-button>
-      <el-button @click="resetZoom" icon="RefreshRight"></el-button>
+      <el-button id="zoomInButton" @click="zoomIn" icon="Plus"></el-button>
+      <el-button id="zoomOutButton" @click="zoomOut" icon="Minus"></el-button>
+      <el-button id="resetZoomButton" @click="resetZoom" icon="RefreshRight"></el-button>
       <el-button
+        id="presentationModeButton"
         style="margin: 15px 0 0 0"
         @click="togglePresentationMode"
         :class="{ 'presentation-mode': isPresentationMode }"
         :icon="`${isPresentationMode ? 'Platform' : 'Monitor'}`"
       ></el-button>
+      <el-button id="helpCenterButton" style="margin: 4px 0 0 0" @click="openHelpCenter">
+        <template #icon>
+          <img :src="QuestionSvg" alt="Custom Question Icon" style="height: 18px" />
+        </template>
+      </el-button>
     </div>
   </div>
 
@@ -1903,41 +2237,44 @@ defineExpose({
     :style="{ top: `${contextMenuPosition.y}px`, left: `${contextMenuPosition.x}px` }"
     class="context-menu bubble-context-menu"
   >
-    <el-divider> Bubble </el-divider>
-    <!-- <h4>Bubble</h4> -->
-    <el-form @submit.prevent="updateBubbleText" style="margin: 0 0 10px 0">
+    <div id="updateBubbles">
+      <el-divider> Bubble </el-divider>
+      <!-- <h4>Bubble</h4> -->
+      <el-form @submit.prevent="updateBubbleText">
+        <el-form-item label="">
+          <el-input v-model="newText" autosize type="textarea" />
+        </el-form-item>
+        <el-form-item class="margin-top-less">
+          <el-button type="primary" style="width: 47%" @click="updateBubbleText">Update</el-button>
+          <el-popconfirm title="Are you sure to remove this?" @confirm="confirmRemoveBubble">
+            <template #reference>
+              <el-button style="width: 47%" type="danger">Remove</el-button>
+            </template>
+          </el-popconfirm>
+        </el-form-item>
+      </el-form>
+    </div>
+
+    <div id="manageRelationships" style="margin-top: 20px">
+      <el-divider> Relationship </el-divider>
+      <!-- Add a select box for relationship types -->
       <el-form-item label="">
-        <el-input v-model="newText" autosize type="textarea" />
+        <el-select v-model="newRelationshipType" placeholder="Select relationship type">
+          <el-option v-for="type in relationshipTypes" :key="type" :label="type" :value="type" />
+        </el-select>
       </el-form-item>
-      <el-form-item class="margin-top-less">
-        <el-button type="primary" style="width: 47%" @click="updateBubbleText">Update</el-button>
-        <el-popconfirm title="Are you sure to remove this?" @confirm="confirmRemoveBubble">
-          <template #reference>
-            <el-button style="width: 47%" type="danger">Remove</el-button>
-          </template>
-        </el-popconfirm>
-      </el-form-item>
-    </el-form>
 
-    <el-divider> Relationship </el-divider>
-    <!-- Add a select box for relationship types -->
-    <el-form-item label="">
-      <el-select v-model="newRelationshipType" placeholder="Select relationship type">
-        <el-option v-for="type in relationshipTypes" :key="type" :label="type" :value="type" />
-      </el-select>
-    </el-form-item>
+      <!-- Add the "Create Relationship" button -->
+      <el-button
+        type="primary"
+        class="margin-top-less"
+        style="width: 100%; margin-top: 0px"
+        @click="startCreateRelationship(newRelationshipType)"
+        >Create Relationship</el-button
+      >
 
-    <!-- Add the "Create Relationship" button -->
-    <el-button
-      type="primary"
-      class="margin-top-less"
-      style="width: 100%; margin-top: 0px"
-      @click="startCreateRelationship(newRelationshipType)"
-      >Create Relationship</el-button
-    >
-
-    <div class="relationship-list" v-if="selectedBubble">
-      <!-- <h4
+      <div class="relationship-list" v-if="selectedBubble">
+        <!-- <h4
         v-if="
           props.data.relationships.filter(
             (rel) => rel.source === selectedBubble?.id || rel.target === selectedBubble?.id,
@@ -1946,41 +2283,50 @@ defineExpose({
       >
        &nbsp;  Relationships
       </h4> -->
-      <ul>
-        <li
-          v-for="relationship in props.data.relationships
-            .filter((rel) => rel.source === selectedBubble?.id || rel.target === selectedBubble?.id)
-            .reverse()"
-          :key="relationship.id"
-        >
-          <span class="text-ellipsis">
-            <el-icon style="vertical-align: middle; margin-right: 2px"><Link /></el-icon>
-            {{props.data.bubbles.find((b) => selectedBubble?.id === relationship.target?  b.id === relationship.source :  b.id === relationship.target)?.text }}</span
+        <ul>
+          <li
+            v-for="relationship in props.data.relationships
+              .filter(
+                (rel) => rel.source === selectedBubble?.id || rel.target === selectedBubble?.id,
+              )
+              .reverse()"
+            :key="relationship.id"
           >
+            <span class="text-ellipsis">
+              <el-icon style="vertical-align: middle; margin-right: 2px"><Link /></el-icon>
+              {{
+                props.data.bubbles.find((b) =>
+                  selectedBubble?.id === relationship.target
+                    ? b.id === relationship.source
+                    : b.id === relationship.target,
+                )?.text
+              }}</span
+            >
 
-          <el-row :gutter="10">
-            <el-col :span="16">
-              <el-select
-                v-model="relationship.type"
-                placeholder="Select"
-                @change="(newType: string) => updateRelationshipType(relationship, newType)"
-              >
-                <el-option
-                  v-for="type in relationshipTypes"
-                  :key="type"
-                  :label="type"
-                  :value="type"
-                ></el-option>
-              </el-select>
-            </el-col>
-            <el-col :span="6">
-              <el-button type="danger" @click="() => removeRelationship(relationship)"
-                >Delete</el-button
-              >
-            </el-col>
-          </el-row>
-        </li>
-      </ul>
+            <el-row :gutter="10">
+              <el-col :span="16">
+                <el-select
+                  v-model="relationship.type"
+                  placeholder="Select"
+                  @change="(newType: string) => updateRelationshipType(relationship, newType)"
+                >
+                  <el-option
+                    v-for="type in relationshipTypes"
+                    :key="type"
+                    :label="type"
+                    :value="type"
+                  ></el-option>
+                </el-select>
+              </el-col>
+              <el-col :span="6">
+                <el-button type="danger" @click="() => removeRelationship(relationship)"
+                  >Delete</el-button
+                >
+              </el-col>
+            </el-row>
+          </li>
+        </ul>
+      </div>
     </div>
   </div>
 
@@ -1993,55 +2339,58 @@ defineExpose({
     }"
     class="context-menu empty-context-menu"
   >
-    <el-divider> Bubble </el-divider>
-    <el-form @submit.prevent="createBubble">
-      <el-form-item label="">
-        <el-input v-model="newBubbleText" autosize type="textarea" />
-      </el-form-item>
-      <el-form-item>
-        <el-button
-          class="margin-top-less"
-          type="primary"
-          style="width: 100%; margin-bottom: 10px"
-          @click="createBubble"
-          >Create</el-button
-        >
-      </el-form-item>
-    </el-form>
-
-    <el-divider> Group </el-divider>
-    <el-form @submit.prevent="createGroup">
-      <el-form-item label="">
-        <el-input v-model="newGroupName" type="text" placeholder="Enter group name" />
-      </el-form-item>
-      <el-form-item>
-        <el-button type="primary" class="margin-top-less" style="width: 100%" @click="createGroup"
-          >Create Group</el-button
-        >
-      </el-form-item>
-
-      <template v-if="currentGroup">
+    <div id="createBubble">
+      <el-divider> Bubble </el-divider>
+      <el-form @submit.prevent="createBubble">
         <el-form-item label="">
-          <el-input
-            v-model="currentGroup.name"
-            style="width: 100%; margin-top: 10px"
-            type="text"
-            placeholder="Enter group name"
-          />
+          <el-input v-model="newBubbleText" autosize type="textarea" />
         </el-form-item>
-      </template>
+        <el-form-item>
+          <el-button
+            class="margin-top-less"
+            type="primary"
+            style="width: 100%"
+            @click="createBubble"
+            >Create</el-button
+          >
+        </el-form-item>
+      </el-form>
+    </div>
+    <div id="createGroup" style="margin-top: 20px">
+      <el-divider> Group </el-divider>
+      <el-form @submit.prevent="createGroup">
+        <el-form-item label="">
+          <el-input v-model="newGroupName" type="text" placeholder="Enter group name" />
+        </el-form-item>
+        <el-form-item>
+          <el-button type="primary" class="margin-top-less" style="width: 100%" @click="createGroup"
+            >Create Group</el-button
+          >
+        </el-form-item>
 
-      <el-popconfirm
-        :title="`Are you sure you want to delete the group '${currentGroup?.name}'' and all its bubbles?`"
-        @confirm="deleteCurrentGroup"
-      >
-        <template #reference>
-          <el-button v-if="currentGroup" type="danger" style="width: 100%; margin-top: 0px">
-            Delete Current Group
-          </el-button>
+        <template v-if="currentGroup">
+          <el-form-item label="">
+            <el-input
+              v-model="currentGroup.name"
+              style="width: 100%; margin-top: 10px"
+              type="text"
+              placeholder="Enter group name"
+            />
+          </el-form-item>
         </template>
-      </el-popconfirm>
-    </el-form>
+
+        <el-popconfirm
+          :title="`Are you sure you want to delete the group '${currentGroup?.name}'' and all its bubbles?`"
+          @confirm="deleteCurrentGroup"
+        >
+          <template #reference>
+            <el-button v-if="currentGroup" type="danger" style="width: 100%; margin-top: 0px">
+              Delete Current Group
+            </el-button>
+          </template>
+        </el-popconfirm>
+      </el-form>
+    </div>
   </div>
 </template>
 <style>

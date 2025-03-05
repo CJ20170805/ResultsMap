@@ -17,13 +17,34 @@
 }
 
 .custom-modal-class {
-  background-color: #fdfdfd!important;
+  background-color: rgba(20, 20, 21, 0.4)!important;
 }
 
-.el-overlay {
+.home-container .el-overlay {
   background-color: #fdfdfd!important;
 }
 
 .custom-message-box-class{
   margin-top: -110px;
+  --el-messagebox-width: 40%!important;
+}
+
+.el-collapse{
+  border-bottom: none!important;
+}
+
+.el-collapse-item__header{
+  font-size: 14px!important;
+}
+
+.el-collapse-item__content{
+  font-size: 14px!important;
+}
+
+.custom-backdrop-class{
+  box-shadow: rgba(20, 20, 21, 0.04) 0px 0px 1px 2px, rgba(20, 20, 21, 0.48) 0px 0px 0px 1000vh!important;
+  z-index: 3000!important;
+}
+.tg-dialog-close-btn{
+  margin: -10px 0 0 0;
 }

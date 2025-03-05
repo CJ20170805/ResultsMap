@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onMounted, inject } from 'vue'
 import type {
   LayerType,
   RelationType,
@@ -10,6 +10,7 @@ import type {
   ExportType,
 } from '@/types/ResultsMap'
 //import { mapActions } from 'pinia';
+import type { TourGuideClient } from '@sjmc11/tourguidejs/src/Tour'
 
 const props = defineProps<{
   onAddBubble: (bubble: Omit<Bubble, 'id'>) => void
@@ -20,6 +21,7 @@ const props = defineProps<{
   onExport: (type: ExportType) => void
   onImport: () => void
   onCreateNewMap: () => void
+  onContinueTour: () => void
   groups: Group[]
   mapData: ResultsMapData
 }>()
@@ -50,6 +52,77 @@ const newRelationship = ref({
 
 const layerOptions: LayerType[] = ['mission', 'strategic', 'process', 'operational']
 const relationTypes: RelationType[] = ['cause-effect', 'companion', 'conflict', 'lead-lag']
+
+// Tour related state
+const currentTab = ref<string>('File')
+
+// Initialize TourGuideJS
+const hasSeenTour = localStorage.getItem('hasSeenTour')
+const tour = inject<TourGuideClient>('tourGuide')
+const isFinished = ref(false);
+
+const startATour = () => {
+  // Configure the tour
+  if (tour) {
+    const steps = [
+      {
+        title: 'File Tab',
+        content: 'This is the File tab where you can create, import, and export maps.',
+        target: '#fileTab',
+      },
+      {
+        title: 'Map Tab',
+        content:
+          'This is the Map tab where you can configure the map title, date, layer colors, and group divider level.',
+        target: '#mapTab',
+      },
+      {
+        title: 'Legend Tab',
+        content: 'This is the Legend tab where you can manage the legend for bubbles and lines.',
+        target: '#legendTab',
+      },
+    ]
+
+    tour.setOptions({ steps, finishLabel: 'Continue' })
+
+    tour.onBeforeStepChange(() => {
+      console.log(`Before Changing to step: ${tour.activeStep}`)
+      if(!isFinished.value) {
+        switch (tour.activeStep) {
+        case 0:
+          currentTab.value = 'Map'
+          break
+        case 1:
+          currentTab.value = 'Legend'
+          break
+        case 2:
+          currentTab.value = 'File'
+          break
+      }
+      }
+
+    })
+
+    tour.onFinish(() => {
+      console.log('Tour finished')
+
+      currentTab.value = 'File'
+
+      isFinished.value = true;
+      props.onContinueTour();
+    })
+
+    tour.start()
+  }
+}
+
+onMounted(() => {
+  if (!hasSeenTour && tour){
+    setTimeout(() => {
+      startATour()
+    }, 1000)
+  }
+})
 
 const handleAddBubble = () => {
   if (newBubble.value.text.trim()) {
@@ -119,14 +192,14 @@ const createNewMap = () => {
 
 <template>
   <div class="controls-panel">
-    <el-tabs type="card" class="control-tabs">
-      <el-tab-pane label="File">
+    <el-tabs type="card" v-model="currentTab" class="control-tabs">
+      <el-tab-pane label="File" name="File" id="fileTab">
         <!-- Import and Export Forms -->
         <el-row :gutter="20">
           <el-col :span="24">
             <div class="control-section">
               <!-- <h3>Import & Export Map</h3> -->
-              <el-form style="margin: 5px 0 0 0;">
+              <el-form style="margin: 5px 0 0 0">
                 <!-- New Map Form -->
                 <el-form-item>
                   <label style="margin: 0 26px 0 0">New Map: </label>
@@ -158,7 +231,7 @@ const createNewMap = () => {
           </el-col>
         </el-row>
       </el-tab-pane>
-      <el-tab-pane label="Map">
+      <el-tab-pane label="Map" name="Map" id="mapTab">
         <el-row :gutter="20">
           <el-col :span="24">
             <div class="control-section">
@@ -207,6 +280,26 @@ const createNewMap = () => {
                   <el-color-picker v-model="mapConfig.layerColors[layer]" />
                 </el-form-item>
               </el-form>
+            </div>
+          </el-col>
+        </el-row>
+        <el-row :gutter="20">
+          <el-col :span="24">
+            <div class="control-section">
+              <h3>Group Divider Level</h3>
+              <el-select
+                v-model="groupLevel"
+                placeholder="Select Group Level"
+                @change="handleGroupLayerChange"
+              >
+                <el-option label="None" value="None"></el-option>
+                <el-option
+                  v-for="layer in layerOptions"
+                  :key="layer"
+                  :label="layer"
+                  :value="layer"
+                ></el-option>
+              </el-select>
             </div>
           </el-col>
         </el-row>
@@ -366,7 +459,7 @@ const createNewMap = () => {
           </el-col>
         </el-row>
       </el-tab-pane>
-      <el-tab-pane label="Legend">
+      <el-tab-pane label="Legend" name="Legend" id="legendTab">
         <el-row :gutter="20">
           <el-col :span="24">
             <div class="control-section">
@@ -398,6 +491,23 @@ const createNewMap = () => {
         </el-row>
       </el-tab-pane>
     </el-tabs>
+
+    <!-- Tour Dialogue -->
+    <!-- <el-tour
+      v-model="showTour"
+      :z-index="2005"
+      @finish="handleTourFinish"
+      @change="handleTourChange"
+    >
+      <el-tour-step
+        v-for="(step, index) in tourSteps"
+        :key="index"
+        :target="step.target"
+        :title="step.title"
+        :description="step.description"
+        @close="handleStepClose"
+      />
+    </el-tour> -->
   </div>
 </template>
 
@@ -408,7 +518,7 @@ const createNewMap = () => {
 .control-tabs .el-tabs__nav {
   width: 100%;
 }
-.control-tabs  .el-tabs__item{
+.control-tabs .el-tabs__item {
   width: 33%;
 }
 .el-form-item {
