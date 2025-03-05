@@ -808,10 +808,10 @@ function addArrowsAndTitle(svg: d3.Selection<SVGGElement, unknown, null, undefin
   // Add a logo at the bottom right corner
   svg
     .append('image')
-    .attr('x', width - 300)
-    .attr('y', height - 170)
-    .attr('width', 280)
-    .attr('height', 200)
+    .attr('x', width - 220)
+    .attr('y', height - 120)
+    .attr('width', 200)
+    .attr('height', 120)
     .attr('xlink:href', logoImage)
 }
 
