@@ -309,8 +309,22 @@ const handleContinueWorking = async () => {
       console.log('Map data loaded from file:', mapData.value)
     } else {
       console.error('Permission denied')
-      resetPage()
-      // Notify the user that access was denied
+      //resetPage()
+      // show a comfirm to request permission again
+      await ElMessageBox.confirm(
+        `Permission to access the file was denied. Do you want to try again?`, // message
+        {
+          title: 'Permission Denied', // title is part of options
+          confirmButtonText: 'Try Again',
+          cancelButtonText: 'Cancel',
+          distinguishCancelAndClose: true,
+          closeOnClickModal: false,
+          showClose: false,
+          customClass: 'custom-message-box-class',
+        },
+      ).then(() => {
+        handleContinueWorking()
+      }).catch(() => false)
     }
   } catch (error) {
     console.error('Error loading file:', error)
@@ -336,6 +350,8 @@ const removeFileHandleToLocalStorage = () => {
 }
 
 const resetPage = () => {
+  console.log("ResetPage");
+
   removeFileHandleToLocalStorage()
   window.location.reload()
 }

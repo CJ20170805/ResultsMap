@@ -1811,8 +1811,9 @@ const exportMapAsJson = () => {
 
 // open help page
 const openHelpCenter = () => {
-  const helpUrl = window.location.origin + '/#/help'
-  window.open(helpUrl, '_blank')
+  const currentUrl = window.location.href;
+  const helpUrl = currentUrl.replace(/\/[^\/]*$/, '/help'); // Replace the current path with '/#/help'
+  window.open(helpUrl, '_blank');
 }
 
 // Tour related
