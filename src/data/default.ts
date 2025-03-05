@@ -52,8 +52,8 @@ const defaultMapData: ResultsMapData = {
         y: 344,
         length: 32,
         color: '#000',
-        type: 'Conflict',
-        text: 'Conflict',
+        type: 'Companion',
+        text: 'Companion',
         visible: true,
       },
       {
@@ -61,8 +61,8 @@ const defaultMapData: ResultsMapData = {
         y: 378,
         length: 32,
         color: '#000',
-        type: 'Companion',
-        text: 'Companion',
+        type: 'Conflict',
+        text: 'Conflict',
         visible: true,
       },
       {

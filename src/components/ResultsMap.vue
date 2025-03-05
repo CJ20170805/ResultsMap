@@ -814,15 +814,14 @@ function addArrowsAndTitle(svg: d3.Selection<SVGGElement, unknown, null, undefin
     .attr('xlink:href', logoImage)
 }
 
-
 // For legend explanation dialog
-const legendExplanationDialogVisible = ref(false);
+const legendExplanationDialogVisible = ref(false)
 const showLegendExplanationDialog = () => {
-  legendExplanationDialogVisible.value = true;
-};
+  legendExplanationDialogVisible.value = true
+}
 const handleLegendExplanationDialogClose = () => {
-  legendExplanationDialogVisible.value = false;
-};
+  legendExplanationDialogVisible.value = false
+}
 
 const drawMap = () => {
   console.log('Map Data', props.data)
@@ -1330,31 +1329,32 @@ const drawMap = () => {
     }
   })
 
-
   // Add a circle border around the question mark icon
-legendGroup
-  .append('circle')
-  .attr('cx', 100) // Adjust the position to match the question mark's x position
-  .attr('cy', 0 + 304) // Adjust the position to match the question mark's y position
-  .attr('r', 10) // Radius of the circle (adjust as needed)
-  .attr('fill', 'none') // No fill
-  .attr('stroke', '#409eff') // Border color
-  .attr('stroke-width', 1.5); // Border thickness
+  legendGroup
+    .append('circle')
+    .attr('cx', 100) // Adjust the position to match the question mark's x position
+    .attr('cy', 0 + 304) // Adjust the position to match the question mark's y position
+    .attr('r', 10) // Radius of the circle (adjust as needed)
+    .attr('fill', 'none') // No fill
+    .attr('stroke', '#409eff') // Border color
+    .attr('class', 'non-exportable')
+    .attr('stroke-width', 1.5) // Border thickness
 
   // Add a question mark icon next to the legend lines group
-legendGroup
-  .append('text')
-  .attr('x', 100) // Adjust the position as needed
-  .attr('y',  0 + 306) // Adjust the position as needed
-  .attr('text-anchor', 'middle')
-  .attr('alignment-baseline', 'middle')
-  .text('?')
-  .style('font-size', '15px')
-  .style('fill', '#409eff')
-  .style('cursor', 'pointer')
-  .on('click', () => {
-    showLegendExplanationDialog();
-  });
+  legendGroup
+    .append('text')
+    .attr('x', 100) // Adjust the position as needed
+    .attr('y', 0 + 306) // Adjust the position as needed
+    .attr('text-anchor', 'middle')
+    .attr('alignment-baseline', 'middle')
+    .text('?')
+    .style('font-size', '15px')
+    .style('fill', '#409eff')
+    .style('cursor', 'pointer')
+    .attr('class', 'non-exportable')
+    .on('click', () => {
+      showLegendExplanationDialog()
+    })
 
   // Add vertical legend lines with text at the top
   let currentY = 0
@@ -1840,7 +1840,13 @@ const exportMapAsImage = async () => {
       return
     }
 
-    saveSvgAsPng.saveSvgAsPng(svgElement, generateFileName('png'), {
+    // Clone the SVG element to avoid modifying the original
+    const clonedSvg = svgElement.cloneNode(true) as SVGSVGElement
+
+    // Remove non-exportable elements from the cloned SVG
+    d3.select(clonedSvg).selectAll('.non-exportable').remove()
+
+    saveSvgAsPng.saveSvgAsPng(clonedSvg, generateFileName('png'), {
       encorderOptions: 1,
       backgroundColor: 'white',
     })
@@ -1854,6 +1860,17 @@ const exportMapAsPDF = async (
   svgElement = d3.select(svgRef.value).node() as SVGSVGElement,
   filename = generateFileName('pdf'),
 ) => {
+
+    // Clone the SVG element to avoid modifying the original
+    const clonedSvg = svgElement.cloneNode(true) as SVGSVGElement;
+
+    console.log("Clone", clonedSvg);
+
+    // Remove non-exportable elements from the cloned SVG
+    d3.select(clonedSvg)
+      .selectAll('.non-exportable')
+      .remove();
+
   const pdf = new jsPDF({
     orientation: 'landscape', // Change to "portrait" if needed
     unit: 'px',
@@ -1861,7 +1878,7 @@ const exportMapAsPDF = async (
   })
 
   // Convert SVG to PDF vector format
-  await svg2pdf(svgElement, pdf, {
+  await svg2pdf(clonedSvg, pdf, {
     x: 0,
     y: 0,
     width: svgElement.clientWidth,
@@ -2115,7 +2132,6 @@ const startCreationMenuTour = () => {
   }
 }
 
-
 onMounted(() => {
   drawMap()
   document.addEventListener('click', handleClickOutside)
@@ -2311,20 +2327,20 @@ defineExpose({
   <!-- legends explanation-->
 
   <el-dialog
-  v-model="legendExplanationDialogVisible"
-  title="Relationship Types Explanation"
-  width="30%"
-  top="35vh"
-  :modal="false"
-  :before-close="handleLegendExplanationDialogClose"
->
-  <ul class="legend-explanation">
-    <li><strong>Cause-Effect</strong>: if A improves, then B improves.</li>
-    <li><strong>Companion</strong>: no sense improving A without B.</li>
-    <li><strong>Conflict</strong>: if A improves, B gets worse.</li>
-    <li><strong>Lead-Lag</strong>: if A improves, then B will improve but later.</li>
-  </ul>
-</el-dialog>
+    v-model="legendExplanationDialogVisible"
+    title="Relationship Types Explanation"
+    width="30%"
+    top="35vh"
+    :modal="false"
+    :before-close="handleLegendExplanationDialogClose"
+  >
+    <ul class="legend-explanation">
+      <li><strong>Cause-Effect</strong>: if A improves, then B improves.</li>
+      <li><strong>Companion</strong>: no sense improving A without B.</li>
+      <li><strong>Conflict</strong>: if A improves, B gets worse.</li>
+      <li><strong>Lead-Lag</strong>: if A improves, then B will improve but later.</li>
+    </ul>
+  </el-dialog>
 
   <!-- context menu for bubble updates -->
   <div
@@ -2520,17 +2536,17 @@ svg {
   margin-top: -4px !important;
 }
 
-.legend-explanation strong{
+.legend-explanation strong {
   font-size: 14px;
   color: #000;
   font-weight: bold;
 }
 
-.legend-explanation{
+.legend-explanation {
   padding: 0 30px;
 }
 
-.legend-explanation li{
+.legend-explanation li {
   font-size: 14px;
   color: #000;
   line-height: 26px;
