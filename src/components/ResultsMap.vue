@@ -786,8 +786,8 @@ function addArrowsAndTitle(svg: d3.Selection<SVGGElement, unknown, null, undefin
   // Add a timestamp at the bottom left corner
   svg
     .append('text')
-    .attr('x', 50)
-    .attr('y', height - 30)
+    .attr('x', 60)
+    .attr('y', height - 40)
     .attr('transform', 'translate(30, 0)')
     .attr('text-anchor', 'middle')
     .attr('alignment-baseline', 'middle')
@@ -804,7 +804,7 @@ function addArrowsAndTitle(svg: d3.Selection<SVGGElement, unknown, null, undefin
             year: 'numeric',
           }),
     )
-    .style('font-size', '17px')
+    .style('font-size', '22px')
     .style('fill', '#000')
 
   // Add a logo at the bottom right corner
@@ -997,8 +997,8 @@ const drawMap = () => {
       .attr('text-anchor', 'middle')
       .attr('alignment-baseline', 'middle')
       .attr('fill', '#000')
-      .attr('font-size', '13px')
-      .attr('font-weight', 'bold')
+      .attr('font-size', '16px')
+      .style('font-weight', 'bold')
       .text(bubble.text)
       .call(wrap, TEXT_WIDTH)
 
@@ -1236,9 +1236,9 @@ const drawMap = () => {
   legendGroup
     .append('rect')
     .attr('x', -20)
-    .attr('y', -60)
-    .attr('width', 100)
-    .attr('height', 500)
+    .attr('y', -140)
+    .attr('width', 120)
+    .attr('height', 570)
     .attr('fill', '#f8f8f8')
     .attr('stroke', '#000')
     .attr('stroke-width', 0)
@@ -1246,12 +1246,12 @@ const drawMap = () => {
   // Add "Legend" text at the top
   legendGroup
     .append('text')
-    .attr('x', 30)
-    .attr('y', -44)
+    .attr('x', 40)
+    .attr('y', -115)
     .attr('text-anchor', 'middle')
     .attr('alignment-baseline', 'middle')
     .text('Legend')
-    .style('font-size', '15px')
+    .style('font-size', '20px')
     .style('font-weight', 'bold')
     .style('fill', '#000')
 
@@ -1277,7 +1277,7 @@ const drawMap = () => {
       .attr('x', bubble.cx)
       .attr('text-anchor', 'middle')
       .attr('alignment-baseline', 'middle')
-      .style('font-size', '13px')
+      .style('font-size', '16px')
       .style('fill', '#000')
 
     const words = bubble.text.split(' ').filter((word) => word.trim() !== '')
@@ -1335,9 +1335,9 @@ const drawMap = () => {
   // Add a circle border around the question mark icon
   legendGroup
     .append('circle')
-    .attr('cx', 100) // Adjust the position to match the question mark's x position
-    .attr('cy', 0 + 304) // Adjust the position to match the question mark's y position
-    .attr('r', 10) // Radius of the circle (adjust as needed)
+    .attr('cx', 110) // Adjust the position to match the question mark's x position
+    .attr('cy', 0 + 278) // Adjust the position to match the question mark's y position
+    .attr('r', 12) // Radius of the circle (adjust as needed)
     .attr('fill', 'none') // No fill
     .attr('stroke', '#409eff') // Border color
     .attr('class', 'non-exportable')
@@ -1346,12 +1346,12 @@ const drawMap = () => {
   // Add a question mark icon next to the legend lines group
   legendGroup
     .append('text')
-    .attr('x', 100) // Adjust the position as needed
-    .attr('y', 0 + 306) // Adjust the position as needed
+    .attr('x', 110) // Adjust the position as needed
+    .attr('y', 0 + 280) // Adjust the position as needed
     .attr('text-anchor', 'middle')
     .attr('alignment-baseline', 'middle')
     .text('?')
-    .style('font-size', '15px')
+    .style('font-size', '16px')
     .style('fill', '#409eff')
     .style('cursor', 'pointer')
     .attr('class', 'non-exportable')
@@ -1366,19 +1366,19 @@ const drawMap = () => {
       legendGroup
         .append('text')
         .attr('x', line.x)
-        .attr('y', line.y - currentY - 4)
+        .attr('y', line.y - currentY - 2)
         .attr('text-anchor', 'middle')
         .attr('alignment-baseline', 'middle')
         .text(line.text)
-        .style('font-size', '13px')
+        .style('font-size', '16px')
         .style('fill', '#000')
 
       const legendLine = legendGroup
         .append('line')
         .attr('x1', line.x - line.length + 3)
-        .attr('y1', line.y + 12 - currentY)
+        .attr('y1', line.y + 14 - currentY)
         .attr('x2', line.x + line.length - 3)
-        .attr('y2', line.y + 12 - currentY)
+        .attr('y2', line.y + 14 - currentY)
         .attr('stroke', line.color)
         .attr('stroke-width', 1.5)
 
@@ -1386,8 +1386,8 @@ const drawMap = () => {
       legendGroup
         .append('circle')
         .attr('cx', line.x - line.length - 7) // Adjust the position as needed
-        .attr('cy', line.y + 12 - currentY)
-        .attr('r', 8) // Radius of the circle
+        .attr('cy', line.y + 14 - currentY)
+        .attr('r', 9) // Radius of the circle
         .attr('fill', 'white')
         .attr('stroke', line.color)
         .attr('stroke-width', 1.5)
@@ -1395,19 +1395,19 @@ const drawMap = () => {
       legendGroup
         .append('text')
         .attr('x', line.x - line.length - 7)
-        .attr('y', line.y + 13 - currentY)
+        .attr('y', line.y + 15 - currentY)
         .attr('text-anchor', 'middle')
         .attr('alignment-baseline', 'middle')
         .text('A')
-        .style('font-size', '12px')
+        .style('font-size', '14px')
         .style('fill', line.color)
 
       // Add a circle with "B" on the right side of the arrow
       legendGroup
         .append('circle')
         .attr('cx', line.x + line.length + 7) // Adjust the position as needed
-        .attr('cy', line.y + 12 - currentY)
-        .attr('r', 8) // Radius of the circle
+        .attr('cy', line.y + 14 - currentY)
+        .attr('r', 9) // Radius of the circle
         .attr('fill', 'white')
         .attr('stroke', line.color)
         .attr('stroke-width', 1.5)
@@ -1415,11 +1415,11 @@ const drawMap = () => {
       legendGroup
         .append('text')
         .attr('x', line.x + line.length + 7)
-        .attr('y', line.y + 13 - currentY)
+        .attr('y', line.y + 15 - currentY)
         .attr('text-anchor', 'middle')
         .attr('alignment-baseline', 'middle')
         .text('B')
-        .style('font-size', '12px')
+        .style('font-size', '14px')
         .style('fill', line.color)
 
       if (line.type === 'Cause-Effect') {

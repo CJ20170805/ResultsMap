@@ -32,15 +32,15 @@ const defaultMapData: ResultsMapData = {
   groupLevel: 'strategic',
   legends: {
     legendBubbles: [
-      { cx: 30, cy: 250, rx: 40, ry: 34, track: 'operational', text: 'Operational' },
-      { cx: 30, cy: 170, rx: 40, ry: 34, track: 'process', text: 'Process' },
-      { cx: 30, cy: 90, rx: 40, ry: 34, track: 'strategic', text: 'Strategic' },
-      { cx: 30, cy: 10, rx: 40, ry: 34, track: 'mission', text: 'Mission' },
+      { cx: 40, cy: 210, rx: 46, ry: 38, track: 'operational', text: 'Operational' },
+      { cx: 40, cy: 120, rx: 46, ry: 38, track: 'process', text: 'Process' },
+      { cx: 40, cy: 30, rx: 46, ry: 38, track: 'strategic', text: 'Strategic' },
+      { cx: 40, cy: -60, rx: 46, ry: 38, track: 'mission', text: 'Mission' },
     ],
     legendLines: [
       {
-        x: 30,
-        y: 310,
+        x: 40,
+        y: 282,
         length: 32,
         color: '#000',
         type: 'Cause-Effect',
@@ -48,8 +48,8 @@ const defaultMapData: ResultsMapData = {
         visible: true,
       },
       {
-        x: 30,
-        y: 344,
+        x: 40,
+        y: 322,
         length: 32,
         color: '#000',
         type: 'Companion',
@@ -57,8 +57,8 @@ const defaultMapData: ResultsMapData = {
         visible: true,
       },
       {
-        x: 30,
-        y: 378,
+        x: 40,
+        y: 360,
         length: 32,
         color: '#000',
         type: 'Conflict',
@@ -66,8 +66,8 @@ const defaultMapData: ResultsMapData = {
         visible: true,
       },
       {
-        x: 30,
-        y: 412,
+        x: 40,
+        y: 398,
         length: 32,
         color: '#000',
         type: 'Lead-Lag',
