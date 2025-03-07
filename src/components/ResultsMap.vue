@@ -33,7 +33,7 @@ const width = 1800
 const height = 1240
 const centerX = width / 2 + 50
 const centerY = height / 2 - 40
-const yScale = 0.87
+const yScale = 0.86
 const yOffset = 50
 
 const contextMenuVisible = ref(false)
@@ -142,7 +142,7 @@ const handleEmptyPositionRightClick = (event: MouseEvent) => {
 
         // start a context menu tour
         // messageInstance.close();
-        hasSeenTour = localStorage.getItem('hasSeenTour');
+        hasSeenTour = localStorage.getItem('hasSeenTour')
         if (!hasSeenTour && !isFirstBubbleCreated.value) {
           startCreationMenuTour()
         }
@@ -248,7 +248,7 @@ const createBubble = () => {
 
   isFirstBubbleCreated.value = true
   // Detect if the new bubble is created in the tour
-  hasSeenTour = localStorage.getItem('hasSeenTour');
+  hasSeenTour = localStorage.getItem('hasSeenTour')
   if (!hasSeenTour && mapBubbles.value.length > 1) {
     isTwoBubbleCreated.value = true
     messageInstance?.close()
@@ -273,7 +273,7 @@ const removeRelationship = (relationship: Relationship) => {
 }
 
 const showContextMenu = (event: MouseEvent, bubble: Bubble) => {
-  hasSeenTour = localStorage.getItem('hasSeenTour');
+  hasSeenTour = localStorage.getItem('hasSeenTour')
   hideContextMenu()
   event.preventDefault()
   selectedBubble.value = bubble
@@ -366,10 +366,10 @@ const removeBubble = () => {
 
 // Define track boundaries with inner and outer radii
 const tracks = {
-  mission: { outer: 170, inner: 0 }, // Pink (innermost)
-  strategic: { outer: 330, inner: 180 }, // Green
-  process: { outer: 480, inner: 330 }, // Blue
-  operational: { outer: 630, inner: 480 }, // Orange (outermost)
+  mission: { outer: 190, inner: 0 }, // Pink (innermost)
+  strategic: { outer: 350, inner: 180 }, // Green
+  process: { outer: 500, inner: 350 }, // Blue
+  operational: { outer: 650, inner: 500 }, // Orange (outermost)
 }
 
 // Calculate the middle radius for bubble positioning
@@ -665,7 +665,7 @@ function addGroupNames(svg: d3.Selection<SVGGElement, unknown, null, undefined>,
       .attr('dominant-baseline', 'middle')
       .text(group.name)
       .style('font-weight', 'bold')
-      .style('font-size', '20px')
+      .style('font-size', '22px')
       .style('fill', '#000')
 
     if (!isPresentationMode.value) {
@@ -955,9 +955,12 @@ const drawMap = () => {
   // const BUBBLE_RADIUS_X = 55
   // const BUBBLE_RADIUS_Y = 45
   const OFFSET = 4 // Adjust this value to control how far outside the bubbles the lines should start/end
-  const TEXT_WIDTH = 120
-  const BUBBLE_PADDING_X = 20 // Horizontal padding around the text inside the bubble
-  const BUBBLE_PADDING_Y = 25
+  const TEXT_WIDTH = 160
+  const BUBBLE_PADDING_X = 10 // Horizontal padding around the text inside the bubble
+  const BUBBLE_PADDING_Y = 15
+  const MIN_BUBBLE_RADIUS_X = 70 // Minimum horizontal radius
+  const MIN_BUBBLE_RADIUS_Y = 60 // Minimum vertical radius
+  const BUBBLE_ASPECT_RATIO = MIN_BUBBLE_RADIUS_X / MIN_BUBBLE_RADIUS_Y // Fixed aspect ratio
 
   // Draw bubbles
   const bubbleGroup = mapGroup.append('g')
@@ -1000,7 +1003,7 @@ const drawMap = () => {
       .attr('font-size', '16px')
       .style('font-weight', 'bold')
       .text(bubble.text)
-      .call(wrap, TEXT_WIDTH)
+      .call(wrap, MIN_BUBBLE_RADIUS_X * 2 - BUBBLE_PADDING_X * 2)
 
     // Measure the text dimensions
     const textBBox = textElement.node()!.getBBox()
@@ -1008,10 +1011,33 @@ const drawMap = () => {
     const textHeight = textBBox.height
 
     // Adjust the bubble size based on the text dimensions
-    const bubbleRadiusX = textWidth / 2 + BUBBLE_PADDING_X
-    const bubbleRadiusY = textHeight / 2 + BUBBLE_PADDING_Y
+    let bubbleRadiusX = textWidth / 2 + BUBBLE_PADDING_X
+    let bubbleRadiusY = textHeight / 2 + BUBBLE_PADDING_Y
+
+    // Ensure the bubble has a minimum size and maintains the fixed aspect ratio
+
+    // Scale the bubble to maintain the aspect ratio while respecting the minimum dimensions
+    bubbleRadiusX = Math.max(bubbleRadiusX, MIN_BUBBLE_RADIUS_X)
+    bubbleRadiusY = Math.max(bubbleRadiusY, MIN_BUBBLE_RADIUS_Y)
+
+    // Adjust the dimensions to maintain the fixed aspect ratio
+    if (bubbleRadiusX / bubbleRadiusY > BUBBLE_ASPECT_RATIO) {
+      bubbleRadiusY = bubbleRadiusX / BUBBLE_ASPECT_RATIO
+    } else {
+      bubbleRadiusX = bubbleRadiusY * BUBBLE_ASPECT_RATIO
+    }
+
+    console.log(
+      'BubbleRadiusX: ',
+      bubbleRadiusX,
+      'BubbleRadiusY: ',
+      bubbleRadiusY,
+      'Ratio: ',
+      bubbleRadiusX / bubbleRadiusY,
+    )
 
     bubbleRadii.set(bubble.id, { rx: bubbleRadiusX, ry: bubbleRadiusY })
+
 
     g.append('ellipse')
       .attr('rx', bubbleRadiusX)
@@ -1543,7 +1569,7 @@ const createGroup = () => {
   emptyPositionContextMenuVisible.value = false
 
   // Detect if the new group is created in the tour
-  hasSeenTour = localStorage.getItem('hasSeenTour');
+  hasSeenTour = localStorage.getItem('hasSeenTour')
   if (!hasSeenTour) {
     isNewGroupCreated.value = true
     messageInstance?.close()
@@ -1745,7 +1771,7 @@ const handleBubbleClick = (bubbleId: string) => {
     isCreatingRelationship.value = false // Exit relationship creation mode
 
     // Detect if the new relationship is created in the tour
-    hasSeenTour = localStorage.getItem('hasSeenTour');
+    hasSeenTour = localStorage.getItem('hasSeenTour')
     if (!hasSeenTour) {
       isNewRelationshipCreated.value = true
       messageInstance?.close()
@@ -1865,16 +1891,13 @@ const exportMapAsPDF = async (
   svgElement = d3.select(svgRef.value).node() as SVGSVGElement,
   filename = generateFileName('pdf'),
 ) => {
+  // Clone the SVG element to avoid modifying the original
+  const clonedSvg = svgElement.cloneNode(true) as SVGSVGElement
 
-    // Clone the SVG element to avoid modifying the original
-    const clonedSvg = svgElement.cloneNode(true) as SVGSVGElement;
+  console.log('Clone', clonedSvg)
 
-    console.log("Clone", clonedSvg);
-
-    // Remove non-exportable elements from the cloned SVG
-    d3.select(clonedSvg)
-      .selectAll('.non-exportable')
-      .remove();
+  // Remove non-exportable elements from the cloned SVG
+  d3.select(clonedSvg).selectAll('.non-exportable').remove()
 
   const pdf = new jsPDF({
     orientation: 'landscape', // Change to "portrait" if needed
@@ -1914,7 +1937,7 @@ const openHelpCenter = () => {
 }
 
 // Tour related
-let hasSeenTour = localStorage.getItem('hasSeenTour');
+let hasSeenTour = localStorage.getItem('hasSeenTour')
 const tour = inject<TourGuideClient>('tourGuide')
 
 let messageInstance: any = null
@@ -1928,8 +1951,7 @@ const isUpdateMenuTourFinished = ref(false)
 const isCreationMenuTourFinished = ref(false)
 
 const startATour = () => {
-
-  hasSeenTour = localStorage.getItem('hasSeenTour');
+  hasSeenTour = localStorage.getItem('hasSeenTour')
   isNewGroupCreated.value = false
   isFirstBubbleCreated.value = false
   isTwoBubbleCreated.value = false
@@ -1937,7 +1959,6 @@ const startATour = () => {
   isIconsTourFinished.value = false
   isUpdateMenuTourFinished.value = false
   isCreationMenuTourFinished.value = false
-
 
   // Configure the tour
   if (tour) {
@@ -2018,7 +2039,7 @@ const startATour = () => {
 
     tour.onBeforeExit(() => {
       console.log('Tour exited - icons')
-      if(!isIconsTourFinished.value && tour.isVisible) {
+      if (!isIconsTourFinished.value && tour.isVisible) {
         localStorage.setItem('hasSeenTour', 'true')
         messageInstance?.close()
       }
@@ -2031,7 +2052,7 @@ const startATour = () => {
 }
 
 const startCreateBubbleTour = () => {
-  hasSeenTour = localStorage.getItem('hasSeenTour');
+  hasSeenTour = localStorage.getItem('hasSeenTour')
   // Show a message box to inform the user about the next steps
   ElMessageBox.confirm(
     `You can now create bubbles by right-clicking on the map.  <br /> <img style="width: 100%; margin-top: 10px;" src="${createBubbleGif}"/>`,
@@ -2067,7 +2088,7 @@ const startCreateBubbleTour = () => {
 }
 
 const startCreateRelationshipTour = () => {
-  hasSeenTour = localStorage.getItem('hasSeenTour');
+  hasSeenTour = localStorage.getItem('hasSeenTour')
   // Show a message box to inform the user about the next steps
   ElMessageBox.confirm(
     `You can now create relationships by right-clicking the bubble.  <br /> <img style="width: 100%; margin-top: 10px;" src="${createRelationshipGif}"/>`,
@@ -2102,7 +2123,7 @@ const startCreateRelationshipTour = () => {
 }
 
 const startUpdateMenuTour = () => {
-  hasSeenTour = localStorage.getItem('hasSeenTour');
+  hasSeenTour = localStorage.getItem('hasSeenTour')
   if (tour) {
     tour.setOptions({
       steps: [
@@ -2135,7 +2156,7 @@ const startUpdateMenuTour = () => {
 
     tour.onBeforeExit(() => {
       console.log('Tour exited - update menu')
-      if(!isUpdateMenuTourFinished.value && tour.isVisible) {
+      if (!isUpdateMenuTourFinished.value && tour.isVisible) {
         localStorage.setItem('hasSeenTour', 'true')
         messageInstance?.close()
       }
@@ -2149,7 +2170,7 @@ const startUpdateMenuTour = () => {
 }
 
 const startCreationMenuTour = () => {
-  hasSeenTour = localStorage.getItem('hasSeenTour');
+  hasSeenTour = localStorage.getItem('hasSeenTour')
   if (tour) {
     tour.setOptions({
       steps: [
@@ -2172,7 +2193,7 @@ const startCreationMenuTour = () => {
     // Handle the end of the second tour
     tour.onFinish(() => {
       console.log('Second tour finished')
-      isCreationMenuTourFinished.value = true;
+      isCreationMenuTourFinished.value = true
       // ElMessage({
       //   type: 'success',
       //   message: 'You are now ready to create bubbles and groups!',
@@ -2181,12 +2202,11 @@ const startCreationMenuTour = () => {
 
     tour.onBeforeExit(() => {
       console.log('Tour exited - update menu')
-      if(!isCreationMenuTourFinished.value && tour.isVisible) {
+      if (!isCreationMenuTourFinished.value && tour.isVisible) {
         localStorage.setItem('hasSeenTour', 'true')
         messageInstance?.close()
       }
     })
-
 
     // Start the second tour
     tour.start()
@@ -2212,55 +2232,73 @@ watch(() => props.data, drawMap, { deep: true })
 
 // Helper function to wrap text with proper typing
 function wrap(text: d3.Selection<SVGTextElement, Bubble, null, undefined>, width: number) {
-  text.each(function (this: d3.BaseType) {
-    const textElement = d3.select(this)
-    const words = textElement.text().split(/\s+/).reverse()
-    const lines: string[] = []
+  text.each(function (this: SVGTextElement) {
+    const textElement = d3.select(this);
+    const words = textElement.text().split(/\s+/); // Split text into words
+    const lines: string[] = []; // Array to hold lines of text
 
-    if (words.length < 8) {
-      width = 80
+    let currentLine: string[] = []; // Current line being built
+    let currentLineWidth = 0; // Width of the current line
+
+    // Measure the width of a space
+    const tempTspan = textElement.append('tspan').style('visibility', 'hidden').text(' ');
+    const spaceWidth = tempTspan.node()?.getComputedTextLength() || 0;
+    tempTspan.remove(); // Remove the temporary tspan
+
+    words.forEach((word: string) => {
+      // Measure the width of the word
+      const tempWordTspan = textElement.append('tspan').style('visibility', 'hidden').text(word);
+      const wordWidth = tempWordTspan.node()?.getComputedTextLength() || 0;
+      tempWordTspan.remove(); // Remove the temporary tspan
+
+      // If adding the word exceeds the width, start a new line
+      if (currentLineWidth + wordWidth + (currentLine.length > 0 ? spaceWidth : 0) > width && currentLine.length > 0) {
+        lines.push(currentLine.join(' ')); // Add the current line to lines
+        currentLine = []; // Start a new line
+        currentLineWidth = 0; // Reset the line width
+      }
+
+      // Add the word to the current line
+      if (currentLine.length > 0) {
+        currentLineWidth += spaceWidth; // Add space width before the word
+      }
+      currentLine.push(word);
+      currentLineWidth += wordWidth;
+    });
+
+    // Add the last line if it has content
+    if (currentLine.length > 0) {
+      lines.push(currentLine.join(' '));
     }
 
-    // First, calculate how many lines we'll need
-    let currentLine: string[] = []
-    const tempSpan = textElement.append('tspan').style('visibility', 'hidden')
-
-    words
-      .slice()
-      .reverse()
-      .forEach((word: string) => {
-        currentLine.push(word)
-        tempSpan.text(currentLine.join(' '))
-
-        const node = tempSpan.node()
-        if (node && node.getComputedTextLength() > width) {
-          currentLine.pop()
-          if (currentLine.length) lines.push(currentLine.join(' '))
-          currentLine = [word]
-        }
-      })
-    if (currentLine.length) lines.push(currentLine.join(' '))
-    tempSpan.remove()
-
-    // Calculate starting position
-    const lineHeight = 1.2
-    const totalHeight = lines.length * lineHeight
-    const startY = -totalHeight / 2 + lineHeight / 2
+    // Calculate starting position to center the text vertically
+    const lineHeight = 1.2; // Base line height
+    const totalHeight = lines.length * lineHeight;
+    const startY = -totalHeight / 2 + lineHeight / 2;
 
     // Clear existing text
-    textElement.text('')
+    textElement.text('');
 
-    // Add lines with proper spacing
+    // Add lines with adjusted vertical spacing for the 7/6 aspect ratio
     lines.forEach((line, i) => {
+      // Calculate the vertical offset based on the line's position
+      const linePosition = i / (lines.length - 1 || 1); // Prevent division by zero
+      const verticalOffset = Math.sin(linePosition * Math.PI) * 0.5; // Sine curve for bulging effect
+
+      // Adjust the vertical spacing
+      const dy = startY + i * lineHeight - verticalOffset * lineHeight;
+
+      // Add the line to the text element
       textElement
         .append('tspan')
         .attr('x', 0)
         .attr('y', 0)
-        .attr('dy', `${startY + i * lineHeight}em`)
-        .text(line)
-    })
-  })
+        .attr('dy', `${dy}em`)
+        .text(line);
+    });
+  });
 }
+
 
 // Helper: Check if line intersects an ellipse
 function lineIntersectsEllipse(

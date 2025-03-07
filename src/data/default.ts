@@ -5,7 +5,7 @@ import type {
 const defaultMapData: ResultsMapData = {
   mapConfig: {
     title: 'Results Map',
-    titleFontSize: 28,
+    titleFontSize: 32,
     layerColors: {
       mission: '#ffcdd2', // Pink
       strategic: '#c8e6c9', // Green

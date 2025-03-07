@@ -127,7 +127,7 @@ const autoSave = debounce(async () => {
   //   console.log('Auto-saving map data...')
   //   await saveMapDataToFile(false)
   // }
-  mapData.value = defaultMapData;
+  //mapData.value = defaultMapData;
 }, 2000)
 
 // Watch for changes in mapData
