@@ -14,7 +14,6 @@ import { ArrowLeft, ArrowRight } from '@element-plus/icons-vue'
 import defaultMapData from '@/data/default'
 import { ElMessageBox } from 'element-plus'
 import type { TourGuideClient } from '@sjmc11/tourguidejs/src/Tour'
-import { map } from 'd3'
 
 const showAside = ref(true)
 
@@ -52,7 +51,9 @@ const startATour = async () => {
 }
 
 const continueTour = () => {
-  ResultsMapRef.value?.startATour()
+  setTimeout(()=>{
+    ResultsMapRef.value?.startATour()
+  },300)
 }
 
 onMounted(async () => {
@@ -86,6 +87,7 @@ onMounted(async () => {
         await handleContinueWorking()
       } else {
         // User declined, clear the saved file name
+        removeFileHandleToLocalStorage()
         resetPage()
         showFileDialog.value = true // Show the file dialog for new/import options
       }
@@ -93,15 +95,14 @@ onMounted(async () => {
   } else {
     // No file name found, show the default dialog
     showFileDialog.value = true
+    // Start the tour
+    setTimeout(() => {
+      startATour()
+    }, 600)
   }
 
   // Set the session flag to indicate the tab is open
   sessionStorage.setItem('isSameTab', 'true')
-
-  // Start the tour
-  setTimeout(() => {
-    startATour()
-  }, 600)
 })
 
 // onMounted(() => {
@@ -322,9 +323,11 @@ const handleContinueWorking = async () => {
           showClose: false,
           customClass: 'custom-message-box-class',
         },
-      ).then(() => {
-        handleContinueWorking()
-      }).catch(() => false)
+      )
+        .then(() => {
+          handleContinueWorking()
+        })
+        .catch(() => false)
     }
   } catch (error) {
     console.error('Error loading file:', error)
@@ -350,7 +353,7 @@ const removeFileHandleToLocalStorage = () => {
 }
 
 const resetPage = () => {
-  console.log("ResetPage");
+  console.log('ResetPage')
 
   //removeFileHandleToLocalStorage()
   window.location.reload()
@@ -591,7 +594,7 @@ const importMapFromFile = async () => {
 
 const resetDataToDefault = () => {
   saveMapDataToFile(true)
-  console.log('resetDataToDefault', mapData.value, defaultMapData);
+  console.log('resetDataToDefault', mapData.value, defaultMapData)
 
   //update the ResultsMap component
   mapData.value = null

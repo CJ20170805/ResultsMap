@@ -142,6 +142,7 @@ const handleEmptyPositionRightClick = (event: MouseEvent) => {
 
         // start a context menu tour
         // messageInstance.close();
+        hasSeenTour = localStorage.getItem('hasSeenTour');
         if (!hasSeenTour && !isFirstBubbleCreated.value) {
           startCreationMenuTour()
         }
@@ -247,6 +248,7 @@ const createBubble = () => {
 
   isFirstBubbleCreated.value = true
   // Detect if the new bubble is created in the tour
+  hasSeenTour = localStorage.getItem('hasSeenTour');
   if (!hasSeenTour && mapBubbles.value.length > 1) {
     isTwoBubbleCreated.value = true
     messageInstance?.close()
@@ -271,6 +273,7 @@ const removeRelationship = (relationship: Relationship) => {
 }
 
 const showContextMenu = (event: MouseEvent, bubble: Bubble) => {
+  hasSeenTour = localStorage.getItem('hasSeenTour');
   hideContextMenu()
   event.preventDefault()
   selectedBubble.value = bubble
@@ -1540,6 +1543,7 @@ const createGroup = () => {
   emptyPositionContextMenuVisible.value = false
 
   // Detect if the new group is created in the tour
+  hasSeenTour = localStorage.getItem('hasSeenTour');
   if (!hasSeenTour) {
     isNewGroupCreated.value = true
     messageInstance?.close()
@@ -1741,6 +1745,7 @@ const handleBubbleClick = (bubbleId: string) => {
     isCreatingRelationship.value = false // Exit relationship creation mode
 
     // Detect if the new relationship is created in the tour
+    hasSeenTour = localStorage.getItem('hasSeenTour');
     if (!hasSeenTour) {
       isNewRelationshipCreated.value = true
       messageInstance?.close()
@@ -1909,7 +1914,7 @@ const openHelpCenter = () => {
 }
 
 // Tour related
-const hasSeenTour = localStorage.getItem('hasSeenTour')
+let hasSeenTour = localStorage.getItem('hasSeenTour');
 const tour = inject<TourGuideClient>('tourGuide')
 
 let messageInstance: any = null
@@ -1918,7 +1923,22 @@ const isFirstBubbleCreated = ref(false) // close the message box after the first
 const isTwoBubbleCreated = ref(false)
 const isNewRelationshipCreated = ref(false)
 
+const isIconsTourFinished = ref(false)
+const isUpdateMenuTourFinished = ref(false)
+const isCreationMenuTourFinished = ref(false)
+
 const startATour = () => {
+
+  hasSeenTour = localStorage.getItem('hasSeenTour');
+  isNewGroupCreated.value = false
+  isFirstBubbleCreated.value = false
+  isTwoBubbleCreated.value = false
+  isNewRelationshipCreated.value = false
+  isIconsTourFinished.value = false
+  isUpdateMenuTourFinished.value = false
+  isCreationMenuTourFinished.value = false
+
+
   // Configure the tour
   if (tour) {
     tour.setOptions({
@@ -1959,7 +1979,8 @@ const startATour = () => {
     // })
 
     tour.onFinish(() => {
-      console.log('Tour finished')
+      console.log('Tour finished 111')
+      isIconsTourFinished.value = true
 
       // Show a message box to inform the user about the next steps
       ElMessageBox.confirm(
@@ -1969,6 +1990,7 @@ const startATour = () => {
           //title: 'Next Steps',
           confirmButtonText: 'Continue',
           cancelButtonText: 'Quit',
+          showClose: false,
           type: '',
           customClass: 'custom-message-box-class',
           dangerouslyUseHTMLString: true,
@@ -1984,12 +2006,22 @@ const startATour = () => {
           })
         })
         .catch(() => {
+          localStorage.setItem('hasSeenTour', 'true')
+          messageInstance?.close()
           ElMessage({
             type: 'info',
             message:
               'You can always right-click on the map to create or delete groups and bubbles.',
           })
         })
+    })
+
+    tour.onBeforeExit(() => {
+      console.log('Tour exited - icons')
+      if(!isIconsTourFinished.value && tour.isVisible) {
+        localStorage.setItem('hasSeenTour', 'true')
+        messageInstance?.close()
+      }
     })
 
     setTimeout(() => {
@@ -1999,6 +2031,7 @@ const startATour = () => {
 }
 
 const startCreateBubbleTour = () => {
+  hasSeenTour = localStorage.getItem('hasSeenTour');
   // Show a message box to inform the user about the next steps
   ElMessageBox.confirm(
     `You can now create bubbles by right-clicking on the map.  <br /> <img style="width: 100%; margin-top: 10px;" src="${createBubbleGif}"/>`,
@@ -2007,6 +2040,7 @@ const startCreateBubbleTour = () => {
       //title: 'Next Steps',
       confirmButtonText: 'Continue',
       cancelButtonText: 'Quit',
+      showClose: false,
       type: '',
       dangerouslyUseHTMLString: true,
       customClass: 'custom-message-box-class',
@@ -2023,6 +2057,8 @@ const startCreateBubbleTour = () => {
       })
     })
     .catch(() => {
+      localStorage.setItem('hasSeenTour', 'true')
+      messageInstance?.close()
       ElMessage({
         type: 'info',
         message: 'You can always right-click on the map to create or delete groups and bubbles.',
@@ -2031,6 +2067,7 @@ const startCreateBubbleTour = () => {
 }
 
 const startCreateRelationshipTour = () => {
+  hasSeenTour = localStorage.getItem('hasSeenTour');
   // Show a message box to inform the user about the next steps
   ElMessageBox.confirm(
     `You can now create relationships by right-clicking the bubble.  <br /> <img style="width: 100%; margin-top: 10px;" src="${createRelationshipGif}"/>`,
@@ -2039,6 +2076,7 @@ const startCreateRelationshipTour = () => {
       //title: 'Next Steps',
       confirmButtonText: 'Continue',
       cancelButtonText: 'Quit',
+      showClose: false,
       type: '',
       dangerouslyUseHTMLString: true,
       customClass: 'custom-message-box-class',
@@ -2054,6 +2092,8 @@ const startCreateRelationshipTour = () => {
       })
     })
     .catch(() => {
+      localStorage.setItem('hasSeenTour', 'true')
+      messageInstance?.close()
       ElMessage({
         type: 'info',
         message: 'You can always right-click on the map to create or delete groups and bubbles.',
@@ -2062,6 +2102,7 @@ const startCreateRelationshipTour = () => {
 }
 
 const startUpdateMenuTour = () => {
+  hasSeenTour = localStorage.getItem('hasSeenTour');
   if (tour) {
     tour.setOptions({
       steps: [
@@ -2085,10 +2126,19 @@ const startUpdateMenuTour = () => {
     // Handle the end of the second tour
     tour.onFinish(() => {
       console.log('Second tour finished')
+      isUpdateMenuTourFinished.value = true
       // ElMessage({
       //   type: 'success',
       //   message: 'You are now ready to create bubbles and groups!',
       // })
+    })
+
+    tour.onBeforeExit(() => {
+      console.log('Tour exited - update menu')
+      if(!isUpdateMenuTourFinished.value && tour.isVisible) {
+        localStorage.setItem('hasSeenTour', 'true')
+        messageInstance?.close()
+      }
     })
 
     // Start the tour
@@ -2099,6 +2149,7 @@ const startUpdateMenuTour = () => {
 }
 
 const startCreationMenuTour = () => {
+  hasSeenTour = localStorage.getItem('hasSeenTour');
   if (tour) {
     tour.setOptions({
       steps: [
@@ -2121,11 +2172,21 @@ const startCreationMenuTour = () => {
     // Handle the end of the second tour
     tour.onFinish(() => {
       console.log('Second tour finished')
+      isCreationMenuTourFinished.value = true;
       // ElMessage({
       //   type: 'success',
       //   message: 'You are now ready to create bubbles and groups!',
       // })
     })
+
+    tour.onBeforeExit(() => {
+      console.log('Tour exited - update menu')
+      if(!isCreationMenuTourFinished.value && tour.isVisible) {
+        localStorage.setItem('hasSeenTour', 'true')
+        messageInstance?.close()
+      }
+    })
+
 
     // Start the second tour
     tour.start()

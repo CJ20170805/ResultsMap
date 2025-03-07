@@ -64,6 +64,9 @@ const isFinished = ref(false);
 const startATour = () => {
   // Configure the tour
   if (tour) {
+    // restart the tour
+    localStorage.removeItem('hasSeenTour')
+
     const steps = [
       {
         title: 'File Tab',
@@ -112,8 +115,21 @@ const startATour = () => {
       props.onContinueTour();
     })
 
+    tour.onBeforeExit(() => {
+      console.log('Tour exited 000')
+      if(!isFinished.value) {
+        localStorage.setItem('hasSeenTour', 'true')
+        currentTab.value = "File"
+      }
+    })
+
     tour.start()
   }
+}
+
+const reStartATour = () => {
+  isFinished.value = false;
+  startATour();
 }
 
 onMounted(() => {
@@ -225,6 +241,13 @@ const createNewMap = () => {
                     <el-option label="Source Data" value="json"></el-option>
                   </el-select>
                   <el-button type="primary" @click="handleExport">Export</el-button>
+                </el-form-item>
+
+
+                <!-- Start a tour -->
+                <el-form-item>
+                  <label style="margin: 0 14px 0 0">Start a Tour: </label>
+                  <el-button type="primary" @click="reStartATour">Start</el-button>
                 </el-form-item>
               </el-form>
             </div>
