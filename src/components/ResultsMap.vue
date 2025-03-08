@@ -1001,9 +1001,9 @@ const drawMap = () => {
       .attr('alignment-baseline', 'middle')
       .attr('fill', '#000')
       .attr('font-size', '16px')
-      .style('font-weight', 'bold')
+      // .style('font-weight', 'bold')
       .text(bubble.text)
-      .call(wrap, MIN_BUBBLE_RADIUS_X * 2 - BUBBLE_PADDING_X * 2)
+      .call(wrap, BUBBLE_PADDING_X)
 
     // Measure the text dimensions
     const textBBox = textElement.node()!.getBBox()
@@ -2231,69 +2231,99 @@ onBeforeUnmount(() => {
 watch(() => props.data, drawMap, { deep: true })
 
 // Helper function to wrap text with proper typing
-function wrap(text: d3.Selection<SVGTextElement, Bubble, null, undefined>, width: number) {
-  text.each(function (this: SVGTextElement) {
-    const textElement = d3.select(this);
-    const words = textElement.text().split(/\s+/); // Split text into words
-    const lines: string[] = []; // Array to hold lines of text
+function wrap(text: d3.Selection<SVGTextElement, Bubble, null, undefined>, maxWidth: number): void {
+  text.each(function (this: SVGTextElement, d: Bubble) {
+    const textElement = d3.select<SVGTextElement, Bubble>(this);
+    const words: string[] = textElement.text().split(/\s+/); // Split text into words
+    const lineHeight: number = 1.1; // Line height in ems
 
-    let currentLine: string[] = []; // Current line being built
-    let currentLineWidth = 0; // Width of the current line
-
-    // Measure the width of a space
-    const tempTspan = textElement.append('tspan').style('visibility', 'hidden').text(' ');
-    const spaceWidth = tempTspan.node()?.getComputedTextLength() || 0;
-    tempTspan.remove(); // Remove the temporary tspan
-
-    words.forEach((word: string) => {
-      // Measure the width of the word
-      const tempWordTspan = textElement.append('tspan').style('visibility', 'hidden').text(word);
-      const wordWidth = tempWordTspan.node()?.getComputedTextLength() || 0;
-      tempWordTspan.remove(); // Remove the temporary tspan
-
-      // If adding the word exceeds the width, start a new line
-      if (currentLineWidth + wordWidth + (currentLine.length > 0 ? spaceWidth : 0) > width && currentLine.length > 0) {
-        lines.push(currentLine.join(' ')); // Add the current line to lines
-        currentLine = []; // Start a new line
-        currentLineWidth = 0; // Reset the line width
-      }
-
-      // Add the word to the current line
-      if (currentLine.length > 0) {
-        currentLineWidth += spaceWidth; // Add space width before the word
-      }
-      currentLine.push(word);
-      currentLineWidth += wordWidth;
-    });
-
-    // Add the last line if it has content
-    if (currentLine.length > 0) {
-      lines.push(currentLine.join(' '));
+    // Dynamic word distribution rules
+    let maxMiddleWords: number, topLineWords: number;
+    if (words.length <= 10) {
+      maxMiddleWords = 2; // Middle line max words for very short text
+      topLineWords = 2; // Top line words for very short text
+    } else if (words.length <= 20 && words.length > 10) {
+      maxMiddleWords = 2;
+      topLineWords = 2;
+    } else if (words.length <= 30 && words.length > 20) {
+      maxMiddleWords = 4;
+      topLineWords = 3;
+    } else if (words.length <= 80 && words.length > 30) {
+      maxMiddleWords = 5;
+      topLineWords = 3;
+    } else if (words.length > 80) {
+      maxMiddleWords = 6;
+      topLineWords = 4;
+    } else {
+      maxMiddleWords = 5;
+      topLineWords = 3;
     }
 
-    // Calculate starting position to center the text vertically
-    const lineHeight = 1.2; // Base line height
-    const totalHeight = lines.length * lineHeight;
-    const startY = -totalHeight / 2 + lineHeight / 2;
+    if (words.length <= 3) {
+      // If 3 or fewer words, keep the text as a single line in the middle
+      textElement.text(words.join(' '));
+      return;
+    }
 
-    // Clear existing text
-    textElement.text('');
+    // Clear the text
+    textElement.text(null);
 
-    // Add lines with adjusted vertical spacing for the 7/6 aspect ratio
-    lines.forEach((line, i) => {
-      // Calculate the vertical offset based on the line's position
-      const linePosition = i / (lines.length - 1 || 1); // Prevent division by zero
-      const verticalOffset = Math.sin(linePosition * Math.PI) * 0.5; // Sine curve for bulging effect
+    // Function to calculate the total letters in the first `topLineWords`
+    const getTotalLetters = (startIndex: number, wordCount: number): number => {
+      return words
+        .slice(startIndex, startIndex + wordCount)
+        .join('')
+        .length;
+    };
 
-      // Adjust the vertical spacing
-      const dy = startY + i * lineHeight - verticalOffset * lineHeight;
+    // Adjust the first top line if the total letters are less than 10
+    const firstTopLineLetters: number = getTotalLetters(0, topLineWords);
 
-      // Add the line to the text element
-      textElement
-        .append('tspan')
+    console.log('firstTopLineLetters- 0', firstTopLineLetters, topLineWords);
+
+    const firstTopLineWordCount: number =
+      firstTopLineLetters < 10 && topLineWords > 2 ? topLineWords + 1 : topLineWords;
+
+    console.log('firstTopLineLetters', firstTopLineLetters, firstTopLineWordCount);
+
+    // Function to add a line with a specific number of words
+    const addLine = (wordCount: number): void => {
+      if (currentIndex < words.length) {
+        lines.push(words.slice(currentIndex, currentIndex + wordCount).join(' '));
+        currentIndex += wordCount;
+      }
+    };
+
+    // Distribute words into lines in an ellipse-like shape
+    const lines: string[] = [];
+    let currentIndex: number = 0;
+
+    // Top lines: gradually increase word count
+    addLine(firstTopLineWordCount); // First top line
+    addLine(topLineWords + 1); // Second top line
+
+    // Middle lines: maximum words
+    while (currentIndex < words.length - (topLineWords + 1)) { // Reserve words for bottom lines
+      addLine(maxMiddleWords); // Middle line
+    }
+
+    // Bottom lines: gradually decrease word count
+    addLine(topLineWords + 1); // First bottom line
+    addLine(topLineWords); // Second bottom line
+    if (words.length >= 30) addLine(1); // Last bottom line for long text
+
+    // Calculate the total height of the text
+    const totalHeight: number = lines.length * lineHeight; // Total height in ems
+
+    // Add a small offset to move the text down slightly
+    const offset: number = 0.8; // Adjust this value to move the text down (e.g., 0.5em)
+
+    // Add the lines to the text element
+    lines.forEach((line: string, i: number) => {
+      textElement.append('tspan')
         .attr('x', 0)
-        .attr('y', 0)
-        .attr('dy', `${dy}em`)
+        .attr('dy', i === 0 ? `-${totalHeight / 2 - offset}em` : `${lineHeight}em`) // Adjust vertical spacing
+        .attr('text-anchor', 'middle') // Center-align each line
         .text(line);
     });
   });

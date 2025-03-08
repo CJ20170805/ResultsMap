@@ -123,10 +123,10 @@ const debounce = (func: (...args: any[]) => void, delay: number): ((...args: any
 
 // Debounced auto-save function
 const autoSave = debounce(async () => {
-  // if (mapData.value) {
-  //   console.log('Auto-saving map data...')
-  //   await saveMapDataToFile(false)
-  // }
+  if (mapData.value) {
+    console.log('Auto-saving map data...')
+    await saveMapDataToFile(false)
+  }
   //mapData.value = defaultMapData;
 }, 2000)
 
