@@ -1357,32 +1357,34 @@ const drawMap = () => {
     }
   })
 
-  // Add a circle border around the question mark icon
-  legendGroup
-    .append('circle')
-    .attr('cx', 110) // Adjust the position to match the question mark's x position
-    .attr('cy', 0 + 278) // Adjust the position to match the question mark's y position
-    .attr('r', 12) // Radius of the circle (adjust as needed)
-    .attr('fill', 'none') // No fill
-    .attr('stroke', '#409eff') // Border color
-    .attr('class', 'non-exportable')
-    .attr('stroke-width', 1.5) // Border thickness
+  if (!isPresentationMode.value) {
+    // Add a circle border around the question mark icon
+    legendGroup
+      .append('circle')
+      .attr('cx', 110) // Adjust the position to match the question mark's x position
+      .attr('cy', 0 + 278) // Adjust the position to match the question mark's y position
+      .attr('r', 12) // Radius of the circle (adjust as needed)
+      .attr('fill', 'none') // No fill
+      .attr('stroke', '#409eff') // Border color
+      .attr('class', 'non-exportable')
+      .attr('stroke-width', 1.5) // Border thickness
 
-  // Add a question mark icon next to the legend lines group
-  legendGroup
-    .append('text')
-    .attr('x', 110) // Adjust the position as needed
-    .attr('y', 0 + 280) // Adjust the position as needed
-    .attr('text-anchor', 'middle')
-    .attr('alignment-baseline', 'middle')
-    .text('?')
-    .style('font-size', '16px')
-    .style('fill', '#409eff')
-    .style('cursor', 'pointer')
-    .attr('class', 'non-exportable')
-    .on('click', () => {
-      showLegendExplanationDialog()
-    })
+    // Add a question mark icon next to the legend lines group
+    legendGroup
+      .append('text')
+      .attr('x', 110) // Adjust the position as needed
+      .attr('y', 0 + 280) // Adjust the position as needed
+      .attr('text-anchor', 'middle')
+      .attr('alignment-baseline', 'middle')
+      .text('?')
+      .style('font-size', '16px')
+      .style('fill', '#409eff')
+      .style('cursor', 'pointer')
+      .attr('class', 'non-exportable')
+      .on('click', () => {
+        showLegendExplanationDialog()
+      })
+  }
 
   // Add vertical legend lines with text at the top
   let currentY = 0
@@ -2298,11 +2300,10 @@ function wrap(text: d3.Selection<SVGTextElement, Bubble, null, undefined>, maxWi
     addLine(firstTopLineWordCount) // First top line
     //addLine(topLineWords + 1); // Second top line
 
-    let maxMWords = maxMiddleWords;
+    let maxMWords = maxMiddleWords
 
     // Middle lines: maximum words
     while (currentIndex < words.length) {
-
       if (getTotalLetters(currentIndex, maxMiddleWords) < 14) {
         maxMWords += Math.floor(topLineWords / 2) // Middle line
       } else {
@@ -2311,7 +2312,7 @@ function wrap(text: d3.Selection<SVGTextElement, Bubble, null, undefined>, maxWi
         }
       }
       addLine(maxMWords) // Middle line
-      maxMWords = maxMiddleWords;
+      maxMWords = maxMiddleWords
     }
 
     // if(getTotalLetters(currentIndex, topLineWords) < 15){
