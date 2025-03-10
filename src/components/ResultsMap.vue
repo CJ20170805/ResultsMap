@@ -1038,7 +1038,6 @@ const drawMap = () => {
 
     bubbleRadii.set(bubble.id, { rx: bubbleRadiusX, ry: bubbleRadiusY })
 
-
     g.append('ellipse')
       .attr('rx', bubbleRadiusX)
       .attr('ry', bubbleRadiusY)
@@ -2233,102 +2232,116 @@ watch(() => props.data, drawMap, { deep: true })
 // Helper function to wrap text with proper typing
 function wrap(text: d3.Selection<SVGTextElement, Bubble, null, undefined>, maxWidth: number): void {
   text.each(function (this: SVGTextElement, d: Bubble) {
-    const textElement = d3.select<SVGTextElement, Bubble>(this);
-    const words: string[] = textElement.text().split(/\s+/); // Split text into words
-    const lineHeight: number = 1.1; // Line height in ems
+    const textElement = d3.select<SVGTextElement, Bubble>(this)
+    const words: string[] = textElement.text().split(/\s+/) // Split text into words
+    const lineHeight: number = 1.1 // Line height in ems
 
     // Dynamic word distribution rules
-    let maxMiddleWords: number, topLineWords: number;
+    let maxMiddleWords: number, topLineWords: number
     if (words.length <= 10) {
-      maxMiddleWords = 2; // Middle line max words for very short text
-      topLineWords = 2; // Top line words for very short text
+      maxMiddleWords = 2 // Middle line max words for very short text
+      topLineWords = 2 // Top line words for very short text
     } else if (words.length <= 20 && words.length > 10) {
-      maxMiddleWords = 2;
-      topLineWords = 2;
+      maxMiddleWords = 2
+      topLineWords = 2
     } else if (words.length <= 30 && words.length > 20) {
-      maxMiddleWords = 4;
-      topLineWords = 3;
+      maxMiddleWords = 4
+      topLineWords = 3
     } else if (words.length <= 80 && words.length > 30) {
-      maxMiddleWords = 5;
-      topLineWords = 3;
+      maxMiddleWords = 4
+      topLineWords = 3
     } else if (words.length > 80) {
-      maxMiddleWords = 6;
-      topLineWords = 4;
+      maxMiddleWords = 6
+      topLineWords = 4
     } else {
-      maxMiddleWords = 5;
-      topLineWords = 3;
+      maxMiddleWords = 5
+      topLineWords = 3
     }
 
     if (words.length <= 3) {
       // If 3 or fewer words, keep the text as a single line in the middle
-      textElement.text(words.join(' '));
-      return;
+      textElement.text(words.join(' '))
+      return
     }
 
     // Clear the text
-    textElement.text(null);
+    textElement.text(null)
 
     // Function to calculate the total letters in the first `topLineWords`
     const getTotalLetters = (startIndex: number, wordCount: number): number => {
-      return words
-        .slice(startIndex, startIndex + wordCount)
-        .join('')
-        .length;
-    };
+      return words.slice(startIndex, startIndex + wordCount).join('').length
+    }
 
     // Adjust the first top line if the total letters are less than 10
-    const firstTopLineLetters: number = getTotalLetters(0, topLineWords);
+    const firstTopLineLetters: number = getTotalLetters(0, topLineWords)
 
-    console.log('firstTopLineLetters- 0', firstTopLineLetters, topLineWords);
+    console.log('firstTopLineLetters- 0', firstTopLineLetters, topLineWords)
 
     const firstTopLineWordCount: number =
-      firstTopLineLetters < 10 && topLineWords > 2 ? topLineWords + 1 : topLineWords;
+      firstTopLineLetters < 10 && topLineWords > 2 ? topLineWords + 1 : topLineWords
 
-    console.log('firstTopLineLetters', firstTopLineLetters, firstTopLineWordCount);
+    console.log('firstTopLineLetters', firstTopLineLetters, firstTopLineWordCount)
+
+    // Distribute words into lines in an ellipse-like shape
+    const lines: string[] = []
+    let currentIndex: number = 0
 
     // Function to add a line with a specific number of words
     const addLine = (wordCount: number): void => {
       if (currentIndex < words.length) {
-        lines.push(words.slice(currentIndex, currentIndex + wordCount).join(' '));
-        currentIndex += wordCount;
+        lines.push(words.slice(currentIndex, currentIndex + wordCount).join(' '))
+        currentIndex += wordCount
       }
-    };
-
-    // Distribute words into lines in an ellipse-like shape
-    const lines: string[] = [];
-    let currentIndex: number = 0;
-
-    // Top lines: gradually increase word count
-    addLine(firstTopLineWordCount); // First top line
-    addLine(topLineWords + 1); // Second top line
-
-    // Middle lines: maximum words
-    while (currentIndex < words.length - (topLineWords + 1)) { // Reserve words for bottom lines
-      addLine(maxMiddleWords); // Middle line
     }
 
+    // Top lines: gradually increase word count
+    addLine(firstTopLineWordCount) // First top line
+    //addLine(topLineWords + 1); // Second top line
+
+    let maxMWords = maxMiddleWords;
+
+    // Middle lines: maximum words
+    while (currentIndex < words.length) {
+
+      if (getTotalLetters(currentIndex, maxMiddleWords) < 14) {
+        maxMWords += Math.floor(topLineWords / 2) // Middle line
+      } else {
+        if (maxMWords > maxMiddleWords) {
+          maxMWords -= Math.floor(topLineWords / 2) // Middle line
+        }
+      }
+      addLine(maxMWords) // Middle line
+      maxMWords = maxMiddleWords;
+    }
+
+    // if(getTotalLetters(currentIndex, topLineWords) < 15){
+    //   topLineWords += Math.floor(topLineWords/2); // Middle line
+    // } else {
+    //   topLineWords -= Math.floor(topLineWords/2); // Middle line
+    // }
+
     // Bottom lines: gradually decrease word count
-    addLine(topLineWords + 1); // First bottom line
-    addLine(topLineWords); // Second bottom line
-    if (words.length >= 30) addLine(1); // Last bottom line for long text
+    // addLine(topLineWords); // First bottom line
+    // addLine(topLineWords); // Second bottom line
+    //if (words.length >= 30) addLine(1); // Last bottom line for long text
 
     // Calculate the total height of the text
-    const totalHeight: number = lines.length * lineHeight; // Total height in ems
+    const totalHeight: number = lines.length * lineHeight // Total height in ems
 
     // Add a small offset to move the text down slightly
-    const offset: number = 0.8; // Adjust this value to move the text down (e.g., 0.5em)
+    const offset: number = 0.8 // Adjust this value to move the text down (e.g., 0.5em)
 
     // Add the lines to the text element
     lines.forEach((line: string, i: number) => {
-      textElement.append('tspan')
+      textElement
+        .append('tspan')
         .attr('x', 0)
         .attr('dy', i === 0 ? `-${totalHeight / 2 - offset}em` : `${lineHeight}em`) // Adjust vertical spacing
         .attr('text-anchor', 'middle') // Center-align each line
-        .text(line);
-    });
-  });
+        .text(line)
+    })
+  })
 }
-
 
 // Helper: Check if line intersects an ellipse
 function lineIntersectsEllipse(
