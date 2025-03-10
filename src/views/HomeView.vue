@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, watch, inject } from 'vue'
+import { ref, onMounted, watch, inject, onUpdated } from 'vue'
 import ResultsMap from '@/components/ResultsMap.vue'
 import ResultsMapControls from '@/components/ResultsMapControls.vue'
 import type {
@@ -147,6 +147,22 @@ const addBubble = (bubble: Omit<Bubble, 'id'>) => {
     id: newId,
     locked: false,
   })
+}
+
+const updateBubble = (bubble: Bubble) => {
+  if (!mapData.value) return
+  const index = mapData.value.bubbles.findIndex((b) => b.id === bubble.id)
+  if (index !== -1) {
+    mapData.value.bubbles[index] = bubble
+  }
+}
+
+const updateGroup = (group: Group) => {
+  if (!mapData.value) return
+  const index = mapData.value.groups.findIndex((g) => g.id === group.id)
+  if (index !== -1) {
+    mapData.value.groups[index] = group
+  }
 }
 
 const addRelationship = (relationship: Omit<Relationship, 'id'>) => {
@@ -622,6 +638,8 @@ const resetDataToDefault = () => {
           <ResultsMapControls
             :mapData="mapData"
             :onAddBubble="addBubble"
+            :onUpdateBubble="updateBubble"
+            :onUpdateGroup="updateGroup"
             :onAddRelationship="addRelationship"
             :onAddGroup="addGroup"
             :onDeleteGroup="deleteGroup"

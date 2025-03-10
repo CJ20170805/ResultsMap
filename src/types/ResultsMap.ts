@@ -26,7 +26,7 @@ export interface Group {
     y?: number
     locked: boolean
     isDragging: boolean
-    //visible: boolean
+    visible: boolean
 }
 
 export interface Bubble {

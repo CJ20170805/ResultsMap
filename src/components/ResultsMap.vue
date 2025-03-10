@@ -222,6 +222,15 @@ const detectGroup = (x: number, y: number): string | null => {
 const createBubble = () => {
   if (!newBubbleText.value) return
 
+  // Check if there is one group on the map at least
+  if (props.data.groups.length === 0) {
+    ElMessage({
+      message: 'Please create at least one group before adding bubbles.',
+      type: 'warning',
+    })
+    return
+  }
+
   // Detect the layer and group for the new bubble
   const layer = detectLayer(newBubblePosition.value.x, newBubblePosition.value.y)
   const groupId = detectGroup(newBubblePosition.value.x, newBubblePosition.value.y)
@@ -403,9 +412,10 @@ function calculateGroupAngles(groups: Group[]) {
   //   group.endAngle = currentAngle + angleShare
   //   currentAngle += angleShare
   // })
+  const visibleGroups = groups.filter((group) => group.visible)
+  const angleIncrement = (2 * Math.PI) / visibleGroups.length
 
-  const angleIncrement = (2 * Math.PI) / groups.length
-  groups.forEach((group, index) => {
+  visibleGroups.forEach((group, index) => {
     if (!group.locked) {
       group.startAngle = index * angleIncrement
       group.endAngle = (index + 1) * angleIncrement
@@ -413,7 +423,7 @@ function calculateGroupAngles(groups: Group[]) {
     }
   })
 
-  return groups
+  return visibleGroups
 }
 
 // Add function to draw group dividers
@@ -865,6 +875,8 @@ const drawMap = () => {
   // Calculate group angles
   const updatedGroups = calculateGroupAngles(props.data.groups)
   //, props.data.bubbles
+  console.log("UpdatedGroups--", updatedGroups);
+
 
   // Draw layers (concentric circles)
   Object.entries(tracks)
@@ -1563,6 +1575,7 @@ const createGroup = () => {
     name: newGroupName.value,
     locked: false,
     isDragging: false,
+    visible: true,
   })
 
   // Clear the input field and hide the context menu

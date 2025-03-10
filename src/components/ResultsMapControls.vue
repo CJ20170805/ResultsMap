@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, inject } from 'vue'
+import { ref, onMounted, inject, watch } from 'vue'
 import type {
   LayerType,
   RelationType,
@@ -14,9 +14,11 @@ import type { TourGuideClient } from '@sjmc11/tourguidejs/src/Tour'
 
 const props = defineProps<{
   onAddBubble: (bubble: Omit<Bubble, 'id'>) => void
+  onUpdateBubble: (bubble: Bubble) => void
   onAddRelationship: (relationship: Omit<Relationship, 'id'>) => void
   onAddGroup: (group: Omit<Group, 'id'>) => void
   onDeleteGroup: (groupId: string) => void
+  onUpdateGroup: (group: Group) => void
   onChangeGroupLevel: (groupLevel: LayerType) => void
   onExport: (type: ExportType) => void
   onImport: () => void
@@ -28,6 +30,8 @@ const props = defineProps<{
 
 const mapConfig = ref(props.mapData.mapConfig)
 const legends = ref(props.mapData.legends)
+const bubbleData = ref(props.mapData.bubbles)
+const groupData = ref(props.groups)
 
 const exportType = ref<ExportType>('png')
 
@@ -59,7 +63,7 @@ const currentTab = ref<string>('File')
 // Initialize TourGuideJS
 const hasSeenTour = localStorage.getItem('hasSeenTour')
 const tour = inject<TourGuideClient>('tourGuide')
-const isFinished = ref(false);
+const isFinished = ref(false)
 
 const startATour = () => {
   // Configure the tour
@@ -90,20 +94,19 @@ const startATour = () => {
 
     tour.onBeforeStepChange(() => {
       console.log(`Before Changing to step: ${tour.activeStep}`)
-      if(!isFinished.value) {
+      if (!isFinished.value) {
         switch (tour.activeStep) {
-        case 0:
-          currentTab.value = 'Map'
-          break
-        case 1:
-          currentTab.value = 'Legend'
-          break
-        case 2:
-          currentTab.value = 'File'
-          break
+          case 0:
+            currentTab.value = 'Map'
+            break
+          case 1:
+            currentTab.value = 'Legend'
+            break
+          case 2:
+            currentTab.value = 'File'
+            break
+        }
       }
-      }
-
     })
 
     tour.onFinish(() => {
@@ -111,15 +114,15 @@ const startATour = () => {
 
       currentTab.value = 'File'
 
-      isFinished.value = true;
-      props.onContinueTour();
+      isFinished.value = true
+      props.onContinueTour()
     })
 
     tour.onBeforeExit(() => {
       console.log('Tour exited 000')
-      if(!isFinished.value) {
+      if (!isFinished.value) {
         localStorage.setItem('hasSeenTour', 'true')
-        currentTab.value = "File"
+        currentTab.value = 'File'
       }
     })
 
@@ -128,17 +131,29 @@ const startATour = () => {
 }
 
 const reStartATour = () => {
-  isFinished.value = false;
-  startATour();
+  isFinished.value = false
+  startATour()
 }
 
 onMounted(() => {
-  if (!hasSeenTour && tour){
+  if (!hasSeenTour && tour) {
     setTimeout(() => {
       startATour()
     }, 1000)
   }
+  generateTreeData()
+  //updateCheckedKeys()
 })
+
+
+watch(
+  () => [props.mapData.bubbles, props.groups],
+  () => {
+     generateTreeData()
+    // updateCheckedKeys()
+  },
+  { deep: true },
+)
 
 const handleAddBubble = () => {
   if (newBubble.value.text.trim()) {
@@ -159,7 +174,7 @@ const handleAddGroup = () => {
     name: newGroup.value.name,
     locked: false,
     isDragging: false,
-    //visible: true
+    visible: true,
     //layers: newGroup.value.layers,
   })
   newGroup.value.name = ''
@@ -204,6 +219,72 @@ const createNewMap = () => {
   console.log('Creating new map...')
   props.onCreateNewMap()
 }
+
+// Visibility Control
+
+const treeData = ref<any[]>([])
+const treeProps = ref({
+  label: 'name',
+  children: 'children',
+})
+
+const checkedKeys = ref<string[]>([]);
+
+const updateCheckedKeys = () => {
+  const visibleGroupIds = groupData.value
+    .filter(group => group.visible)
+    .map(group => group.id);
+
+  const visibleBubbleIds = bubbleData.value
+    .filter(bubble => bubble.visible)
+    .map(bubble => bubble.id);
+
+  checkedKeys.value = [...visibleGroupIds, ...visibleBubbleIds];
+};
+
+
+const generateTreeData = () => {
+  // Create a tree structure where groups contain their bubbles
+  treeData.value = groupData.value.map((group) => ({
+    id: group.id,
+    name: group.name || "untitled-group",
+    type: 'group',
+    visible: group.visible,
+    children: bubbleData.value
+      .filter((bubble) => bubble.groupId === group.id) // Filter bubbles for this group
+      .map((bubble) => ({
+        id: bubble.id,
+        name: bubble.text,
+        type: 'bubble',
+        visible: bubble.visible,
+      })),
+  }))
+
+  updateCheckedKeys();
+}
+
+const handleVisibilityChange = (node: any, checked: boolean) => {
+  console.log('Node:', node, 'Checked:', checked);
+
+  if (node.type === 'group') {
+    // Update group visibility
+    const group =  groupData.value.find(g => g.id === node.id);
+    if (group) {
+     // props.onUpdateGroup({ ...group, visible: checked });
+       group.visible = checked;
+    }
+  } else if (node.type === 'bubble') {
+    // Update bubble visibility
+    const bubble =  bubbleData.value.find(b => b.id === node.id);
+    if (bubble) {
+      //props.onUpdateBubble({ ...bubble, visible: checked });
+      bubble.visible = checked;
+    }
+  }
+
+  // // Update the checkedKeys list
+  // updateCheckedKeys();
+};
 </script>
 
 <template>
@@ -242,7 +323,6 @@ const createNewMap = () => {
                   </el-select>
                   <el-button type="primary" @click="handleExport">Export</el-button>
                 </el-form-item>
-
 
                 <!-- Start a tour -->
                 <el-form-item>
@@ -509,6 +589,28 @@ const createNewMap = () => {
                   </el-col>
                 </el-form-item>
               </el-form>
+            </div>
+          </el-col>
+        </el-row>
+      </el-tab-pane>
+
+      <!-- New Visibility tab -->
+      <el-tab-pane label="Visibility" name="Visibility">
+        <el-row :gutter="20">
+          <el-col :span="24">
+            <div class="control-section">
+              <h3>Visibility Control</h3>
+              <el-tree
+                :data="treeData"
+                show-checkbox
+                node-key="id"
+                :props="treeProps"
+                default-expand-all
+                hiligh-current
+                check-strictly
+                :default-checked-keys="checkedKeys"
+                @check-change="handleVisibilityChange"
+              />
             </div>
           </el-col>
         </el-row>
