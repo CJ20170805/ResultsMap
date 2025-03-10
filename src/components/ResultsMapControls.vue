@@ -270,15 +270,22 @@ const handleVisibilityChange = (node: any, checked: boolean) => {
     // Update group visibility
     const group =  groupData.value.find(g => g.id === node.id);
     if (group) {
-     // props.onUpdateGroup({ ...group, visible: checked });
-       group.visible = checked;
+      props.onUpdateGroup({ ...group, visible: checked });
+       //group.visible = checked;
     }
+
+    // Update bubble visibility
+    const bubbles = bubbleData.value.filter(b => b.groupId === node.id);
+    bubbles.forEach(bubble => {
+      props.onUpdateBubble({ ...bubble, visible: checked });
+      //bubble.visible = checked;
+    });
   } else if (node.type === 'bubble') {
     // Update bubble visibility
     const bubble =  bubbleData.value.find(b => b.id === node.id);
     if (bubble) {
-      //props.onUpdateBubble({ ...bubble, visible: checked });
-      bubble.visible = checked;
+      props.onUpdateBubble({ ...bubble, visible: checked });
+     // bubble.visible = checked;
     }
   }
 
@@ -595,7 +602,7 @@ const handleVisibilityChange = (node: any, checked: boolean) => {
       </el-tab-pane>
 
       <!-- New Visibility tab -->
-      <el-tab-pane label="Visibility" name="Visibility">
+      <el-tab-pane label="Visibility" name="Visibility" v-if="false">
         <el-row :gutter="20">
           <el-col :span="24">
             <div class="control-section">

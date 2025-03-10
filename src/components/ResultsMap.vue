@@ -594,7 +594,7 @@ function drawGroupDividers(
 
 // Function to add group names
 function addGroupNames(svg: d3.Selection<SVGGElement, unknown, null, undefined>, groups: Group[]) {
-  console.log('GroupName--', groups)
+  console.log('GroupName00--', groups)
 
   let initX: number, initY: number
   let initMouseX: number, initialMouseY: number
