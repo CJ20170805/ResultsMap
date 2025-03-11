@@ -89,6 +89,11 @@ const startATour = () => {
         content: 'This is the Legend tab where you can manage the legend for bubbles and lines.',
         target: '#legendTab',
       },
+      {
+        title: 'Visibility Tab',
+        content: 'This is the Visibility tab where you can control the visibility of different elements on the map. Use the filter to quickly find specific elements and toggle their visibility using the checkboxes.',
+        target: '#visibilityTab',
+      }
     ]
 
     tour.setOptions({ steps, finishLabel: 'Continue' })
@@ -104,6 +109,9 @@ const startATour = () => {
             currentTab.value = 'Legend'
             break
           case 2:
+            currentTab.value = 'Visibility'
+            break
+          case 3:
             currentTab.value = 'File'
             break
         }
@@ -612,9 +620,7 @@ const handleVisibilityChange = (node: any, checked: boolean) => {
           </el-col>
         </el-row>
       </el-tab-pane>
-
-      <!-- New Visibility tab -->
-      <el-tab-pane label="Visibility" name="Visibility" v-if="true">
+      <el-tab-pane label="Visibility" name="Visibility" id="visibilityTab">
         <el-row :gutter="20">
           <el-col :span="24">
             <div class="control-section">
