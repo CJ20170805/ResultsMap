@@ -11,6 +11,7 @@ import type {
 } from '@/types/ResultsMap'
 //import { mapActions } from 'pinia';
 import type { TourGuideClient } from '@sjmc11/tourguidejs/src/Tour'
+import { ElTree } from 'element-plus'
 
 const props = defineProps<{
   onAddBubble: (bubble: Omit<Bubble, 'id'>) => void
@@ -145,11 +146,10 @@ onMounted(() => {
   //updateCheckedKeys()
 })
 
-
 watch(
   () => [props.mapData.bubbles, props.groups],
   () => {
-     generateTreeData()
+    generateTreeData()
     // updateCheckedKeys()
   },
   { deep: true },
@@ -222,32 +222,44 @@ const createNewMap = () => {
 
 // Visibility Control
 
+const filterText = ref('')
+const treeRef = ref<InstanceType<typeof ElTree>>()
 const treeData = ref<any[]>([])
 const treeProps = ref({
   label: 'name',
   children: 'children',
 })
 
-const checkedKeys = ref<string[]>([]);
+interface Tree {
+  [key: string]: any
+}
+
+const checkedKeys = ref<string[]>([])
+
+watch(filterText, (val) => {
+  treeRef.value!.filter(val)
+})
+
+const filterNode = (value: string, data: Tree) => {
+  if (!value) return true
+  return data.name.includes(value)
+}
 
 const updateCheckedKeys = () => {
-  const visibleGroupIds = groupData.value
-    .filter(group => group.visible)
-    .map(group => group.id);
+  const visibleGroupIds = groupData.value.filter((group) => group.visible).map((group) => group.id)
 
   const visibleBubbleIds = bubbleData.value
-    .filter(bubble => bubble.visible)
-    .map(bubble => bubble.id);
+    .filter((bubble) => bubble.visible)
+    .map((bubble) => bubble.id)
 
-  checkedKeys.value = [...visibleGroupIds, ...visibleBubbleIds];
-};
-
+  checkedKeys.value = [...visibleGroupIds, ...visibleBubbleIds]
+}
 
 const generateTreeData = () => {
   // Create a tree structure where groups contain their bubbles
   treeData.value = groupData.value.map((group) => ({
     id: group.id,
-    name: group.name || "untitled-group",
+    name: group.name || 'untitled-group',
     type: 'group',
     visible: group.visible,
     children: bubbleData.value
@@ -260,38 +272,38 @@ const generateTreeData = () => {
       })),
   }))
 
-  updateCheckedKeys();
+  updateCheckedKeys()
 }
 
 const handleVisibilityChange = (node: any, checked: boolean) => {
-  console.log('Node:', node, 'Checked:', checked);
+  console.log('Node:', node, 'Checked:', checked)
 
   if (node.type === 'group') {
     // Update group visibility
-    const group =  groupData.value.find(g => g.id === node.id);
+    const group = groupData.value.find((g) => g.id === node.id)
     if (group) {
-      props.onUpdateGroup({ ...group, visible: checked });
-       //group.visible = checked;
+      props.onUpdateGroup({ ...group, visible: checked })
+      //group.visible = checked;
     }
 
     // Update bubble visibility
-    const bubbles = bubbleData.value.filter(b => b.groupId === node.id);
-    bubbles.forEach(bubble => {
-      props.onUpdateBubble({ ...bubble, visible: checked });
+    const bubbles = bubbleData.value.filter((b) => b.groupId === node.id)
+    bubbles.forEach((bubble) => {
+      props.onUpdateBubble({ ...bubble, visible: checked })
       //bubble.visible = checked;
-    });
+    })
   } else if (node.type === 'bubble') {
     // Update bubble visibility
-    const bubble =  bubbleData.value.find(b => b.id === node.id);
+    const bubble = bubbleData.value.find((b) => b.id === node.id)
     if (bubble) {
-      props.onUpdateBubble({ ...bubble, visible: checked });
-     // bubble.visible = checked;
+      props.onUpdateBubble({ ...bubble, visible: checked })
+      // bubble.visible = checked;
     }
   }
 
   // // Update the checkedKeys list
   // updateCheckedKeys();
-};
+}
 </script>
 
 <template>
@@ -607,7 +619,9 @@ const handleVisibilityChange = (node: any, checked: boolean) => {
           <el-col :span="24">
             <div class="control-section">
               <h3>Visibility Control</h3>
+              <el-input v-model="filterText" class="w-60 mb-2" placeholder="Filter keyword" />
               <el-tree
+                ref="treeRef"
                 :data="treeData"
                 show-checkbox
                 node-key="id"
@@ -617,6 +631,7 @@ const handleVisibilityChange = (node: any, checked: boolean) => {
                 check-strictly
                 :default-checked-keys="checkedKeys"
                 @check-change="handleVisibilityChange"
+                :filter-node-method="filterNode"
               />
             </div>
           </el-col>
