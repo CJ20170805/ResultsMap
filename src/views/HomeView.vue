@@ -51,9 +51,9 @@ const startATour = async () => {
 }
 
 const continueTour = () => {
-  setTimeout(()=>{
+  setTimeout(() => {
     ResultsMapRef.value?.startATour()
-  },300)
+  }, 300)
 }
 
 onMounted(async () => {
@@ -159,10 +159,34 @@ const updateBubble = (bubble: Bubble) => {
 
 const updateGroup = (group: Group) => {
   if (!mapData.value) return
+
+  // unlock group
+  mapData.value.groups.forEach((g) => {
+    g.locked = false
+    g.isDragging = true // For recalculate the group name
+  })
+
+  // unlock bubble
+  mapData.value.bubbles.forEach((g) => {
+    g.locked = false
+  })
+
+  // update group
   const index = mapData.value.groups.findIndex((g) => g.id === group.id)
   if (index !== -1) {
-    mapData.value.groups[index] = group
+    mapData.value.groups[index].visible = group.visible;
   }
+
+
+  // recovery status
+  setTimeout(() => {
+    if (mapData.value) {
+      mapData.value.groups.forEach((g) => {
+        g.locked = false
+        g.isDragging = false
+      })
+    }
+  }, 300)
 }
 
 const addRelationship = (relationship: Omit<Relationship, 'id'>) => {

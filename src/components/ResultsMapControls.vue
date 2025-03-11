@@ -602,7 +602,7 @@ const handleVisibilityChange = (node: any, checked: boolean) => {
       </el-tab-pane>
 
       <!-- New Visibility tab -->
-      <el-tab-pane label="Visibility" name="Visibility" v-if="false">
+      <el-tab-pane label="Visibility" name="Visibility" v-if="true">
         <el-row :gutter="20">
           <el-col :span="24">
             <div class="control-section">

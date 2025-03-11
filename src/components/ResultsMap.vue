@@ -650,7 +650,9 @@ function addGroupNames(svg: d3.Selection<SVGGElement, unknown, null, undefined>,
 
     // console.log("group.isDragging?", group.isDragging);
 
+    // Only calculate the group name position automatically during the initial creation or when dragging the divider.
     if (!group.x || !group.y || group.isDragging) {
+      console.log("Yesssssssssss", group.name);
       const midAngle = (group.startAngle + group.endAngle) / 2
       const outerRadius = tracks.operational.outer + 20 // Offset outside the outer track
       x = centerX + outerRadius * Math.cos(midAngle)
@@ -785,7 +787,7 @@ function addArrowsAndTitle(svg: d3.Selection<SVGGElement, unknown, null, undefin
   svg
     .append('text')
     .attr('x', centerX)
-    .attr('y', 40)
+    .attr('y', 32)
     .attr('text-anchor', 'middle')
     .attr('alignment-baseline', 'middle')
     .text(props.data.mapConfig.title)
