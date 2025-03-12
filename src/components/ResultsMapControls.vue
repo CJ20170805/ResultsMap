@@ -626,7 +626,7 @@ const handleVisibilityChange = (node: any, checked: boolean) => {
             <div class="control-section">
               <h3>Visibility Control</h3>
               <el-input v-model="filterText" class="w-60 mb-2" placeholder="Filter keyword" />
-              <el-tree
+              <el-tree-v2
                 ref="treeRef"
                 :data="treeData"
                 show-checkbox
