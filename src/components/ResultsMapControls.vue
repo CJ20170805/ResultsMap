@@ -12,6 +12,7 @@ import type {
 //import { mapActions } from 'pinia';
 import type { TourGuideClient } from '@sjmc11/tourguidejs/src/Tour'
 import { ElTreeV2 } from 'element-plus'
+import exp from 'constants';
 
 const props = defineProps<{
   onAddBubble: (bubble: Omit<Bubble, 'id'>) => void
@@ -232,7 +233,7 @@ const createNewMap = () => {
 const filterText = ref('')
 const treeRef = ref<InstanceType<typeof ElTreeV2>>()
 const treeData = ref<any[]>([])
-const expandedKeys =  groupData.value.map((group) => group.id);
+let expandedKeys =  groupData.value.map((group) => group.id);
 console.log('Expanded Keys:', expandedKeys);
 const treeProps = ref({
   label: 'name',
@@ -265,9 +266,20 @@ const updateCheckedKeys = () => {
 
   treeRef.value!.setCheckedKeys(checkedKeys.value)
 
-  setTimeout(() => {
-    treeRef.value!.setExpandedKeys(groupData.value.map((group) => group.id))
-  }, 500)
+  // setTimeout(() => {
+  //   treeRef.value!.setExpandedKeys(groupData.value.map((group) => group.id))
+  // }, 500)
+
+  // If new group is added, expand it
+  if (groupData.value.length > expandedKeys.length) {
+    const newGroupIds = visibleGroupIds.filter((id) => !expandedKeys.includes(id))
+    const groupNode = treeRef.value!.getNode(newGroupIds[0]);
+    const bubbleLength = bubbleData.value.filter((bubble) => bubble.groupId === newGroupIds[0]).length;
+    if (groupNode && bubbleLength > 0) {
+      treeRef.value!.expandNode(groupNode);
+      expandedKeys.push(newGroupIds[0]);
+    }
+  } 
 }
 
 const generateTreeData = () => {
