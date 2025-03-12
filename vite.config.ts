@@ -7,7 +7,6 @@ import vueDevTools from 'vite-plugin-vue-devtools'
 // https://vite.dev/config/
 export default defineConfig({
   //base: "/sites/fit/AlignMB/j_sandbox/SitePages/ResultsMap/",
-  base: "/ResultsMap/",
   plugins: [
     vue(),
     vueDevTools(),
