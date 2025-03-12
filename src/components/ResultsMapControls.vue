@@ -11,7 +11,8 @@ import type {
 } from '@/types/ResultsMap'
 //import { mapActions } from 'pinia';
 import type { TourGuideClient } from '@sjmc11/tourguidejs/src/Tour'
-import { ElTree } from 'element-plus'
+import { ElTreeV2 } from 'element-plus'
+import { calc } from 'antd/es/theme/internal';
 
 const props = defineProps<{
   onAddBubble: (bubble: Omit<Bubble, 'id'>) => void
@@ -229,10 +230,11 @@ const createNewMap = () => {
 }
 
 // Visibility Control
-
 const filterText = ref('')
-const treeRef = ref<InstanceType<typeof ElTree>>()
+const treeRef = ref<InstanceType<typeof ElTreeV2>>()
 const treeData = ref<any[]>([])
+const expandedKeys =  groupData.value.map((group) => group.id);
+console.log('Expanded Keys:', expandedKeys);
 const treeProps = ref({
   label: 'name',
   children: 'children',
@@ -261,9 +263,16 @@ const updateCheckedKeys = () => {
     .map((bubble) => bubble.id)
 
   checkedKeys.value = [...visibleGroupIds, ...visibleBubbleIds]
+
+  treeRef.value!.setCheckedKeys(checkedKeys.value)
+
+  setTimeout(() => {
+    treeRef.value!.setExpandedKeys(groupData.value.map((group) => group.id))
+  }, 500)
 }
 
 const generateTreeData = () => {
+  console.log('Generating tree data...')
   // Create a tree structure where groups contain their bubbles
   treeData.value = groupData.value.map((group) => ({
     id: group.id,
@@ -625,19 +634,20 @@ const handleVisibilityChange = (node: any, checked: boolean) => {
           <el-col :span="24">
             <div class="control-section">
               <h3>Visibility Control</h3>
-              <el-input v-model="filterText" class="w-60 mb-2" placeholder="Filter keyword" />
+              <el-input style="margin: 0 0 10px 0;" v-model="filterText" class="w-60 mb-2" placeholder="Filter keyword" />
               <el-tree-v2
                 ref="treeRef"
                 :data="treeData"
                 show-checkbox
-                node-key="id"
                 :props="treeProps"
                 default-expand-all
                 hiligh-current
                 check-strictly
                 :default-checked-keys="checkedKeys"
+                :default-expanded-keys="expandedKeys"
                 @check-change="handleVisibilityChange"
-                :filter-node-method="filterNode"
+                :filter-method="filterNode"
+                :height="600"
               />
             </div>
           </el-col>
