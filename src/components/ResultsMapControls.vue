@@ -12,7 +12,6 @@ import type {
 //import { mapActions } from 'pinia';
 import type { TourGuideClient } from '@sjmc11/tourguidejs/src/Tour'
 import { ElTreeV2 } from 'element-plus'
-import { calc } from 'antd/es/theme/internal';
 
 const props = defineProps<{
   onAddBubble: (bubble: Omit<Bubble, 'id'>) => void
