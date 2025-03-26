@@ -1294,7 +1294,7 @@ const drawMap = () => {
     const endY = target.y - unitY * (targetRadius.ry + OFFSET)
 
     // Use a straight line for close bubbles
-    const CLOSE_DISTANCE_THRESHOLD = 300
+    const CLOSE_DISTANCE_THRESHOLD = 500
     // console.log('distance', distance)
 
     if (distance < CLOSE_DISTANCE_THRESHOLD) {
@@ -2387,10 +2387,10 @@ function wrap(text: d3.Selection<SVGTextElement, Bubble, null, undefined>, maxWi
       maxMiddleWords = 2 // Middle line max words for very short text
       topLineWords = 2 // Top line words for very short text
     } else if (words.length <= 20 && words.length > 10) {
-      maxMiddleWords = 2
+      maxMiddleWords = 3
       topLineWords = 2
     } else if (words.length <= 30 && words.length > 20) {
-      maxMiddleWords = 4
+      maxMiddleWords = 3
       topLineWords = 3
     } else if (words.length <= 80 && words.length > 30) {
       maxMiddleWords = 4
