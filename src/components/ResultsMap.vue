@@ -652,7 +652,7 @@ function addGroupNames(svg: d3.Selection<SVGGElement, unknown, null, undefined>,
 
     // Only calculate the group name position automatically during the initial creation or when dragging the divider.
     if (!group.x || !group.y || group.isDragging) {
-      console.log("Yesssssssssss", group.name);
+      console.log('Yesssssssssss', group.name)
       const midAngle = (group.startAngle + group.endAngle) / 2
       const outerRadius = tracks.operational.outer + 20 // Offset outside the outer track
       x = centerX + outerRadius * Math.cos(midAngle)
@@ -827,6 +827,22 @@ function addArrowsAndTitle(svg: d3.Selection<SVGGElement, unknown, null, undefin
     .attr('width', 200)
     .attr('height', 120)
     .attr('xlink:href', logoImage)
+
+  // symbol for resize
+  svg
+    .append('defs')
+    .append('marker')
+    .attr('id', 'resize-symbol')
+    .attr('viewBox', '0 0 20 20')
+    .attr('refX', 10)
+    .attr('refY', 10)
+    .attr('markerWidth', 12)
+    .attr('markerHeight', 12)
+    .append('path')
+    .attr('d', 'M10,0 L20,10 L10,20 L0,10 Z') // Diamond shape
+    .attr('fill', '#409eff')
+    .attr('stroke', '#fff')
+    .attr('stroke-width', 1.5)
 }
 
 // For legend explanation dialog
@@ -877,8 +893,7 @@ const drawMap = () => {
   // Calculate group angles
   const updatedGroups = calculateGroupAngles(props.data.groups)
   //, props.data.bubbles
-  console.log("UpdatedGroups--", updatedGroups);
-
+  console.log('UpdatedGroups--', updatedGroups)
 
   // Draw layers (concentric circles)
   Object.entries(tracks)
@@ -976,6 +991,9 @@ const drawMap = () => {
   const MIN_BUBBLE_RADIUS_Y = 60 // Minimum vertical radius
   const BUBBLE_ASPECT_RATIO = MIN_BUBBLE_RADIUS_X / MIN_BUBBLE_RADIUS_Y // Fixed aspect ratio
 
+  // Add these constants for resize handle sizing
+  const RESIZE_HANDLE_SIZE = 12
+
   // Draw bubbles
   const bubbleGroup = mapGroup.append('g')
   const bubbleRadii = new Map<string, { rx: number; ry: number }>()
@@ -1024,9 +1042,12 @@ const drawMap = () => {
     const textWidth = textBBox.width
     const textHeight = textBBox.height
 
-    // Adjust the bubble size based on the text dimensions
-    let bubbleRadiusX = textWidth / 2 + BUBBLE_PADDING_X
-    let bubbleRadiusY = textHeight / 2 + BUBBLE_PADDING_Y
+    console.log("TextWidth: ", textWidth, "TextHeight: ", textHeight);
+
+
+    // Use stored radii if they exist, otherwise calculate based on text
+    let bubbleRadiusX = bubble.rx || textWidth / 2 + BUBBLE_PADDING_X
+    let bubbleRadiusY = bubble.ry || textHeight / 2 + BUBBLE_PADDING_Y
 
     // Ensure the bubble has a minimum size and maintains the fixed aspect ratio
 
@@ -1041,6 +1062,10 @@ const drawMap = () => {
       bubbleRadiusX = bubbleRadiusY * BUBBLE_ASPECT_RATIO
     }
 
+    // Store the final radii in the bubble data
+    bubble.rx = bubbleRadiusX
+    bubble.ry = bubbleRadiusY
+
     console.log(
       'BubbleRadiusX: ',
       bubbleRadiusX,
@@ -1052,7 +1077,9 @@ const drawMap = () => {
 
     bubbleRadii.set(bubble.id, { rx: bubbleRadiusX, ry: bubbleRadiusY })
 
-    g.append('ellipse')
+    // Draw the bubble ellipse
+    const bubbleEllipse = g
+      .append('ellipse')
       .attr('rx', bubbleRadiusX)
       .attr('ry', bubbleRadiusY)
       .attr('stroke', '#000')
@@ -1065,6 +1092,107 @@ const drawMap = () => {
       )
       .attr('opacity', 1)
       .lower()
+
+    // Add resize handles if not in presentation mode
+    if (!isPresentationMode.value) {
+      // Bottom-right resize handle
+      const hideHandleTimeout = ref<ReturnType<typeof setTimeout> | null>(null)
+      const resizeHandle = g
+        .append('rect')
+        .attr('class', 'resize-handle')
+        .attr('x', bubbleRadiusX - RESIZE_HANDLE_SIZE / 2)
+        .attr('y', bubbleRadiusY - RESIZE_HANDLE_SIZE / 2)
+        .attr('width', RESIZE_HANDLE_SIZE)
+        .attr('height', RESIZE_HANDLE_SIZE)
+        .attr('fill', '#409eff')
+        .attr('stroke', '#fff')
+        .attr('stroke-width', 1)
+        .attr('rx', 2)
+        .style('cursor', 'nwse-resize')
+        .style('display', 'none')
+        .call(
+          d3
+            .drag<SVGRectElement, Bubble>()
+            .on('start', function (event) {
+              if (hideHandleTimeout.value) {
+                clearTimeout(hideHandleTimeout.value)
+                hideHandleTimeout.value = null
+              }
+
+              d3.select(this).style('display', null)
+              d3.select(this).raise()
+              event.sourceEvent.stopPropagation()
+
+              props.data.bubbles.forEach((b) => {
+                b.locked = true
+              })
+
+              // Store initial positions
+              const [startX, startY] = d3.pointer(event, svgRef.value!)
+              event.subject.startX = startX
+              event.subject.startY = startY
+              event.subject.startRx = bubbleRadiusX
+              event.subject.startRy = bubbleRadiusY
+            })
+            .on('drag', function (event, d) {
+              const bubble = mapBubbles.value.find((b) => b.id === d.id)
+
+              if (bubble) {
+                // Get current pointer position in SVG coordinates
+                const [x, y] = d3.pointer(event, svgRef.value!)
+
+                // Calculate delta from start position
+                const dx = x - event.subject.startX
+                const dy = y - event.subject.startY
+
+                // Calculate new radii
+                let newRx = Math.max(MIN_BUBBLE_RADIUS_X, event.subject.startRx + dx)
+                let newRy = Math.max(MIN_BUBBLE_RADIUS_Y, event.subject.startRy + dy)
+
+                // Maintain aspect ratio
+                if (newRx / newRy > BUBBLE_ASPECT_RATIO) {
+                  newRy = newRx / BUBBLE_ASPECT_RATIO
+                } else {
+                  newRx = newRy * BUBBLE_ASPECT_RATIO
+                }
+
+                // Update bubble data
+                bubble.rx = newRx
+                bubble.ry = newRy
+
+                // Update visual elements
+                d3.select(this.parentNode as Element)
+                  .select('ellipse')
+                  .attr('rx', newRx)
+                  .attr('ry', newRy)
+
+                // Update handle position
+                d3.select(this)
+                  .attr('x', newRx - RESIZE_HANDLE_SIZE / 2)
+                  .attr('y', newRy - RESIZE_HANDLE_SIZE / 2)
+              }
+            })
+            .on('end', function () {
+              hideHandleTimeout.value = setTimeout(() => {
+                // hide the resize handle after 2 seconds
+                resizeHandle.style('display', 'none')
+              }, 2000)
+            }),
+        )
+
+      // Update hover behavior to cancel timeout
+      g.on('mouseenter', () => {
+        if (hideHandleTimeout.value) {
+          clearTimeout(hideHandleTimeout.value)
+          hideHandleTimeout.value = null
+        }
+        resizeHandle.style('display', null)
+      }).on('mouseleave', () => {
+        hideHandleTimeout.value = setTimeout(() => {
+          resizeHandle.style('display', 'none')
+        }, 2000)
+      })
+    }
   })
 
   let initX: number, initY: number
@@ -1166,7 +1294,7 @@ const drawMap = () => {
     const endY = target.y - unitY * (targetRadius.ry + OFFSET)
 
     // Use a straight line for close bubbles
-    const CLOSE_DISTANCE_THRESHOLD = 240
+    const CLOSE_DISTANCE_THRESHOLD = 300
     // console.log('distance', distance)
 
     if (distance < CLOSE_DISTANCE_THRESHOLD) {
@@ -2663,6 +2791,21 @@ defineExpose({
   </div>
 </template>
 <style>
+/* Add this to your existing styles */
+.resize-handle {
+  pointer-events: all;
+}
+
+.bubble-group:hover .resize-handle {
+  display: block;
+}
+
+/* Make sure text stays centered when bubble is resized */
+text {
+  dominant-baseline: middle;
+  text-anchor: middle;
+}
+
 .transparent {
   opacity: 0.2;
   transition: opacity 0.2s ease;

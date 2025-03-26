@@ -38,6 +38,8 @@ export interface Bubble {
     x?: number
     y?: number
     visible: boolean
+    rx?: number
+    ry?: number
 }
 
 export interface Relationship {
