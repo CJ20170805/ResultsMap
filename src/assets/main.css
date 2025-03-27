@@ -26,7 +26,7 @@
 
 .custom-message-box-class{
   margin-top: -110px;
-  --el-messagebox-width: 36%!important;
+  --el-messagebox-width: 50%!important;
 }
 
 .el-collapse{

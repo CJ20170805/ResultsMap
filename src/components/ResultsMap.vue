@@ -143,7 +143,7 @@ const handleEmptyPositionRightClick = (event: MouseEvent) => {
         // start a context menu tour
         // messageInstance.close();
         hasSeenTour = localStorage.getItem('hasSeenTour')
-        if (!hasSeenTour && !isFirstBubbleCreated.value) {
+        if (!hasSeenTour && !isFirstBubbleCreated.value && !isFirstGroupCreated.value) {
           startCreationMenuTour()
         }
       }
@@ -376,7 +376,7 @@ const removeBubble = () => {
 // Define track boundaries with inner and outer radii
 const tracks = {
   mission: { outer: 190, inner: 0 }, // Pink (innermost)
-  strategic: { outer: 350, inner: 180 }, // Green
+  strategic: { outer: 350, inner: 190 }, // Green
   process: { outer: 500, inner: 350 }, // Blue
   operational: { outer: 650, inner: 500 }, // Orange (outermost)
 }
@@ -1712,9 +1712,11 @@ const createGroup = () => {
   newGroupName.value = ''
   emptyPositionContextMenuVisible.value = false
 
+  isFirstGroupCreated.value = true;
+
   // Detect if the new group is created in the tour
   hasSeenTour = localStorage.getItem('hasSeenTour')
-  if (!hasSeenTour) {
+  if (!hasSeenTour  && mapGroups.value.length > 1) {
     isNewGroupCreated.value = true
     messageInstance?.close()
 
@@ -1781,7 +1783,7 @@ const togglePresentationMode = () => {
         {
           confirmButtonText: 'Ok',
           showCancelButton: false,
-          type: 'info',
+          type: 'warning',
         },
       )
         .then(() => {
@@ -2086,7 +2088,8 @@ const tour = inject<TourGuideClient>('tourGuide')
 
 let messageInstance: any = null
 const isNewGroupCreated = ref(false)
-const isFirstBubbleCreated = ref(false) // close the message box after the first bubble is created
+const isFirstBubbleCreated = ref(false) // Not show the context menu tutorial anymore after the first bubble is created
+const isFirstGroupCreated = ref(false)  // Not show the context menu tutorial anymore after the first group is created
 const isTwoBubbleCreated = ref(false)
 const isNewRelationshipCreated = ref(false)
 
@@ -2165,8 +2168,8 @@ const startATour = () => {
           // Start the second tour
           // startCreationMenuTour();
           messageInstance = ElMessage({
-            type: 'info',
-            message: 'Please right-click the map to create a group',
+            type: 'warning',
+            message: 'Please right-click the map to create a group, ensuring at least two groups are placed on the map.',
             duration: 0, // Make the message persistent
           })
         })
@@ -2174,7 +2177,7 @@ const startATour = () => {
           localStorage.setItem('hasSeenTour', 'true')
           messageInstance?.close()
           ElMessage({
-            type: 'info',
+            type: 'warning',
             message:
               'You can always right-click on the map to create or delete groups and bubbles.',
           })
@@ -2215,7 +2218,7 @@ const startCreateBubbleTour = () => {
       // Start the second tour
       // startCreationMenuTour();
       messageInstance = ElMessage({
-        type: 'info',
+        type: 'warning',
         message:
           'Please right-click the map to create bubbles, ensuring at least two bubbles are placed on the map.',
         duration: 0, // Make the message persistent
@@ -2225,7 +2228,7 @@ const startCreateBubbleTour = () => {
       localStorage.setItem('hasSeenTour', 'true')
       messageInstance?.close()
       ElMessage({
-        type: 'info',
+        type: 'warning',
         message: 'You can always right-click on the map to create or delete groups and bubbles.',
       })
     })
@@ -2251,7 +2254,7 @@ const startCreateRelationshipTour = () => {
       // Start the second tour
       // startCreationMenuTour();
       messageInstance = ElMessage({
-        type: 'info',
+        type: 'warning',
         message: 'Please right-click the bubble to create a new relationship',
         duration: 0, // Make the message persistent
       })
@@ -2260,7 +2263,7 @@ const startCreateRelationshipTour = () => {
       localStorage.setItem('hasSeenTour', 'true')
       messageInstance?.close()
       ElMessage({
-        type: 'info',
+        type: 'warning',
         message: 'You can always right-click on the map to create or delete groups and bubbles.',
       })
     })
