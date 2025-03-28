@@ -40,6 +40,9 @@ export interface Bubble {
     visible: boolean
     rx?: number
     ry?: number
+    fontColor?: string
+    fontSize?: number,
+    fontWeight?: string
 }
 
 export interface Relationship {

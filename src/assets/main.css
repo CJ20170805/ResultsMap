@@ -54,3 +54,8 @@
   flex-direction: row;
   align-items: center;
 }
+
+.svg-text-bold {
+  font-weight: bold;
+  font-family: Arial, sans-serif; /* Ensure the font supports bold */
+}

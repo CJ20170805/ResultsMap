@@ -246,6 +246,9 @@ const createBubble = () => {
     y: newBubblePosition.value.y,
     locked: false,
     visible: true,
+    fontColor: '#000',
+    fontSize: 16,
+    fontWeight: 'normal',
   }
 
   mapBubbles.value.push(newBubble)
@@ -1031,10 +1034,10 @@ const drawMap = () => {
       .append('text')
       .attr('text-anchor', 'middle')
       .attr('alignment-baseline', 'middle')
-      .attr('fill', '#000')
-      .attr('font-size', '16px')
-      // .style('font-weight', 'bold')
       .text(bubble.text)
+      .attr('fill', bubble.fontColor || '#000')
+      .attr('font-size', `${bubble.fontSize || 16}px`)
+      .style('font-weight', bubble.fontWeight || 'normal')
       .call(wrap, BUBBLE_PADDING_X)
 
     // Measure the text dimensions
@@ -1042,8 +1045,7 @@ const drawMap = () => {
     const textWidth = textBBox.width
     const textHeight = textBBox.height
 
-    console.log("TextWidth: ", textWidth, "TextHeight: ", textHeight);
-
+    console.log('TextWidth: ', textWidth, 'TextHeight: ', textHeight)
 
     // Use stored radii if they exist, otherwise calculate based on text
     let bubbleRadiusX = bubble.rx || textWidth / 2 + BUBBLE_PADDING_X
@@ -1712,11 +1714,11 @@ const createGroup = () => {
   newGroupName.value = ''
   emptyPositionContextMenuVisible.value = false
 
-  isFirstGroupCreated.value = true;
+  isFirstGroupCreated.value = true
 
   // Detect if the new group is created in the tour
   hasSeenTour = localStorage.getItem('hasSeenTour')
-  if (!hasSeenTour  && mapGroups.value.length > 1) {
+  if (!hasSeenTour && mapGroups.value.length > 1) {
     isNewGroupCreated.value = true
     messageInstance?.close()
 
@@ -1988,6 +1990,11 @@ const getRelatedBubblesAndRelationships = (bubbleId: string) => {
 
 const handleClickOutside = (event: MouseEvent) => {
   console.log('click outside')
+  // Check if system color picker is open
+  const colorPicker = document.querySelector('.el-color-picker[aria-describedby]')
+  if (colorPicker) {
+    return // Don't close menu if color picker is active
+  }
 
   const contextMenuElement = document.querySelector('.context-menu')
   const tourButton = document.querySelector('.tg-dialog-btn')
@@ -2089,7 +2096,7 @@ const tour = inject<TourGuideClient>('tourGuide')
 let messageInstance: any = null
 const isNewGroupCreated = ref(false)
 const isFirstBubbleCreated = ref(false) // Not show the context menu tutorial anymore after the first bubble is created
-const isFirstGroupCreated = ref(false)  // Not show the context menu tutorial anymore after the first group is created
+const isFirstGroupCreated = ref(false) // Not show the context menu tutorial anymore after the first group is created
 const isTwoBubbleCreated = ref(false)
 const isNewRelationshipCreated = ref(false)
 
@@ -2169,7 +2176,8 @@ const startATour = () => {
           // startCreationMenuTour();
           messageInstance = ElMessage({
             type: 'warning',
-            message: 'Please right-click the map to create a group, ensuring at least two groups are placed on the map.',
+            message:
+              'Please right-click the map to create a group, ensuring at least two groups are placed on the map.',
             duration: 0, // Make the message persistent
           })
         })
@@ -2485,6 +2493,9 @@ function wrap(text: d3.Selection<SVGTextElement, Bubble, null, undefined>, maxWi
         .attr('x', 0)
         .attr('dy', i === 0 ? `-${totalHeight / 2 - offset}em` : `${lineHeight}em`) // Adjust vertical spacing
         .attr('text-anchor', 'middle') // Center-align each line
+        .attr('fill', d.fontColor || '#000')
+        .attr('font-size', `${d.fontSize || 16}px`)
+        .style('font-weight', d.fontWeight || 'normal')
         .text(line)
     })
   })
@@ -2643,12 +2654,34 @@ defineExpose({
       <el-form @submit.prevent="updateBubbleText">
         <el-form-item label="">
           <el-input v-model="newText" autosize type="textarea" />
+          <el-button type="primary" style="width: 100%; margin: 6px 0 0 0" @click="updateBubbleText">Update</el-button>
         </el-form-item>
+
+        <template v-if="selectedBubble">
+          <!-- Add color picker -->
+          <el-form-item label="Color">
+            <el-color-picker v-model="selectedBubble.fontColor" ref="colorPicker" />
+          </el-form-item>
+
+          <!-- Add font size slider -->
+          <el-form-item label="Font Size">
+            <el-slider v-model="selectedBubble.fontSize" :min="16" :max="34" :step="1" />
+          </el-form-item>
+
+          <!-- Add font weight toggle -->
+          <el-form-item label="Bold Text">
+            <el-switch
+              v-model="selectedBubble.fontWeight"
+              active-value="bold"
+              inactive-value="normal"
+            />
+          </el-form-item>
+        </template>
+
         <el-form-item class="margin-top-less">
-          <el-button type="primary" style="width: 47%" @click="updateBubbleText">Update</el-button>
           <el-popconfirm title="Are you sure to remove this?" @confirm="confirmRemoveBubble">
             <template #reference>
-              <el-button style="width: 47%" type="danger">Remove</el-button>
+              <el-button style="width: 100%; margin: 4px 0 0 0" type="danger">Remove current bubble</el-button>
             </template>
           </el-popconfirm>
         </el-form-item>
@@ -2672,7 +2705,6 @@ defineExpose({
         @click="startCreateRelationship(newRelationshipType)"
         >Create Relationship</el-button
       >
-
 
       <div class="relationship-list" v-if="selectedBubble">
         <!-- <h4
@@ -2771,15 +2803,15 @@ defineExpose({
 
         <template v-if="currentGroup">
           <el-form-item label="">
-             <div class="flex-row" style="margin: 3px 0;">
-              <span style="margin: 0 5px 0 0;">Rename: </span>
-            <el-input
-              v-model="currentGroup.name"
-              style="width: 70%;"
-              type="text"
-              placeholder="Enter group name"
-            />
-             </div>
+            <div class="flex-row" style="margin: 3px 0">
+              <span style="margin: 0 5px 0 0">Rename: </span>
+              <el-input
+                v-model="currentGroup.name"
+                style="width: 70%"
+                type="text"
+                placeholder="Enter group name"
+              />
+            </div>
           </el-form-item>
         </template>
 
