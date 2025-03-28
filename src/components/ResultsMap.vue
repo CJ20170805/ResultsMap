@@ -563,7 +563,7 @@ function drawGroupDividers(
         .attr('y1', startY)
         .attr('x2', endX)
         .attr('y2', endY)
-        .attr('stroke', 'white')
+        .attr('stroke', 'black')
         .attr('stroke-width', 3)
         .attr('cursor', 'default') // Disable resize cursor
         .datum(group)
@@ -583,7 +583,7 @@ function drawGroupDividers(
         .attr('y1', startY)
         .attr('x2', endX)
         .attr('y2', endY)
-        .attr('stroke', 'white')
+        .attr('stroke', 'black')
         .attr('stroke-width', 3)
         .attr('cursor', 'ew-resize')
         .datum(group)
@@ -2668,10 +2668,11 @@ defineExpose({
       <el-button
         type="primary"
         class="margin-top-less"
-        style="width: 100%; margin-top: 0px"
+        style="width: 100%; margin: 0px 0 5px 0"
         @click="startCreateRelationship(newRelationshipType)"
         >Create Relationship</el-button
       >
+
 
       <div class="relationship-list" v-if="selectedBubble">
         <!-- <h4
@@ -2770,12 +2771,15 @@ defineExpose({
 
         <template v-if="currentGroup">
           <el-form-item label="">
+             <div class="flex-row" style="margin: 3px 0;">
+              <span style="margin: 0 5px 0 0;">Rename: </span>
             <el-input
               v-model="currentGroup.name"
-              style="width: 100%; margin-top: 10px"
+              style="width: 70%;"
               type="text"
               placeholder="Enter group name"
             />
+             </div>
           </el-form-item>
         </template>
 

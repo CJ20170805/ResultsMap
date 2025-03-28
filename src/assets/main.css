@@ -48,3 +48,9 @@
 .tg-dialog-close-btn{
   margin: -10px 0 0 0;
 }
+
+.flex-row{
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+}
