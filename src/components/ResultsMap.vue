@@ -448,150 +448,112 @@ function drawGroupDividers(
     .on('drag', function (event) {
       const [x, y] = d3.pointer(event, svgRef.value!)
 
-      //Unlock every single bubble
+      // Unlock every single bubble
       props.data.bubbles.forEach((b) => {
         b.locked = false
       })
 
       // Adjust Y coordinate for scaling/offset AND INVERT Y-AXIS
-      const adjustedY = -(y - centerY - yOffset) / yScale // 🔥 Negate to fix coordinate system
-
-      // Calculate angle with corrected y-axis
-      const angle = Math.atan2(adjustedY, x - centerX) // Now uses inverted y
-      const normalizedAngle = angle < 0 ? angle + 2 * Math.PI : angle
-      console.log('Angle===', angle)
+      const adjustedY = -(y - centerY - yOffset) / yScale
+      const angle = Math.atan2(adjustedY, x - centerX)
+      let normalizedAngle = angle < 0 ? angle + 2 * Math.PI : angle
+console.log("normalizedAngle", normalizedAngle);
 
       const MIN_ANGLE = 0.3
-
       const line = d3.select(this)
-      let startX, startY
-
       const currentGroup = line.datum() as Group
       const currentIndex = groups.indexOf(currentGroup)
-      const preGroup = currentIndex === 0 ? groups[groups.length - 1] : groups[currentIndex - 1]
+
+      // Get previous and next groups with circular wrapping
+      const prevGroup = currentIndex === 0 ? groups[groups.length - 1] : groups[currentIndex - 1]
       const nextGroup = groups[(currentIndex + 1) % groups.length]
 
-      console.log('CurrentGroup: ', currentGroup, 'preGroup: ', preGroup)
-
-      if (currentGroup && preGroup) {
+      if (currentGroup && prevGroup) {
         currentGroup.locked = true
-        preGroup.locked = true
-
+        prevGroup.locked = true
         currentGroup.isDragging = true
-        preGroup.isDragging = true
+        prevGroup.isDragging = true
 
-        let clampedAngle = normalizedAngle
-        console.log('currentIndex', currentIndex)
+        // Handle angle constraints differently for first divider
+        if (currentIndex === 0) {
+          // For first divider, we need to handle the circular case
+          const nextAngle = nextGroup.startAngle!
+          const prevAngle = prevGroup.startAngle!
 
-        // Disable drag for first group's divider
-        if (currentIndex === 0) return
-        // Prevent the first group and last group go to other side when they through the boundary divier
-        if (
-          (currentIndex === 1 && angle <= 0) ||
-          (currentIndex === groups.length - 1 && angle >= 0)
-        )
-          return
-
-        // For non-first groups, handle constraints
-        const minBound = preGroup.startAngle! + MIN_ANGLE
-        const maxBound =
-          currentIndex === groups.length - 1
-            ? currentGroup.endAngle! - MIN_ANGLE
-            : nextGroup.startAngle! - MIN_ANGLE
-
-        // Handle circular boundary wrap
-        if (maxBound < minBound) {
-          if (clampedAngle > maxBound && clampedAngle < minBound) {
-            const distToMin = clampedAngle - maxBound
-            const distToMax = minBound - clampedAngle
-            clampedAngle = distToMin < distToMax ? maxBound : minBound
+          // Allow movement in both directions with wrapping
+          if (normalizedAngle > nextAngle - MIN_ANGLE && normalizedAngle < prevAngle + MIN_ANGLE) {
+            // If moving into the "forbidden zone" between next and prev groups
+            if (Math.abs(normalizedAngle - nextAngle) < Math.abs(normalizedAngle - prevAngle)) {
+              normalizedAngle = nextAngle - MIN_ANGLE
+            } else {
+              normalizedAngle = prevAngle + MIN_ANGLE
+            }
           }
         } else {
-          clampedAngle = Math.max(minBound, Math.min(clampedAngle, maxBound))
-        }
+          // For other dividers, use standard constraints
+          const minBound = prevGroup.startAngle! + MIN_ANGLE
+          const maxBound = nextGroup.startAngle! - MIN_ANGLE
 
-        // Final normalization
-        clampedAngle = clampedAngle % (2 * Math.PI)
-        if (clampedAngle < 0) clampedAngle += 2 * Math.PI
+          if (maxBound < minBound) {
+            // Handle circular case
+            if (normalizedAngle > maxBound && normalizedAngle < minBound) {
+              const distToMin = normalizedAngle - maxBound
+              const distToMax = minBound - normalizedAngle
+              normalizedAngle = distToMin < distToMax ? maxBound : minBound
+            }
+          } else {
+            normalizedAngle = Math.max(minBound, Math.min(normalizedAngle, maxBound))
+          }
+        }
 
         // Update angles
-        currentGroup.startAngle = clampedAngle
-        preGroup.endAngle = clampedAngle
+        currentGroup.startAngle = normalizedAngle
+        prevGroup.endAngle = normalizedAngle
 
-        if (startLayer === 'None') {
-          startX = centerX
-          startY = centerY
-        } else {
-          // Use original y-axis for drawing (SVG coordinates)
-          startX = centerX + Math.cos(angle) * tracks[startLayer].inner
-          startY = centerY + -Math.sin(angle) * tracks[startLayer].inner * yScale + yOffset
-        }
+        console.log(
+          `Dragging divider: ${currentGroup.name} (${currentGroup.startAngle}) and ${prevGroup.name} (${prevGroup.startAngle})`,
+        )
 
-        // End point (outer radius)
-        const endX = centerX + Math.cos(angle) * tracks.operational.outer
-        const endY = centerY + -Math.sin(angle) * tracks.operational.outer * yScale + yOffset
+        // Update line position
+        const startX = centerX + Math.cos(normalizedAngle) * tracks[startLayer].inner
+        const startY = centerY + -Math.sin(normalizedAngle) * tracks[startLayer].inner * yScale + yOffset
+        const endX = centerX + Math.cos(normalizedAngle) * tracks.operational.outer
+        const endY = centerY + -Math.sin(normalizedAngle) * tracks.operational.outer * yScale + yOffset
 
         line.attr('x1', startX).attr('y1', startY).attr('x2', endX).attr('y2', endY)
       }
     })
     .on('end', function () {
       d3.select(this).attr('stroke', 'white')
-
       const line = d3.select(this)
-
       const currentGroup = line.datum() as Group
       const currentIndex = groups.indexOf(currentGroup)
-      const preGroup = currentIndex === 0 ? groups[groups.length - 1] : groups[currentIndex - 1]
+      const prevGroup = currentIndex === 0 ? groups[groups.length - 1] : groups[currentIndex - 1]
 
       currentGroup.isDragging = false
-      preGroup.isDragging = false
+      prevGroup.isDragging = false
     })
 
-  // Draw dividers
-  groups.forEach((group, index) => {
-    if (group.startAngle === undefined || group.endAngle === undefined) return
-    if (startLayer === 'None') return
+  // Draw all dividers with the same drag behavior
+  groups.forEach((group) => {
+    if (group.startAngle === undefined || group.endAngle === undefined || startLayer === 'None') return
 
-    // For first group, create a static line at 0
-    if (index === 0) {
-      const startX = centerX + Math.cos(0) * tracks[startLayer].inner
-      const startY = centerY + -Math.sin(0) * tracks[startLayer].inner * yScale + yOffset
+    const startX = centerX + Math.cos(group.startAngle) * tracks[startLayer].inner
+    const startY = centerY + -Math.sin(group.startAngle) * tracks[startLayer].inner * yScale + yOffset
+    const endX = centerX + Math.cos(group.startAngle) * tracks.operational.outer
+    const endY = centerY + -Math.sin(group.startAngle) * tracks.operational.outer * yScale + yOffset
 
-      const endX = centerX + Math.cos(0) * tracks.operational.outer
-      const endY = centerY + -Math.sin(0) * tracks.operational.outer * yScale + yOffset
-
-      dividerGroup
-        .append('line')
-        .attr('x1', startX)
-        .attr('y1', startY)
-        .attr('x2', endX)
-        .attr('y2', endY)
-        .attr('stroke', 'black')
-        .attr('stroke-width', 3)
-        .attr('cursor', 'default') // Disable resize cursor
-        .datum(group)
-    } else {
-      // For other groups, create draggable lines
-      const startX = centerX + Math.cos(group.startAngle) * tracks[startLayer].inner
-      const startY =
-        centerY + -Math.sin(group.startAngle) * tracks[startLayer].inner * yScale + yOffset
-
-      const endX = centerX + Math.cos(group.startAngle) * tracks.operational.outer
-      const endY =
-        centerY + -Math.sin(group.startAngle) * tracks.operational.outer * yScale + yOffset
-
-      dividerGroup
-        .append('line')
-        .attr('x1', startX)
-        .attr('y1', startY)
-        .attr('x2', endX)
-        .attr('y2', endY)
-        .attr('stroke', 'black')
-        .attr('stroke-width', 3)
-        .attr('cursor', 'ew-resize')
-        .datum(group)
-        .call(drag)
-    }
+    dividerGroup
+      .append('line')
+      .attr('x1', startX)
+      .attr('y1', startY)
+      .attr('x2', endX)
+      .attr('y2', endY)
+      .attr('stroke', 'black')
+      .attr('stroke-width', 3)
+      .attr('cursor', 'ew-resize')
+      .datum(group)
+      .call(drag)
   })
 }
 
