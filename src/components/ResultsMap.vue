@@ -2406,7 +2406,7 @@ onBeforeUnmount(() => {
 watch(() => props.data, drawMap, { deep: true })
 
 // Helper function to wrap text with proper typing
-function wrap(text: d3.Selection<SVGTextElement, Bubble, null, undefined>, maxWidth: number): void {
+function wrap_old(text: d3.Selection<SVGTextElement, Bubble, null, undefined>, maxWidth: number): void {
   text.each(function (this: SVGTextElement, d: Bubble) {
     const textElement = d3.select<SVGTextElement, Bubble>(this)
     const words: string[] = textElement.text().split(/\s+/) // Split text into words
@@ -2519,6 +2519,102 @@ function wrap(text: d3.Selection<SVGTextElement, Bubble, null, undefined>, maxWi
         .text(line)
     })
   })
+}
+
+function wrap(
+  text: d3.Selection<SVGTextElement, Bubble, null, undefined>,
+  maxWidth: number,
+): void {
+
+  const targetLineLength: number = 22 // New parameter with default value
+  const topLineMaxLength: number = 14 // Also made this configurable
+
+  text.each(function (this: SVGTextElement, d: Bubble) {
+    const textElement = d3.select<SVGTextElement, Bubble>(this);
+    const words: string[] = textElement.text().split(/\s+/);
+    const lineHeight: number = 1.1;
+
+    // Clear the text
+    textElement.text(null);
+
+    // Function to calculate the total characters in a range of words
+    const getTotalChars = (startIndex: number, wordCount: number): number => {
+      return words.slice(startIndex, startIndex + wordCount).join(' ').length;
+    };
+
+    // Distribute words into lines with dynamic adjustment
+    const lines: string[] = [];
+    let currentIndex: number = 0;
+
+    // Handle first line (max topLineMaxLength characters)
+    if (words.length > 0) {
+      let firstLineWords = 0;
+      let firstLineChars = 0;
+
+      while (firstLineWords < words.length && firstLineChars < topLineMaxLength) {
+        firstLineWords++;
+        firstLineChars = getTotalChars(0, firstLineWords);
+      }
+
+      if (firstLineChars > topLineMaxLength && firstLineWords > 1) {
+        firstLineWords--;
+      }
+
+      lines.push(words.slice(0, firstLineWords).join(' '));
+      currentIndex = firstLineWords;
+    }
+
+    // Handle remaining lines (target targetLineLength characters)
+    while (currentIndex < words.length) {
+      let wordCount = 1;
+      let currentChars = getTotalChars(currentIndex, wordCount);
+      const maxAcceptableLength = targetLineLength * 1.25; // 25% over target
+
+      while (currentIndex + wordCount < words.length) {
+        const nextWordCount = wordCount + 1;
+        const nextChars = getTotalChars(currentIndex, nextWordCount);
+
+        if (currentChars < targetLineLength) {
+          if (nextChars <= maxAcceptableLength ||
+              (Math.abs(targetLineLength - nextChars) < Math.abs(targetLineLength - currentChars))) {
+            wordCount = nextWordCount;
+            currentChars = nextChars;
+          } else {
+            break;
+          }
+        } else {
+          if (wordCount > 1 &&
+              Math.abs(targetLineLength - getTotalChars(currentIndex, wordCount - 1)) <
+              Math.abs(targetLineLength - currentChars)) {
+            wordCount -= 1;
+            currentChars = getTotalChars(currentIndex, wordCount);
+          }
+          break;
+        }
+      }
+
+      wordCount = Math.min(wordCount, words.length - currentIndex);
+      lines.push(words.slice(currentIndex, currentIndex + wordCount).join(' '));
+      currentIndex += wordCount;
+    }
+
+    // Calculate the total height of the text
+    const totalHeight: number = lines.length * lineHeight;
+    const offset: number = 0.8;
+
+    // Add the lines to the text element
+    lines.forEach((line: string, i: number) => {
+      textElement
+        .append('tspan')
+        .attr('x', 0)
+        .attr('dy', i === 0 ? `-${totalHeight / 2 - offset}em` : `${lineHeight}em`)
+        .attr('text-anchor', 'middle')
+        .attr('fill', d.fontColor || '#000')
+        .attr('font-size', `${d.fontSize || 16}px`)
+        .style('font-weight', d.fontWeight || 'normal')
+        .text(line);
+    });
+  });
 }
 
 // Helper: Check if line intersects an ellipse
