@@ -197,27 +197,34 @@ const detectGroup = (x: number, y: number): string | null => {
   // Calculate angle in the scaled coordinate system (clockwise)
   const angle = Math.atan2(dy, dx)
 
-  // Convert to anticlockwise order
-  const anticlockwiseAngle = (2 * Math.PI - angle) % (2 * Math.PI)
-
-  // console.log(`Click Position: x=${x}, y=${y}`)
-  // console.log(`Adjusted Position: dx=${dx}, dy=${dy}`)
-  // console.log(`Calculated Angle (clockwise): ${angle}`)
-  // console.log(`Converted Angle (anticlockwise): ${anticlockwiseAngle}`)
+  // Convert to anticlockwise order and normalize to [0, 2π)
+  let anticlockwiseAngle = (2 * Math.PI - angle) % (2 * Math.PI)
+  if (anticlockwiseAngle < 0) anticlockwiseAngle += 2 * Math.PI
 
   // Find the group that contains this angle
   const group = props.data.groups.find((group) => {
     if (group.startAngle === undefined || group.endAngle === undefined) return false
-    return anticlockwiseAngle >= group.startAngle && anticlockwiseAngle <= group.endAngle
+
+    // Normalize group angles to [0, 2π)
+    let startAngle = group.startAngle < 0 ? group.startAngle + 2 * Math.PI : group.startAngle
+    let endAngle = group.endAngle < 0 ? group.endAngle + 2 * Math.PI : group.endAngle
+
+    // Handle wrap-around groups (where endAngle < startAngle)
+    if (endAngle < startAngle) {
+      return anticlockwiseAngle >= startAngle || anticlockwiseAngle <= endAngle
+    }
+
+    // Normal case
+    return anticlockwiseAngle >= startAngle && anticlockwiseAngle <= endAngle
   })
 
   if (group) {
-    console.log(`Detected Group: ${group.name}`)
+    console.log(`Detected Group: ${group.name} (${group.startAngle} to ${group.endAngle}) for angle ${anticlockwiseAngle}`)
+    return group.id
   } else {
-    console.log('No group detected')
+    console.log(`No group detected for angle ${anticlockwiseAngle}`)
+    return null
   }
-
-  return group ? group.id : null
 }
 
 // Handle create new bubble
@@ -434,6 +441,11 @@ function calculateGroupAngles(groups: Group[]) {
     if (!group.locked) {
       group.startAngle = index * angleIncrement
       group.endAngle = (index + 1) * angleIncrement
+
+      // Normalize if any angle calculation resulted in negative
+      if (group.startAngle < 0) group.startAngle += 2 * Math.PI
+      if (group.endAngle < 0) group.endAngle += 2 * Math.PI
+
       console.log('GroupAngle- ' + group.name + ' : ', group.startAngle, group.endAngle)
     }
   })
@@ -919,68 +931,73 @@ const drawMap = () => {
   drawGroupDividers(mapGroup, updatedGroups, props.data.groupLevel) // Start from the center if the startLayer is mission
 
   // Position bubbles along their orbits
-  props.data.bubbles.forEach((bubble, i) => {
-    if (bubble.locked || !bubble.visible) return
+props.data.bubbles.forEach((bubble, i) => {
+  if (bubble.locked || !bubble.visible) return
 
-    let angle: number
+  let angle: number
 
-    if (bubble.groupId) {
-      // Find the group this bubble belongs to
-      const group = updatedGroups.find((g) => g.id === bubble.groupId)
-      if (group && group.startAngle !== undefined && group.endAngle !== undefined) {
-        // Get all bubbles in the group for the same orbit (layer)
-        const groupBubbles = props.data.bubbles.filter(
-          (b) => b.groupId === group.id && b.layer === bubble.layer,
-        )
+  if (bubble.groupId) {
+    // Find the group this bubble belongs to
+    const group = updatedGroups.find((g) => g.id === bubble.groupId)
+    if (group && group.startAngle !== undefined && group.endAngle !== undefined) {
+      // Get all bubbles in the group for the same orbit (layer)
+      const groupBubbles = props.data.bubbles.filter(
+        (b) => b.groupId === group.id && b.layer === bubble.layer,
+      )
 
-        const bubbleIndex = groupBubbles.findIndex((b) => b.id === bubble.id)
+      const bubbleIndex = groupBubbles.findIndex((b) => b.id === bubble.id)
 
-        // Calculate the angular range for the group
-        const sectorStart = group.startAngle
-        const sectorEnd = group.endAngle
-        const sectorSize = sectorEnd - sectorStart
+      // Normalize angles to positive values first
+      let startAngle = group.startAngle < 0 ? group.startAngle + 2 * Math.PI : group.startAngle
+      let endAngle = group.endAngle < 0 ? group.endAngle + 2 * Math.PI : group.endAngle
 
-        // Calculate the angular step based on bubbles in the same orbit
-        const angleStep = sectorSize / (groupBubbles.length + 1) // Leave padding at edges
+      // Handle wrap-around case (when end angle is smaller than start angle)
+      if (endAngle < startAngle) {
+        endAngle += 2 * Math.PI
+      }
 
-        // Position the bubble within its orbit
-        angle = sectorStart + angleStep * (bubbleIndex + 1)
-      } else {
-        // Fallback for undefined groups
-        angle = (i * (2 * Math.PI)) / props.data.bubbles.length
+      // Calculate the angular range for the group
+      const sectorSize = endAngle - startAngle
+      const angleStep = sectorSize / (groupBubbles.length + 1) // Leave padding at edges
+
+      // Position the bubble within its orbit
+      angle = startAngle + angleStep * (bubbleIndex + 1)
+
+      // Normalize back to [0, 2π) if needed
+      if (angle > 2 * Math.PI) {
+        angle -= 2 * Math.PI
       }
     } else {
-      // Handle ungrouped bubbles
-      if (bubble.layer === 'mission') {
-        // Special logic for mission layer
-        const ungroupedMissionBubbles = props.data.bubbles.filter(
-          (b) => !b.groupId && b.layer === 'mission',
-        )
-
-        if (ungroupedMissionBubbles.length === 1) {
-          // If there's only one bubble, position it at the center
-          bubble.x = centerX
-          bubble.y = centerY + yOffset
-          return // Skip the rest of the loop for this bubble
-        } else {
-          // If there are multiple bubbles, distribute them evenly around the full circle
-          const bubbleIndex = ungroupedMissionBubbles.findIndex((b) => b.id === bubble.id)
-          angle = (bubbleIndex * (2 * Math.PI)) / ungroupedMissionBubbles.length
-        }
-      } else {
-        // For other layers, use the existing logic
-        const ungroupedBubbles = props.data.bubbles.filter((b) => !b.groupId)
-        const bubbleIndex = ungroupedBubbles.findIndex((b) => b.id === bubble.id)
-
-        angle = ((bubbleIndex + 1) * (2 * Math.PI)) / (ungroupedBubbles.length + 1)
-      }
+      // Fallback for undefined groups
+      angle = (i * (2 * Math.PI)) / props.data.bubbles.length
     }
+  } else {
+    // Handle ungrouped bubbles (unchanged)
+    if (bubble.layer === 'mission') {
+      const ungroupedMissionBubbles = props.data.bubbles.filter(
+        (b) => !b.groupId && b.layer === 'mission',
+      )
 
-    // Calculate the bubble's position using its orbit radius
-    const radius = layerRadii[bubble.layer as keyof typeof layerRadii]
-    bubble.x = centerX + radius * Math.cos(angle)
-    bubble.y = centerY + yOffset + radius * -Math.sin(angle) * yScale
-  })
+      if (ungroupedMissionBubbles.length === 1) {
+        bubble.x = centerX
+        bubble.y = centerY + yOffset
+        return
+      } else {
+        const bubbleIndex = ungroupedMissionBubbles.findIndex((b) => b.id === bubble.id)
+        angle = (bubbleIndex * (2 * Math.PI)) / ungroupedMissionBubbles.length
+      }
+    } else {
+      const ungroupedBubbles = props.data.bubbles.filter((b) => !b.groupId)
+      const bubbleIndex = ungroupedBubbles.findIndex((b) => b.id === bubble.id)
+      angle = ((bubbleIndex + 1) * (2 * Math.PI)) / (ungroupedBubbles.length + 1)
+    }
+  }
+
+  // Calculate the bubble's position using its orbit radius
+  const radius = layerRadii[bubble.layer as keyof typeof layerRadii]
+  bubble.x = centerX + radius * Math.cos(angle)
+  bubble.y = centerY + yOffset + radius * -Math.sin(angle) * yScale
+})
 
   // Add group names
   addGroupNames(mapGroup, updatedGroups)
