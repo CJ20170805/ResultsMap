@@ -105,6 +105,8 @@ const handleEmptyPositionRightClick = (event: MouseEvent) => {
 
     // Detect the group at the clicked position
     const groupId = detectGroup(invertedX, invertedY)
+    console.log('GroupIdRightClick--', groupId)
+
     currentGroup.value = props.data.groups.find((group) => group.id === groupId) || null
 
     // Set the empty position context menu position initially
@@ -419,6 +421,16 @@ function calculateGroupAngles(groups: Group[]) {
   const angleIncrement = (2 * Math.PI) / visibleGroups.length
 
   visibleGroups.forEach((group, index) => {
+    console.log(
+      'GroupAngle000--',
+      angleIncrement,
+      group.name,
+      index,
+      'ANgles:',
+      group.startAngle,
+      group.endAngle,
+    )
+
     if (!group.locked) {
       group.startAngle = index * angleIncrement
       group.endAngle = (index + 1) * angleIncrement
@@ -457,7 +469,6 @@ function drawGroupDividers(
       const adjustedY = -(y - centerY - yOffset) / yScale
       const angle = Math.atan2(adjustedY, x - centerX)
       let normalizedAngle = angle < 0 ? angle + 2 * Math.PI : angle
-console.log("normalizedAngle", normalizedAngle);
 
       const MIN_ANGLE = 0.3
       const line = d3.select(this)
@@ -474,23 +485,35 @@ console.log("normalizedAngle", normalizedAngle);
         currentGroup.isDragging = true
         prevGroup.isDragging = true
 
-        // Handle angle constraints differently for first divider
+        // Special handling for first divider
         if (currentIndex === 0) {
-          // For first divider, we need to handle the circular case
-          const nextAngle = nextGroup.startAngle!
-          const prevAngle = prevGroup.startAngle!
+          // Calculate the effective angle considering circular nature
+          let effectiveAngle = normalizedAngle
 
-          // Allow movement in both directions with wrapping
-          if (normalizedAngle > nextAngle - MIN_ANGLE && normalizedAngle < prevAngle + MIN_ANGLE) {
-            // If moving into the "forbidden zone" between next and prev groups
-            if (Math.abs(normalizedAngle - nextAngle) < Math.abs(normalizedAngle - prevAngle)) {
-              normalizedAngle = nextAngle - MIN_ANGLE
-            } else {
-              normalizedAngle = prevAngle + MIN_ANGLE
-            }
+          // Handle angle wrapping at 0/2π boundary
+          const angleDiff = normalizedAngle - currentGroup.startAngle!
+          if (Math.abs(angleDiff) > Math.PI) {
+            // If we've moved past the π boundary, adjust the angle
+            effectiveAngle =
+              angleDiff > 0 ? normalizedAngle - 2 * Math.PI : normalizedAngle + 2 * Math.PI
           }
+
+          // Constrain movement within valid bounds
+          const maxAngle = nextGroup.startAngle! - MIN_ANGLE
+          const minAngle = prevGroup.endAngle! - (2 * Math.PI - MIN_ANGLE)
+          effectiveAngle = Math.max(minAngle, Math.min(effectiveAngle, maxAngle))
+
+          // Update angles for both groups
+          currentGroup.startAngle = effectiveAngle
+          prevGroup.endAngle = effectiveAngle
+
+          // The first group's end angle remains at 2π
+          //currentGroup.endAngle = 2 * Math.PI
+
+          // For visual positioning, use the original normalizedAngle
+          normalizedAngle = effectiveAngle >= 0 ? effectiveAngle : effectiveAngle + 2 * Math.PI
         } else {
-          // For other dividers, use standard constraints
+          // Standard divider handling (same as before)
           const minBound = prevGroup.startAngle! + MIN_ANGLE
           const maxBound = nextGroup.startAngle! - MIN_ANGLE
 
@@ -504,21 +527,19 @@ console.log("normalizedAngle", normalizedAngle);
           } else {
             normalizedAngle = Math.max(minBound, Math.min(normalizedAngle, maxBound))
           }
+
+          // Update angles
+          currentGroup.startAngle = normalizedAngle
+          prevGroup.endAngle = normalizedAngle
         }
-
-        // Update angles
-        currentGroup.startAngle = normalizedAngle
-        prevGroup.endAngle = normalizedAngle
-
-        console.log(
-          `Dragging divider: ${currentGroup.name} (${currentGroup.startAngle}) and ${prevGroup.name} (${prevGroup.startAngle})`,
-        )
 
         // Update line position
         const startX = centerX + Math.cos(normalizedAngle) * tracks[startLayer].inner
-        const startY = centerY + -Math.sin(normalizedAngle) * tracks[startLayer].inner * yScale + yOffset
+        const startY =
+          centerY + -Math.sin(normalizedAngle) * tracks[startLayer].inner * yScale + yOffset
         const endX = centerX + Math.cos(normalizedAngle) * tracks.operational.outer
-        const endY = centerY + -Math.sin(normalizedAngle) * tracks.operational.outer * yScale + yOffset
+        const endY =
+          centerY + -Math.sin(normalizedAngle) * tracks.operational.outer * yScale + yOffset
 
         line.attr('x1', startX).attr('y1', startY).attr('x2', endX).attr('y2', endY)
       }
@@ -536,10 +557,12 @@ console.log("normalizedAngle", normalizedAngle);
 
   // Draw all dividers with the same drag behavior
   groups.forEach((group) => {
-    if (group.startAngle === undefined || group.endAngle === undefined || startLayer === 'None') return
+    if (group.startAngle === undefined || group.endAngle === undefined || startLayer === 'None')
+      return
 
     const startX = centerX + Math.cos(group.startAngle) * tracks[startLayer].inner
-    const startY = centerY + -Math.sin(group.startAngle) * tracks[startLayer].inner * yScale + yOffset
+    const startY =
+      centerY + -Math.sin(group.startAngle) * tracks[startLayer].inner * yScale + yOffset
     const endX = centerX + Math.cos(group.startAngle) * tracks.operational.outer
     const endY = centerY + -Math.sin(group.startAngle) * tracks.operational.outer * yScale + yOffset
 
@@ -618,7 +641,7 @@ function addGroupNames(svg: d3.Selection<SVGGElement, unknown, null, undefined>,
     // Only calculate the group name position automatically during the initial creation or when dragging the divider.
     if (!group.x || !group.y || group.isDragging) {
       console.log('Yesssssssssss', group.name)
-      const midAngle = (group.startAngle + group.endAngle) / 2
+      const midAngle = calculateMidAngle(group.startAngle, group.endAngle);
       const outerRadius = tracks.operational.outer + 20 // Offset outside the outer track
       x = centerX + outerRadius * Math.cos(midAngle)
       y = centerY + yOffset + outerRadius * -Math.sin(midAngle) * yScale //  - Math.sin to set the anticlockwise order
@@ -649,6 +672,24 @@ function addGroupNames(svg: d3.Selection<SVGGElement, unknown, null, undefined>,
       textElement.style('cursor', 'move').call(drag)
     }
   })
+}
+
+// Function to calculate midpoint angle for group names
+function calculateMidAngle(startAngle: number, endAngle: number): number {
+  // Normalize angles to [0, 2π) first
+  startAngle = startAngle < 0 ? startAngle + 2 * Math.PI : startAngle;
+  endAngle = endAngle < 0 ? endAngle + 2 * Math.PI : endAngle;
+
+  // Handle the wrap-around case (like when startAngle > endAngle)
+  if (startAngle > endAngle) {
+    // Calculate midpoint in the "long way around"
+    const midpoint = (startAngle + endAngle + 2 * Math.PI) / 2;
+    // Normalize back to [0, 2π)
+    return midpoint > 2 * Math.PI ? midpoint - 2 * Math.PI : midpoint;
+  }
+
+  // Standard case
+  return (startAngle + endAngle) / 2;
 }
 
 // Add arrows and title
@@ -2616,7 +2657,9 @@ defineExpose({
       <el-form @submit.prevent="updateBubbleText">
         <el-form-item label="">
           <el-input v-model="newText" autosize type="textarea" />
-          <el-button type="primary" style="width: 100%; margin: 6px 0 0 0" @click="updateBubbleText">Update</el-button>
+          <el-button type="primary" style="width: 100%; margin: 6px 0 0 0" @click="updateBubbleText"
+            >Update</el-button
+          >
         </el-form-item>
 
         <template v-if="selectedBubble">
@@ -2643,7 +2686,9 @@ defineExpose({
         <el-form-item class="margin-top-less">
           <el-popconfirm title="Are you sure to remove this?" @confirm="confirmRemoveBubble">
             <template #reference>
-              <el-button style="width: 100%; margin: 4px 0 0 0" type="danger">Remove current bubble</el-button>
+              <el-button style="width: 100%; margin: 4px 0 0 0" type="danger"
+                >Remove current bubble</el-button
+              >
             </template>
           </el-popconfirm>
         </el-form-item>
