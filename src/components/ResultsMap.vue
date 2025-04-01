@@ -43,6 +43,7 @@ const newText = ref('')
 const mapRelationships = ref(props.data.relationships)
 const mapBubbles = ref(props.data.bubbles)
 const mapGroups = ref(props.data.groups)
+const mapConfig = ref(props.data.mapConfig)
 
 // handle empty click
 const emptyPositionContextMenuVisible = ref(false)
@@ -219,7 +220,9 @@ const detectGroup = (x: number, y: number): string | null => {
   })
 
   if (group) {
-    console.log(`Detected Group: ${group.name} (${group.startAngle} to ${group.endAngle}) for angle ${anticlockwiseAngle}`)
+    console.log(
+      `Detected Group: ${group.name} (${group.startAngle} to ${group.endAngle}) for angle ${anticlockwiseAngle}`,
+    )
     return group.id
   } else {
     console.log(`No group detected for angle ${anticlockwiseAngle}`)
@@ -653,7 +656,7 @@ function addGroupNames(svg: d3.Selection<SVGGElement, unknown, null, undefined>,
     // Only calculate the group name position automatically during the initial creation or when dragging the divider.
     if (!group.x || !group.y || group.isDragging) {
       console.log('Yesssssssssss', group.name)
-      const midAngle = calculateMidAngle(group.startAngle, group.endAngle);
+      const midAngle = calculateMidAngle(group.startAngle, group.endAngle)
       const outerRadius = tracks.operational.outer + 20 // Offset outside the outer track
       x = centerX + outerRadius * Math.cos(midAngle)
       y = centerY + yOffset + outerRadius * -Math.sin(midAngle) * yScale //  - Math.sin to set the anticlockwise order
@@ -689,19 +692,19 @@ function addGroupNames(svg: d3.Selection<SVGGElement, unknown, null, undefined>,
 // Function to calculate midpoint angle for group names
 function calculateMidAngle(startAngle: number, endAngle: number): number {
   // Normalize angles to [0, 2π) first
-  startAngle = startAngle < 0 ? startAngle + 2 * Math.PI : startAngle;
-  endAngle = endAngle < 0 ? endAngle + 2 * Math.PI : endAngle;
+  startAngle = startAngle < 0 ? startAngle + 2 * Math.PI : startAngle
+  endAngle = endAngle < 0 ? endAngle + 2 * Math.PI : endAngle
 
   // Handle the wrap-around case (like when startAngle > endAngle)
   if (startAngle > endAngle) {
     // Calculate midpoint in the "long way around"
-    const midpoint = (startAngle + endAngle + 2 * Math.PI) / 2;
+    const midpoint = (startAngle + endAngle + 2 * Math.PI) / 2
     // Normalize back to [0, 2π)
-    return midpoint > 2 * Math.PI ? midpoint - 2 * Math.PI : midpoint;
+    return midpoint > 2 * Math.PI ? midpoint - 2 * Math.PI : midpoint
   }
 
   // Standard case
-  return (startAngle + endAngle) / 2;
+  return (startAngle + endAngle) / 2
 }
 
 // Add arrows and title
@@ -802,16 +805,50 @@ function addArrowsAndTitle(svg: d3.Selection<SVGGElement, unknown, null, undefin
     .attr('stroke-width', 1.5)
 
   // Add title at the top of the map
-  svg
+  // svg
+  //   .append('text')
+  //   .attr('x', centerX)
+  //   .attr('y', 32)
+  //   .attr('text-anchor', 'middle')
+  //   .attr('alignment-baseline', 'middle')
+  //   .text(props.data.mapConfig.title)
+  //   .style('font-weight', 'bold')
+  //   .style('font-size', `${props.data.mapConfig.titleFontSize}px`)
+  //   .style('fill', '#000')
+  // Add title at the top of the map
+  const titleGroup = svg
+    .append('g')
+    .attr(
+      'transform',
+      `translate(${props.data.mapConfig.titleX || centerX}, ${props.data.mapConfig.titleY || 32})`,
+    )
+    .style('cursor', 'move')
+
+  titleGroup
     .append('text')
-    .attr('x', centerX)
-    .attr('y', 32)
     .attr('text-anchor', 'middle')
     .attr('alignment-baseline', 'middle')
     .text(props.data.mapConfig.title)
     .style('font-weight', 'bold')
     .style('font-size', `${props.data.mapConfig.titleFontSize}px`)
     .style('fill', '#000')
+
+  // Add drag behavior to the title
+  const titleDrag = d3
+    .drag<SVGGElement, unknown>()
+    .on('start', function () {
+      d3.select(this).raise()
+    })
+    .on('drag', function (event) {
+      const [x, y] = d3.pointer(event, svgRef.value!)
+      d3.select(this).attr('transform', `translate(${x}, ${y})`)
+
+      // Update the title position in the data
+      mapConfig.value.titleX = x
+      mapConfig.value.titleY = y
+    })
+
+  titleGroup.call(titleDrag)
 
   // Add a timestamp at the bottom left corner
   svg
@@ -931,73 +968,73 @@ const drawMap = () => {
   drawGroupDividers(mapGroup, updatedGroups, props.data.groupLevel) // Start from the center if the startLayer is mission
 
   // Position bubbles along their orbits
-props.data.bubbles.forEach((bubble, i) => {
-  if (bubble.locked || !bubble.visible) return
+  props.data.bubbles.forEach((bubble, i) => {
+    if (bubble.locked || !bubble.visible) return
 
-  let angle: number
+    let angle: number
 
-  if (bubble.groupId) {
-    // Find the group this bubble belongs to
-    const group = updatedGroups.find((g) => g.id === bubble.groupId)
-    if (group && group.startAngle !== undefined && group.endAngle !== undefined) {
-      // Get all bubbles in the group for the same orbit (layer)
-      const groupBubbles = props.data.bubbles.filter(
-        (b) => b.groupId === group.id && b.layer === bubble.layer,
-      )
+    if (bubble.groupId) {
+      // Find the group this bubble belongs to
+      const group = updatedGroups.find((g) => g.id === bubble.groupId)
+      if (group && group.startAngle !== undefined && group.endAngle !== undefined) {
+        // Get all bubbles in the group for the same orbit (layer)
+        const groupBubbles = props.data.bubbles.filter(
+          (b) => b.groupId === group.id && b.layer === bubble.layer,
+        )
 
-      const bubbleIndex = groupBubbles.findIndex((b) => b.id === bubble.id)
+        const bubbleIndex = groupBubbles.findIndex((b) => b.id === bubble.id)
 
-      // Normalize angles to positive values first
-      let startAngle = group.startAngle < 0 ? group.startAngle + 2 * Math.PI : group.startAngle
-      let endAngle = group.endAngle < 0 ? group.endAngle + 2 * Math.PI : group.endAngle
+        // Normalize angles to positive values first
+        let startAngle = group.startAngle < 0 ? group.startAngle + 2 * Math.PI : group.startAngle
+        let endAngle = group.endAngle < 0 ? group.endAngle + 2 * Math.PI : group.endAngle
 
-      // Handle wrap-around case (when end angle is smaller than start angle)
-      if (endAngle < startAngle) {
-        endAngle += 2 * Math.PI
-      }
+        // Handle wrap-around case (when end angle is smaller than start angle)
+        if (endAngle < startAngle) {
+          endAngle += 2 * Math.PI
+        }
 
-      // Calculate the angular range for the group
-      const sectorSize = endAngle - startAngle
-      const angleStep = sectorSize / (groupBubbles.length + 1) // Leave padding at edges
+        // Calculate the angular range for the group
+        const sectorSize = endAngle - startAngle
+        const angleStep = sectorSize / (groupBubbles.length + 1) // Leave padding at edges
 
-      // Position the bubble within its orbit
-      angle = startAngle + angleStep * (bubbleIndex + 1)
+        // Position the bubble within its orbit
+        angle = startAngle + angleStep * (bubbleIndex + 1)
 
-      // Normalize back to [0, 2π) if needed
-      if (angle > 2 * Math.PI) {
-        angle -= 2 * Math.PI
-      }
-    } else {
-      // Fallback for undefined groups
-      angle = (i * (2 * Math.PI)) / props.data.bubbles.length
-    }
-  } else {
-    // Handle ungrouped bubbles (unchanged)
-    if (bubble.layer === 'mission') {
-      const ungroupedMissionBubbles = props.data.bubbles.filter(
-        (b) => !b.groupId && b.layer === 'mission',
-      )
-
-      if (ungroupedMissionBubbles.length === 1) {
-        bubble.x = centerX
-        bubble.y = centerY + yOffset
-        return
+        // Normalize back to [0, 2π) if needed
+        if (angle > 2 * Math.PI) {
+          angle -= 2 * Math.PI
+        }
       } else {
-        const bubbleIndex = ungroupedMissionBubbles.findIndex((b) => b.id === bubble.id)
-        angle = (bubbleIndex * (2 * Math.PI)) / ungroupedMissionBubbles.length
+        // Fallback for undefined groups
+        angle = (i * (2 * Math.PI)) / props.data.bubbles.length
       }
     } else {
-      const ungroupedBubbles = props.data.bubbles.filter((b) => !b.groupId)
-      const bubbleIndex = ungroupedBubbles.findIndex((b) => b.id === bubble.id)
-      angle = ((bubbleIndex + 1) * (2 * Math.PI)) / (ungroupedBubbles.length + 1)
-    }
-  }
+      // Handle ungrouped bubbles (unchanged)
+      if (bubble.layer === 'mission') {
+        const ungroupedMissionBubbles = props.data.bubbles.filter(
+          (b) => !b.groupId && b.layer === 'mission',
+        )
 
-  // Calculate the bubble's position using its orbit radius
-  const radius = layerRadii[bubble.layer as keyof typeof layerRadii]
-  bubble.x = centerX + radius * Math.cos(angle)
-  bubble.y = centerY + yOffset + radius * -Math.sin(angle) * yScale
-})
+        if (ungroupedMissionBubbles.length === 1) {
+          bubble.x = centerX
+          bubble.y = centerY + yOffset
+          return
+        } else {
+          const bubbleIndex = ungroupedMissionBubbles.findIndex((b) => b.id === bubble.id)
+          angle = (bubbleIndex * (2 * Math.PI)) / ungroupedMissionBubbles.length
+        }
+      } else {
+        const ungroupedBubbles = props.data.bubbles.filter((b) => !b.groupId)
+        const bubbleIndex = ungroupedBubbles.findIndex((b) => b.id === bubble.id)
+        angle = ((bubbleIndex + 1) * (2 * Math.PI)) / (ungroupedBubbles.length + 1)
+      }
+    }
+
+    // Calculate the bubble's position using its orbit radius
+    const radius = layerRadii[bubble.layer as keyof typeof layerRadii]
+    bubble.x = centerX + radius * Math.cos(angle)
+    bubble.y = centerY + yOffset + radius * -Math.sin(angle) * yScale
+  })
 
   // Add group names
   addGroupNames(mapGroup, updatedGroups)
@@ -2406,7 +2443,10 @@ onBeforeUnmount(() => {
 watch(() => props.data, drawMap, { deep: true })
 
 // Helper function to wrap text with proper typing
-function wrap_old(text: d3.Selection<SVGTextElement, Bubble, null, undefined>, maxWidth: number): void {
+function wrap_old(
+  text: d3.Selection<SVGTextElement, Bubble, null, undefined>,
+  maxWidth: number,
+): void {
   text.each(function (this: SVGTextElement, d: Bubble) {
     const textElement = d3.select<SVGTextElement, Bubble>(this)
     const words: string[] = textElement.text().split(/\s+/) // Split text into words
@@ -2521,86 +2561,86 @@ function wrap_old(text: d3.Selection<SVGTextElement, Bubble, null, undefined>, m
   })
 }
 
-function wrap(
-  text: d3.Selection<SVGTextElement, Bubble, null, undefined>,
-  maxWidth: number,
-): void {
-
+function wrap(text: d3.Selection<SVGTextElement, Bubble, null, undefined>, maxWidth: number): void {
   const targetLineLength: number = 22 // New parameter with default value
   const topLineMaxLength: number = 14 // Also made this configurable
 
   text.each(function (this: SVGTextElement, d: Bubble) {
-    const textElement = d3.select<SVGTextElement, Bubble>(this);
-    const words: string[] = textElement.text().split(/\s+/);
-    const lineHeight: number = 1.1;
+    const textElement = d3.select<SVGTextElement, Bubble>(this)
+    const words: string[] = textElement.text().split(/\s+/)
+    const lineHeight: number = 1.1
 
     // Clear the text
-    textElement.text(null);
+    textElement.text(null)
 
     // Function to calculate the total characters in a range of words
     const getTotalChars = (startIndex: number, wordCount: number): number => {
-      return words.slice(startIndex, startIndex + wordCount).join(' ').length;
-    };
+      return words.slice(startIndex, startIndex + wordCount).join(' ').length
+    }
 
     // Distribute words into lines with dynamic adjustment
-    const lines: string[] = [];
-    let currentIndex: number = 0;
+    const lines: string[] = []
+    let currentIndex: number = 0
 
     // Handle first line (max topLineMaxLength characters)
     if (words.length > 0) {
-      let firstLineWords = 0;
-      let firstLineChars = 0;
+      let firstLineWords = 0
+      let firstLineChars = 0
 
       while (firstLineWords < words.length && firstLineChars < topLineMaxLength) {
-        firstLineWords++;
-        firstLineChars = getTotalChars(0, firstLineWords);
+        firstLineWords++
+        firstLineChars = getTotalChars(0, firstLineWords)
       }
 
       if (firstLineChars > topLineMaxLength && firstLineWords > 1) {
-        firstLineWords--;
+        firstLineWords--
       }
 
-      lines.push(words.slice(0, firstLineWords).join(' '));
-      currentIndex = firstLineWords;
+      lines.push(words.slice(0, firstLineWords).join(' '))
+      currentIndex = firstLineWords
     }
 
     // Handle remaining lines (target targetLineLength characters)
     while (currentIndex < words.length) {
-      let wordCount = 1;
-      let currentChars = getTotalChars(currentIndex, wordCount);
-      const maxAcceptableLength = targetLineLength * 1.25; // 25% over target
+      let wordCount = 1
+      let currentChars = getTotalChars(currentIndex, wordCount)
+      const maxAcceptableLength = targetLineLength * 1.25 // 25% over target
 
       while (currentIndex + wordCount < words.length) {
-        const nextWordCount = wordCount + 1;
-        const nextChars = getTotalChars(currentIndex, nextWordCount);
+        const nextWordCount = wordCount + 1
+        const nextChars = getTotalChars(currentIndex, nextWordCount)
 
         if (currentChars < targetLineLength) {
-          if (nextChars <= maxAcceptableLength ||
-              (Math.abs(targetLineLength - nextChars) < Math.abs(targetLineLength - currentChars))) {
-            wordCount = nextWordCount;
-            currentChars = nextChars;
+          if (
+            nextChars <= maxAcceptableLength ||
+            Math.abs(targetLineLength - nextChars) < Math.abs(targetLineLength - currentChars)
+          ) {
+            wordCount = nextWordCount
+            currentChars = nextChars
           } else {
-            break;
+            break
           }
         } else {
-          if (wordCount > 1 &&
-              Math.abs(targetLineLength - getTotalChars(currentIndex, wordCount - 1)) <
-              Math.abs(targetLineLength - currentChars)) {
-            wordCount -= 1;
-            currentChars = getTotalChars(currentIndex, wordCount);
+          if (
+            wordCount > 1 &&
+            Math.abs(targetLineLength - getTotalChars(currentIndex, wordCount - 1)) <
+              Math.abs(targetLineLength - currentChars)
+          ) {
+            wordCount -= 1
+            currentChars = getTotalChars(currentIndex, wordCount)
           }
-          break;
+          break
         }
       }
 
-      wordCount = Math.min(wordCount, words.length - currentIndex);
-      lines.push(words.slice(currentIndex, currentIndex + wordCount).join(' '));
-      currentIndex += wordCount;
+      wordCount = Math.min(wordCount, words.length - currentIndex)
+      lines.push(words.slice(currentIndex, currentIndex + wordCount).join(' '))
+      currentIndex += wordCount
     }
 
     // Calculate the total height of the text
-    const totalHeight: number = lines.length * lineHeight;
-    const offset: number = 0.8;
+    const totalHeight: number = lines.length * lineHeight
+    const offset: number = 0.8
 
     // Add the lines to the text element
     lines.forEach((line: string, i: number) => {
@@ -2612,9 +2652,9 @@ function wrap(
         .attr('fill', d.fontColor || '#000')
         .attr('font-size', `${d.fontSize || 16}px`)
         .style('font-weight', d.fontWeight || 'normal')
-        .text(line);
-    });
-  });
+        .text(line)
+    })
+  })
 }
 
 // Helper: Check if line intersects an ellipse

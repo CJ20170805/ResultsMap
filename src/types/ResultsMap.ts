@@ -14,6 +14,8 @@ export interface MapConfig {
   titleFontSize: number,
   layerColors: LayerColors,
   date?: string,
+  titleX?: number,
+  titleY?: number
 }
 
 export interface Group {
