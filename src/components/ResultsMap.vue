@@ -463,6 +463,8 @@ function drawGroupDividers(
   startLayer: LayerType | 'None',
 ) {
   if (groups.length <= 1) return
+  if (startLayer === 'None') return;
+
 
   const dividerGroup = svg.append('g').attr('class', 'group-dividers')
 
@@ -572,7 +574,7 @@ function drawGroupDividers(
 
   // Draw all dividers with the same drag behavior
   groups.forEach((group) => {
-    if (group.startAngle === undefined || group.endAngle === undefined || startLayer === 'None')
+    if (group.startAngle === undefined || group.endAngle === undefined || startLayer === 'None' as LayerType)
       return
 
     const startX = centerX + Math.cos(group.startAngle) * tracks[startLayer].inner
