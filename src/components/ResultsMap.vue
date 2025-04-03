@@ -1388,10 +1388,21 @@ const drawMap = () => {
       }
     } else {
       // Use existing control points or calculate defaults
-      const controlX1 = rel.controlPoints?.x1 ?? startX + (endX - startX) / 3 + unitY * 50
-      const controlY1 = rel.controlPoints?.y1 ?? startY + (endY - startY) / 3 - unitX * 50
-      const controlX2 = rel.controlPoints?.x2 ?? startX + ((endX - startX) * 2) / 3 + unitY * 50
-      const controlY2 = rel.controlPoints?.y2 ?? startY + ((endY - startY) * 2) / 3 - unitX * 50
+
+      const pointX1 = startX + (endX - startX) / 3 + unitY * 50
+      const pointY1 = startY + (endY - startY) / 3 - unitX * 50
+      const pointX2 = startX + ((endX - startX) * 2) / 3 + unitY * 50
+      const pointY2 = startY + ((endY - startY) * 2) / 3 - unitX * 50
+
+      const controlX1 = rel.controlPoints?.x1 ?? pointX1
+      const controlY1 = rel.controlPoints?.y1 ?? pointY1
+      const controlX2 = rel.controlPoints?.x2 ?? pointX2
+      const controlY2 = rel.controlPoints?.y2 ?? pointY2
+
+      // const controlX1 = rel.controlPoints?.x1 ?? startX + (endX - startX) / 3 + unitY * 50
+      // const controlY1 = rel.controlPoints?.y1 ?? startY + (endY - startY) / 3 - unitX * 50
+      // const controlX2 = rel.controlPoints?.x2 ?? startX + ((endX - startX) * 2) / 3 + unitY * 50
+      // const controlY2 = rel.controlPoints?.y2 ?? startY + ((endY - startY) * 2) / 3 - unitX * 50
 
       let controlX = (startX + endX) / 2 + unitY * 50
       let controlY = (startY + endY) / 2 - unitX * 50
@@ -1443,6 +1454,8 @@ const drawMap = () => {
         controlY += sign * perpY * (shiftY * 1.5)
       }
 
+      let hideHandlerTimeout: ReturnType<typeof setTimeout> | null = null
+
       const line = linkGroup
         .append('path')
         .attr('data-relationship-id', rel.id) // Add a unique identifier
@@ -1453,6 +1466,22 @@ const drawMap = () => {
         .attr('stroke', '#000')
         .attr('stroke-width', 1.5)
         .attr('fill', 'none')
+        .on('mouseover', function () {
+          // Clear any existing timeout to prevent hiding
+          if (hideHandlerTimeout) {
+            clearTimeout(hideHandlerTimeout)
+            hideHandlerTimeout = null
+          }
+
+          // Show handlers for this line
+          d3.selectAll(`circle[data-line-id="${rel.id}"]`).style('display', 'block')
+        })
+        .on('mouseout', function () {
+          // Set a timeout to hide the handlers after 3 seconds
+          hideHandlerTimeout = setTimeout(() => {
+            d3.selectAll(`circle[data-line-id="${rel.id}"]`).style('display', 'none')
+          }, 3000) // 3 seconds
+        })
 
       if (rel.type === 'cause-effect') {
         line.attr('marker-end', 'url(#arrow)')
@@ -1472,11 +1501,13 @@ const drawMap = () => {
           .append('circle')
           .attr('cx', cx)
           .attr('cy', cy)
-          .attr('r', 6)
+          .attr('r', 8)
           .attr('fill', '#409eff')
           .attr('stroke', '#fff')
+          .attr('data-line-id', rel.id)
           .attr('stroke-width', 1.5)
           .style('cursor', 'move')
+          .style('display', 'none')
           .call(
             d3
               .drag<SVGCircleElement, unknown>()
@@ -1506,12 +1537,12 @@ const drawMap = () => {
       }
 
       // Add handlers for control points
-      addHandler(rel.controlPoints.x1, rel.controlPoints.y1, (newX, newY) => {
+      addHandler(controlX1, controlY1, (newX, newY) => {
         rel.controlPoints.x1 = newX
         rel.controlPoints.y1 = newY
       })
 
-      addHandler(rel.controlPoints.x2, rel.controlPoints.y2, (newX, newY) => {
+      addHandler(controlX2, controlY2, (newX, newY) => {
         rel.controlPoints.x2 = newX
         rel.controlPoints.y2 = newY
       })
