@@ -463,8 +463,7 @@ function drawGroupDividers(
   startLayer: LayerType | 'None',
 ) {
   if (groups.length <= 1) return
-  if (startLayer === 'None') return;
-
+  if (startLayer === 'None') return
 
   const dividerGroup = svg.append('g').attr('class', 'group-dividers')
 
@@ -574,7 +573,11 @@ function drawGroupDividers(
 
   // Draw all dividers with the same drag behavior
   groups.forEach((group) => {
-    if (group.startAngle === undefined || group.endAngle === undefined || startLayer === 'None' as LayerType)
+    if (
+      group.startAngle === undefined ||
+      group.endAngle === undefined ||
+      startLayer === ('None' as LayerType)
+    )
       return
 
     const startX = centerX + Math.cos(group.startAngle) * tracks[startLayer].inner
@@ -1320,7 +1323,6 @@ const drawMap = () => {
     d3.select(this).attr('stroke', null)
   }
 
-
   // Draw relationships
   const linkGroup = mapGroup.append('g')
   props.data.relationships.forEach((rel) => {
@@ -1355,6 +1357,8 @@ const drawMap = () => {
     const endX = target.x - unitX * (targetRadius.rx + OFFSET)
     const endY = target.y - unitY * (targetRadius.ry + OFFSET)
 
+    console.log('UPPPPPP')
+
     // Use a straight line for close bubbles
     const CLOSE_DISTANCE_THRESHOLD = 500
     // console.log('distance', distance)
@@ -1383,6 +1387,12 @@ const drawMap = () => {
         line.attr('marker-end', 'url(#end-line-arrow)')
       }
     } else {
+      // Use existing control points or calculate defaults
+      const controlX1 = rel.controlPoints?.x1 ?? startX + (endX - startX) / 3 + unitY * 50
+      const controlY1 = rel.controlPoints?.y1 ?? startY + (endY - startY) / 3 - unitX * 50
+      const controlX2 = rel.controlPoints?.x2 ?? startX + ((endX - startX) * 2) / 3 + unitY * 50
+      const controlY2 = rel.controlPoints?.y2 ?? startY + ((endY - startY) * 2) / 3 - unitX * 50
+
       let controlX = (startX + endX) / 2 + unitY * 50
       let controlY = (startY + endY) / 2 - unitX * 50
 
@@ -1436,7 +1446,10 @@ const drawMap = () => {
       const line = linkGroup
         .append('path')
         .attr('data-relationship-id', rel.id) // Add a unique identifier
-        .attr('d', `M ${startX} ${startY} Q ${controlX} ${controlY} ${endX} ${endY}`)
+        .attr(
+          'd',
+          `M ${startX} ${startY} C ${controlX1} ${controlY1}, ${controlX2} ${controlY2}, ${endX} ${endY}`,
+        )
         .attr('stroke', '#000')
         .attr('stroke-width', 1.5)
         .attr('fill', 'none')
@@ -1453,33 +1466,56 @@ const drawMap = () => {
         line.attr('marker-end', 'url(#end-line-arrow)')
       }
 
-      // Add a draggable handler (circle dot) for adjusting the curve
-      const handler = linkGroup
-        .append('circle')
-        .attr('cx', controlX)
-        .attr('cy', controlY)
-        .attr('r', 6)
-        .attr('fill', '#409eff')
-        .attr('stroke', '#fff')
-        .attr('stroke-width', 1.5)
-        .style('cursor', 'move')
-        .call(
-          d3.drag<SVGCircleElement, unknown>()
-            .on('drag', function (event) {
-              controlX = event.x
-              controlY = event.y
+      // Add draggable handlers for left, middle, and right control points
+      const addHandler = (cx, cy, updateCallback) => {
+        linkGroup
+          .append('circle')
+          .attr('cx', cx)
+          .attr('cy', cy)
+          .attr('r', 6)
+          .attr('fill', '#409eff')
+          .attr('stroke', '#fff')
+          .attr('stroke-width', 1.5)
+          .style('cursor', 'move')
+          .call(
+            d3
+              .drag<SVGCircleElement, unknown>()
+              .on('drag', function (event) {
+                const [newX, newY] = d3.pointer(event, svgRef.value)
 
-              // Update the path dynamically as the handler is dragged
-              line.attr('d', `M ${startX} ${startY} Q ${controlX} ${controlY} ${endX} ${endY}`)
+                // Update the control point
+                updateCallback(newX, newY)
 
-              // Update the handler's position
-              d3.select(this).attr('cx', controlX).attr('cy', controlY)
-            })
-        )
+                // Update the path dynamically
+                line.attr(
+                  'd',
+                  `M ${startX} ${startY} C ${rel.controlPoints.x1} ${rel.controlPoints.y1}, ${rel.controlPoints.x2} ${rel.controlPoints.y2}, ${endX} ${endY}`,
+                )
 
+                // Update the handler's position
+                d3.select(this).attr('cx', newX).attr('cy', newY)
+              })
+              .on('end', function () {
+                // Only update data store when dragging ends
+                const relationship = props.data.relationships.find((r) => r.id === rel.id)
+                if (relationship) {
+                  relationship.controlPoints = { ...rel.controlPoints }
+                }
+              }),
+          )
+      }
+
+      // Add handlers for control points
+      addHandler(rel.controlPoints.x1, rel.controlPoints.y1, (newX, newY) => {
+        rel.controlPoints.x1 = newX
+        rel.controlPoints.y1 = newY
+      })
+
+      addHandler(rel.controlPoints.x2, rel.controlPoints.y2, (newX, newY) => {
+        rel.controlPoints.x2 = newX
+        rel.controlPoints.y2 = newY
+      })
     }
-
-
   })
 
   // Add legend to the bottom-left corner
