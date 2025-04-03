@@ -52,6 +52,12 @@ export interface Relationship {
   source: string
   target: string
   type: RelationType
+  controlPoints?: {
+    x1: number;  // First control point (for source)
+    y1: number;
+    x2: number;  // Second control point (for target)
+    y2: number;
+  };
 }
 
 export interface LegendBubbles {

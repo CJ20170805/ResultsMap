@@ -1320,6 +1320,7 @@ const drawMap = () => {
     d3.select(this).attr('stroke', null)
   }
 
+
   // Draw relationships
   const linkGroup = mapGroup.append('g')
   props.data.relationships.forEach((rel) => {
@@ -1451,7 +1452,34 @@ const drawMap = () => {
       } else if (rel.type === 'lead-lag') {
         line.attr('marker-end', 'url(#end-line-arrow)')
       }
+
+      // Add a draggable handler (circle dot) for adjusting the curve
+      const handler = linkGroup
+        .append('circle')
+        .attr('cx', controlX)
+        .attr('cy', controlY)
+        .attr('r', 6)
+        .attr('fill', '#409eff')
+        .attr('stroke', '#fff')
+        .attr('stroke-width', 1.5)
+        .style('cursor', 'move')
+        .call(
+          d3.drag<SVGCircleElement, unknown>()
+            .on('drag', function (event) {
+              controlX = event.x
+              controlY = event.y
+
+              // Update the path dynamically as the handler is dragged
+              line.attr('d', `M ${startX} ${startY} Q ${controlX} ${controlY} ${endX} ${endY}`)
+
+              // Update the handler's position
+              d3.select(this).attr('cx', controlX).attr('cy', controlY)
+            })
+        )
+
     }
+
+
   })
 
   // Add legend to the bottom-left corner
