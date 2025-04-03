@@ -1399,6 +1399,16 @@ const drawMap = () => {
       const controlX2 = rel.controlPoints?.x2 ?? pointX2
       const controlY2 = rel.controlPoints?.y2 ?? pointY2
 
+      // store position if not already stored
+      if (!rel.controlPoints) {
+        rel.controlPoints = {
+          x1: pointX1,
+          y1: pointY1,
+          x2: pointX2,
+          y2: pointY2,
+        }
+      }
+
       // const controlX1 = rel.controlPoints?.x1 ?? startX + (endX - startX) / 3 + unitY * 50
       // const controlY1 = rel.controlPoints?.y1 ?? startY + (endY - startY) / 3 - unitX * 50
       // const controlX2 = rel.controlPoints?.x2 ?? startX + ((endX - startX) * 2) / 3 + unitY * 50
@@ -1496,7 +1506,7 @@ const drawMap = () => {
       }
 
       // Add draggable handlers for left, middle, and right control points
-      const addHandler = (cx, cy, updateCallback) => {
+      const addHandler = (cx: number, cy: number, updateCallback: (newX: number, newY: number) => void) => {
         linkGroup
           .append('circle')
           .attr('cx', cx)
@@ -1520,7 +1530,7 @@ const drawMap = () => {
                 // Update the path dynamically
                 line.attr(
                   'd',
-                  `M ${startX} ${startY} C ${rel.controlPoints.x1} ${rel.controlPoints.y1}, ${rel.controlPoints.x2} ${rel.controlPoints.y2}, ${endX} ${endY}`,
+                  `M ${startX} ${startY} C ${(rel.controlPoints?.x1 ?? startX)} ${(rel.controlPoints?.y1 ?? startY)}, ${(rel.controlPoints?.x2 ?? endX)} ${(rel.controlPoints?.y2 ?? endY)}, ${endX} ${endY}`,
                 )
 
                 // Update the handler's position
@@ -1530,7 +1540,12 @@ const drawMap = () => {
                 // Only update data store when dragging ends
                 const relationship = props.data.relationships.find((r) => r.id === rel.id)
                 if (relationship) {
-                  relationship.controlPoints = { ...rel.controlPoints }
+                  relationship.controlPoints = {
+                    x1: rel.controlPoints?.x1 ?? 0,
+                    y1: rel.controlPoints?.y1 ?? 0,
+                    x2: rel.controlPoints?.x2 ?? 0,
+                    y2: rel.controlPoints?.y2 ?? 0,
+                  }
                 }
               }),
           )
@@ -1538,13 +1553,13 @@ const drawMap = () => {
 
       // Add handlers for control points
       addHandler(controlX1, controlY1, (newX, newY) => {
-        rel.controlPoints.x1 = newX
-        rel.controlPoints.y1 = newY
+        rel.controlPoints!.x1 = newX
+        rel.controlPoints!.y1 = newY
       })
 
       addHandler(controlX2, controlY2, (newX, newY) => {
-        rel.controlPoints.x2 = newX
-        rel.controlPoints.y2 = newY
+        rel.controlPoints!.x2 = newX
+        rel.controlPoints!.y2 = newY
       })
     }
   })
