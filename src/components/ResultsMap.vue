@@ -1057,7 +1057,7 @@ const drawMap = () => {
   const BUBBLE_ASPECT_RATIO = MIN_BUBBLE_RADIUS_X / MIN_BUBBLE_RADIUS_Y // Fixed aspect ratio
 
   // Add these constants for resize handle sizing
-  const RESIZE_HANDLE_SIZE = 12
+  const RESIZE_HANDLE_SIZE = 16
 
   // Draw bubbles
   const bubbleGroup = mapGroup.append('g')
@@ -1501,7 +1501,7 @@ const drawMap = () => {
           .append('circle')
           .attr('cx', cx)
           .attr('cy', cy)
-          .attr('r', 8)
+          .attr('r', 10)
           .attr('fill', '#409eff')
           .attr('stroke', '#fff')
           .attr('data-line-id', rel.id)
