@@ -858,7 +858,7 @@ function addArrowsAndTitle(svg: d3.Selection<SVGGElement, unknown, null, undefin
   // Add a timestamp at the bottom left corner
   svg
     .append('text')
-    .attr('x', 60)
+    .attr('x', 10)
     .attr('y', height - 40)
     .attr('transform', 'translate(30, 0)')
     .attr('text-anchor', 'middle')
@@ -1568,7 +1568,7 @@ const drawMap = () => {
   const legendGroup = mapGroup
     .append('g')
     .attr('class', 'legend')
-    .attr('transform', `translate(50, ${height - 500})`) // Adjust the position as needed
+    .attr('transform', `translate(0, ${height - 500})`) // Adjust the position as needed
 
   // Add background rectangle for legend
   legendGroup
