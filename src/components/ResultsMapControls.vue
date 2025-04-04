@@ -432,8 +432,28 @@ const handleVisibilityChange = (node: any, checked: boolean) => {
             </div>
           </el-col>
         </el-row>
+        <el-row :gutter="20">
+          <el-col :span="24">
+            <div class="control-section">
+              <h3>Group Divider Level</h3>
+              <el-select
+                v-model="groupLevel"
+                placeholder="Select Group Level"
+                @change="handleGroupLayerChange"
+              >
+                <el-option label="None" value="None"></el-option>
+                <el-option
+                  v-for="layer in layerOptions"
+                  :key="layer"
+                  :label="layer"
+                  :value="layer"
+                ></el-option>
+              </el-select>
+            </div>
+          </el-col>
+        </el-row>
       </el-tab-pane>
-      <el-tab-pane label="Group">
+      <el-tab-pane label="Group" v-if="false">
         <el-row :gutter="20">
           <el-col :span="24">
             <div class="control-section">

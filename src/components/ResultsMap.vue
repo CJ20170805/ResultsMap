@@ -119,7 +119,7 @@ const handleEmptyPositionRightClick = (event: MouseEvent) => {
     nextTick(() => {
       const emptyContextMenuElement = document.querySelector('.empty-context-menu') as HTMLElement
       if (emptyContextMenuElement) {
-        const contextMenuHeight = Math.min(emptyContextMenuElement.clientHeight, 350)
+        const contextMenuHeight = Math.min(emptyContextMenuElement.clientHeight, 490)
         const contextMenuWidth = emptyContextMenuElement.clientWidth + 80
 
         // Get the viewport dimensions
@@ -684,9 +684,9 @@ function addGroupNames(svg: d3.Selection<SVGGElement, unknown, null, undefined>,
       .attr('text-anchor', 'middle')
       .attr('dominant-baseline', 'middle')
       .text(group.name)
-      .style('font-weight', 'bold')
-      .style('font-size', '22px')
-      .style('fill', '#000')
+      .style('font-weight', group.fontWeight || 'bold') // Default to bold if not specified
+      .style('font-size', `${group.fontSize || 24}px`)  // Default size if not specified
+      .style('fill', group.fontColor || '#000')        // Default color if not specified
 
     if (!isPresentationMode.value) {
       textElement.style('cursor', 'move').call(drag)
@@ -1877,6 +1877,9 @@ const createGroup = () => {
     locked: false,
     isDragging: false,
     visible: true,
+    fontColor: '#000', // Default color
+    fontSize: 24,      // Default size
+    fontWeight: 'bold'  // Default weight
   })
 
   // Clear the input field and hide the context menu
@@ -3085,6 +3088,23 @@ defineExpose({
               />
             </div>
           </el-form-item>
+
+           <!-- Add font controls for the group -->
+  <el-form-item label="Text Color">
+    <el-color-picker v-model="currentGroup.fontColor" ref="colorPicker"  />
+  </el-form-item>
+
+  <el-form-item label="Text Size">
+    <el-slider v-model="currentGroup.fontSize" :min="22" :max="40" :step="1" />
+  </el-form-item>
+
+  <el-form-item label="Bold Text">
+    <el-switch
+      v-model="currentGroup.fontWeight"
+      active-value="bold"
+      inactive-value="normal"
+    />
+  </el-form-item>
         </template>
 
         <el-popconfirm

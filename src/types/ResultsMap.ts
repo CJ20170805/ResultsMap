@@ -29,6 +29,9 @@ export interface Group {
     locked: boolean
     isDragging: boolean
     visible: boolean
+    fontColor?: string
+    fontSize?: number
+    fontWeight?: string
 }
 
 export interface Bubble {
