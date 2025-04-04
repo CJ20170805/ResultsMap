@@ -478,7 +478,7 @@ function drawGroupDividers(
 
       // Unlock every single bubble
       props.data.bubbles.forEach((b) => {
-        b.locked = false
+        b.locked = true
       })
 
       // Adjust Y coordinate for scaling/offset AND INVERT Y-AXIS
@@ -561,7 +561,7 @@ function drawGroupDividers(
       }
     })
     .on('end', function () {
-      d3.select(this).attr('stroke', 'white')
+      d3.select(this).attr('stroke', '#000')
       const line = d3.select(this)
       const currentGroup = line.datum() as Group
       const currentIndex = groups.indexOf(currentGroup)

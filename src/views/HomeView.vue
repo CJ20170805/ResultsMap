@@ -202,7 +202,7 @@ const addGroup = (group: Omit<Group, 'id'>) => {
   if (!mapData.value) return
 
   mapData.value.bubbles.forEach((bubble) => {
-    bubble.locked = false
+    bubble.locked = true
   })
 
   // remove all x and y of group, recover the group's name and divider calculation
@@ -228,7 +228,7 @@ const deleteGroup = (groupId: string) => {
   if (!groupToDelete) return
 
   mapData.value.bubbles.forEach((bubble) => {
-    bubble.locked = false
+    bubble.locked = true
   })
 
   mapData.value.groups.forEach((group) => {
