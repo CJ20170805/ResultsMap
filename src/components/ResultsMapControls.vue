@@ -91,9 +91,10 @@ const startATour = () => {
       },
       {
         title: 'Visibility Tab',
-        content: 'This is the Visibility tab where you can control the visibility of different elements on the map. Use the filter to quickly find specific elements and toggle their visibility using the checkboxes.',
+        content:
+          'This is the Visibility tab where you can control the visibility of different elements on the map. Use the filter to quickly find specific elements and toggle their visibility using the checkboxes.',
         target: '#visibilityTab',
-      }
+      },
     ]
 
     tour.setOptions({ steps, finishLabel: 'Continue' })
@@ -232,8 +233,8 @@ const createNewMap = () => {
 const filterText = ref('')
 const treeRef = ref<InstanceType<typeof ElTreeV2>>()
 const treeData = ref<any[]>([])
-let expandedKeys =  groupData.value.map((group) => group.id);
-console.log('Expanded Keys:', expandedKeys);
+let expandedKeys = groupData.value.map((group) => group.id)
+console.log('Expanded Keys:', expandedKeys)
 const treeProps = ref({
   label: 'name',
   children: 'children',
@@ -272,11 +273,13 @@ const updateCheckedKeys = () => {
   // If new group is added, expand it
   if (groupData.value.length > expandedKeys.length) {
     const newGroupIds = visibleGroupIds.filter((id) => !expandedKeys.includes(id))
-    const groupNode = treeRef.value!.getNode(newGroupIds[0]);
-    const bubbleLength = bubbleData.value.filter((bubble) => bubble.groupId === newGroupIds[0]).length;
+    const groupNode = treeRef.value!.getNode(newGroupIds[0])
+    const bubbleLength = bubbleData.value.filter(
+      (bubble) => bubble.groupId === newGroupIds[0],
+    ).length
     if (groupNode && bubbleLength > 0) {
-      treeRef.value!.expandNode(groupNode);
-      expandedKeys.push(newGroupIds[0]);
+      treeRef.value!.expandNode(groupNode)
+      expandedKeys.push(newGroupIds[0])
     }
   }
 }
@@ -396,13 +399,35 @@ const handleVisibilityChange = (node: any, checked: boolean) => {
                 </el-form-item>
                 <el-form-item>
                   <label style="margin: 0 14px 0 0">Title Font Size: </label>
-                  <el-input-number
+                  <!-- <el-input-number
                     v-model="mapConfig.titleFontSize"
                     :min="10"
-                    :max="50"
+                    :max="200"
                     style="width: 220px"
                     label="Font Size"
-                  ></el-input-number>
+                  ></el-input-number> -->
+
+                  <el-slider
+                    style="width: 220px"
+                    v-model="mapConfig.titleFontSize"
+                    :min="10"
+                    :max="300"
+                    :step="1"
+                  />
+                </el-form-item>
+                <!-- Add title color picker -->
+                <el-form-item>
+                  <label style="margin: 0 14px 0 0">Title Color: </label>
+                  <el-color-picker v-model="mapConfig.titleColor" />
+                </el-form-item>
+                <!-- Add title weight toggle -->
+                <el-form-item>
+                  <label style="margin: 0 14px 0 0">Bold Title: </label>
+                  <el-switch
+                    v-model="mapConfig.titleFontWeight"
+                    active-value="bold"
+                    inactive-value="normal"
+                  />
                 </el-form-item>
                 <!--  Date Picker  -->
                 <el-form-item>
@@ -644,7 +669,12 @@ const handleVisibilityChange = (node: any, checked: boolean) => {
           <el-col :span="24">
             <div class="control-section">
               <h3>Visibility Control</h3>
-              <el-input style="margin: 0 0 10px 0;" v-model="filterText" class="w-60 mb-2" placeholder="Filter keyword" />
+              <el-input
+                style="margin: 0 0 10px 0"
+                v-model="filterText"
+                class="w-60 mb-2"
+                placeholder="Filter keyword"
+              />
               <el-tree-v2
                 ref="treeRef"
                 :data="treeData"

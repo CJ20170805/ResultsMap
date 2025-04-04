@@ -685,8 +685,8 @@ function addGroupNames(svg: d3.Selection<SVGGElement, unknown, null, undefined>,
       .attr('dominant-baseline', 'middle')
       .text(group.name)
       .style('font-weight', group.fontWeight || 'bold') // Default to bold if not specified
-      .style('font-size', `${group.fontSize || 24}px`)  // Default size if not specified
-      .style('fill', group.fontColor || '#000')        // Default color if not specified
+      .style('font-size', `${group.fontSize || 24}px`) // Default size if not specified
+      .style('fill', group.fontColor || '#000') // Default color if not specified
 
     if (!isPresentationMode.value) {
       textElement.style('cursor', 'move').call(drag)
@@ -834,9 +834,9 @@ function addArrowsAndTitle(svg: d3.Selection<SVGGElement, unknown, null, undefin
     .attr('text-anchor', 'middle')
     .attr('alignment-baseline', 'middle')
     .text(props.data.mapConfig.title)
-    .style('font-weight', 'bold')
     .style('font-size', `${props.data.mapConfig.titleFontSize}px`)
-    .style('fill', '#000')
+    .style('font-weight', props.data.mapConfig.titleFontWeight || 'bold')
+    .style('fill', props.data.mapConfig.titleColor || '#000')
 
   // Add drag behavior to the title
   const titleDrag = d3
@@ -1506,7 +1506,11 @@ const drawMap = () => {
       }
 
       // Add draggable handlers for left, middle, and right control points
-      const addHandler = (cx: number, cy: number, updateCallback: (newX: number, newY: number) => void) => {
+      const addHandler = (
+        cx: number,
+        cy: number,
+        updateCallback: (newX: number, newY: number) => void,
+      ) => {
         linkGroup
           .append('circle')
           .attr('cx', cx)
@@ -1530,7 +1534,7 @@ const drawMap = () => {
                 // Update the path dynamically
                 line.attr(
                   'd',
-                  `M ${startX} ${startY} C ${(rel.controlPoints?.x1 ?? startX)} ${(rel.controlPoints?.y1 ?? startY)}, ${(rel.controlPoints?.x2 ?? endX)} ${(rel.controlPoints?.y2 ?? endY)}, ${endX} ${endY}`,
+                  `M ${startX} ${startY} C ${rel.controlPoints?.x1 ?? startX} ${rel.controlPoints?.y1 ?? startY}, ${rel.controlPoints?.x2 ?? endX} ${rel.controlPoints?.y2 ?? endY}, ${endX} ${endY}`,
                 )
 
                 // Update the handler's position
@@ -1878,8 +1882,8 @@ const createGroup = () => {
     isDragging: false,
     visible: true,
     fontColor: '#000', // Default color
-    fontSize: 24,      // Default size
-    fontWeight: 'bold'  // Default weight
+    fontSize: 24, // Default size
+    fontWeight: 'bold', // Default weight
   })
 
   // Clear the input field and hide the context menu
@@ -2938,7 +2942,7 @@ defineExpose({
 
           <!-- Add font size slider -->
           <el-form-item label="Font Size">
-            <el-slider v-model="selectedBubble.fontSize" :min="16" :max="34" :step="1" />
+            <el-slider v-model="selectedBubble.fontSize" :min="16" :max="100" :step="1" />
           </el-form-item>
 
           <!-- Add font weight toggle -->
@@ -3089,22 +3093,22 @@ defineExpose({
             </div>
           </el-form-item>
 
-           <!-- Add font controls for the group -->
-  <el-form-item label="Text Color">
-    <el-color-picker v-model="currentGroup.fontColor" ref="colorPicker"  />
-  </el-form-item>
+          <!-- Add font controls for the group -->
+          <el-form-item label="Text Color">
+            <el-color-picker v-model="currentGroup.fontColor" ref="colorPicker" />
+          </el-form-item>
 
-  <el-form-item label="Text Size">
-    <el-slider v-model="currentGroup.fontSize" :min="22" :max="40" :step="1" />
-  </el-form-item>
+          <el-form-item label="Text Size">
+            <el-slider v-model="currentGroup.fontSize" :min="16" :max="100" :step="1" />
+          </el-form-item>
 
-  <el-form-item label="Bold Text">
-    <el-switch
-      v-model="currentGroup.fontWeight"
-      active-value="bold"
-      inactive-value="normal"
-    />
-  </el-form-item>
+          <el-form-item label="Bold Text">
+            <el-switch
+              v-model="currentGroup.fontWeight"
+              active-value="bold"
+              inactive-value="normal"
+            />
+          </el-form-item>
         </template>
 
         <el-popconfirm

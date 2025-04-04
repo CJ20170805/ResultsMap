@@ -6,6 +6,8 @@ const defaultMapData: ResultsMapData = {
   mapConfig: {
     title: 'Results Map',
     titleFontSize: 32,
+    titleColor: '#000000',
+    titleFontWeight: 'bold',
     layerColors: {
       mission: '#ffcdd2', // Pink
       strategic: '#c8e6c9', // Green
