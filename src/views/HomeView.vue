@@ -103,6 +103,9 @@ onMounted(async () => {
 
   // Set the session flag to indicate the tab is open
   sessionStorage.setItem('isSameTab', 'true')
+
+
+  checkUpdates();
 })
 
 // onMounted(() => {
@@ -526,8 +529,6 @@ const createNewMap = async () => {
     setTimeout(() => {
       mapData.value = JSON.parse(JSON.stringify(defaultMapData))
       console.log('New map data:', mapData.value, defaultMapData)
-      // Force update the ResultsMap component
-      //ResultsMapRef.value?.$forceUpdate()
     }, 100)
   } catch (error) {
     console.error('Error creating new map:', error)
@@ -572,6 +573,8 @@ const importMapFromFile = async () => {
 
       // Force update the ResultsMap component
       ResultsMapRef.value?.$forceUpdate()
+
+      checkUpdates();
     } else {
       console.error('Permission denied')
       // Notify the user that access was denied
@@ -643,6 +646,41 @@ const resetDataToDefault = () => {
     mapData.value = JSON.parse(JSON.stringify(defaultMapData))
   }, 300)
 }
+
+const checkUpdates = () => {
+  if (!mapData.value) return;
+
+  const hasOutdatedLegends = mapData.value.legends.legendBubbles.some(
+    (bubble) => bubble.cx !== 60
+  ) || mapData.value.legends.legendLines.some((line) => line.x !== 60);
+
+  if (hasOutdatedLegends) {
+    ElMessageBox.alert(
+      'Your map file contains outdated legend settings. Please click the "Update" button to apply the latest updates.',
+      'Update Required',
+      {
+        confirmButtonText: 'Update',
+        type: 'warning',
+      }
+    ).then(() => {
+
+      if (mapData.value && mapData.value.legends) {
+         // Update legendBubbles
+        mapData.value.legends.legendBubbles.forEach((bubble) => {
+          if (bubble.cx !== 60) bubble.cx = 60;
+        });
+
+        // Update legendLines
+        mapData.value.legends.legendLines.forEach((line) => {
+          if (line.x !== 60) line.x = 60;
+        });
+      }
+
+      console.log('Legend settings updated to defaults.');
+    });
+  }
+};
+
 </script>
 
 <template>
