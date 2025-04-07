@@ -31,7 +31,7 @@ const svgRef = ref<SVGElement | null>(null)
 const containerRef = ref<HTMLDivElement | null>(null)
 const width = 1800
 const height = 1240
-const centerX = width / 2 + 50
+const centerX = width / 2 + 80
 const centerY = height / 2 - 40
 const yScale = 0.86
 const yOffset = 50
@@ -858,7 +858,7 @@ function addArrowsAndTitle(svg: d3.Selection<SVGGElement, unknown, null, undefin
   // Add a timestamp at the bottom left corner
   svg
     .append('text')
-    .attr('x', 10)
+    .attr('x', 30)
     .attr('y', height - 40)
     .attr('transform', 'translate(30, 0)')
     .attr('text-anchor', 'middle')
@@ -1577,7 +1577,7 @@ const drawMap = () => {
   // Add background rectangle for legend
   legendGroup
     .append('rect')
-    .attr('x', -20)
+    .attr('x', 0)
     .attr('y', -140)
     .attr('width', 120)
     .attr('height', 570)
@@ -1588,7 +1588,7 @@ const drawMap = () => {
   // Add "Legend" text at the top
   legendGroup
     .append('text')
-    .attr('x', 40)
+    .attr('x', 60)
     .attr('y', -115)
     .attr('text-anchor', 'middle')
     .attr('alignment-baseline', 'middle')
@@ -1678,7 +1678,7 @@ const drawMap = () => {
     // Add a circle border around the question mark icon
     legendGroup
       .append('circle')
-      .attr('cx', 110) // Adjust the position to match the question mark's x position
+      .attr('cx', 130) // Adjust the position to match the question mark's x position
       .attr('cy', 0 + 278) // Adjust the position to match the question mark's y position
       .attr('r', 12) // Radius of the circle (adjust as needed)
       .attr('fill', 'none') // No fill
@@ -1689,7 +1689,7 @@ const drawMap = () => {
     // Add a question mark icon next to the legend lines group
     legendGroup
       .append('text')
-      .attr('x', 110) // Adjust the position as needed
+      .attr('x', 130) // Adjust the position as needed
       .attr('y', 0 + 280) // Adjust the position as needed
       .attr('text-anchor', 'middle')
       .attr('alignment-baseline', 'middle')

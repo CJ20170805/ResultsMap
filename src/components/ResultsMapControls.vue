@@ -88,8 +88,7 @@ const startATour = () => {
       },
       {
         title: 'Map Tab',
-        content:
-          `This is the Map tab where you can configure map appearance and details. <br/><br/>
+        content: `This is the Map tab where you can configure map appearance and details. <br/><br/>
 <strong>Map customization options:</strong>
 <ul>
   <li><strong>Title Input:</strong> Set the title of your map.</li>
@@ -116,8 +115,7 @@ const startATour = () => {
       },
       {
         title: 'Visibility Tab',
-        content:
-          `This is the Visibility tab where you can show or hide different parts of the map. <br/><br/>
+        content: `This is the Visibility tab where you can show or hide different parts of the map. <br/><br/>
 <strong>What you can do here:</strong>
 <ul>
   <li>Use the search filter to quickly find a specific bubble or group by name.</li>
