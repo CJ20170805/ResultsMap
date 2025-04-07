@@ -75,24 +75,55 @@ const startATour = () => {
     const steps = [
       {
         title: 'File Tab',
-        content: 'This is the File tab where you can create, import, and export maps.',
+        content: `This is the File tab where you can create, import, and export maps. <br/><br/>
+<strong>Available actions:</strong>
+<ul>
+  <li><strong>Create:</strong> Start a new map from scratch.</li>
+  <li><strong>Import:</strong> Upload a previously saved map file.</li>
+  <li><strong>Export:</strong> Download the current map as a file.</li>
+  <li><strong>Start Tour:</strong> Begin a guided walkthrough of the app features.</li>
+</ul>
+`,
         target: '#fileTab',
       },
       {
         title: 'Map Tab',
         content:
-          'This is the Map tab where you can configure the map title, date, layer colors, and group divider level.',
+          `This is the Map tab where you can configure map appearance and details. <br/><br/>
+<strong>Map customization options:</strong>
+<ul>
+  <li><strong>Title Input:</strong> Set the title of your map.</li>
+  <li><strong>Title Font Size:</strong> Adjust the size of the map title text.</li>
+  <li><strong>Title Color:</strong> Pick a color for the map title.</li>
+  <li><strong>Bold Title:</strong> Toggle bold styling for the title text.</li>
+  <li><strong>Map Date:</strong> Choose a date to display on the map.</li>
+  <li><strong>Layer Colors:</strong> Assign colors to different map layers for better visual distinction.</li>
+  <li><strong>Group Divider Level:</strong> Set the grouping level for data organization and map rendering.</li>
+</ul>
+`,
         target: '#mapTab',
       },
       {
         title: 'Legend Tab',
-        content: 'This is the Legend tab where you can manage the legend for bubbles and lines.',
+        content: `This is the Legend tab where you can manage the legend for bubbles and lines. <br/><br/>
+<strong>Legend customization options:</strong>
+<ul>
+  <li><strong>Bubbles:</strong> Set the display name for each bubble legend.</li>
+  <li><strong>Lines:</strong> Set the name for each line legend and turn their visibility on or off.</li>
+</ul>
+`,
         target: '#legendTab',
       },
       {
         title: 'Visibility Tab',
         content:
-          'This is the Visibility tab where you can control the visibility of different elements on the map. Use the filter to quickly find specific elements and toggle their visibility using the checkboxes.',
+          `This is the Visibility tab where you can show or hide different parts of the map. <br/><br/>
+<strong>What you can do here:</strong>
+<ul>
+  <li>Use the search filter to quickly find a specific bubble or group by name.</li>
+   <li>Use the checkbox tree list to turn bubbles or groups on or off.</li>
+</ul>
+`,
         target: '#visibilityTab',
       },
     ]
