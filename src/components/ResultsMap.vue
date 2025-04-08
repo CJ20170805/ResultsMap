@@ -161,7 +161,7 @@ const isPointWithinLayers = (x: number, y: number): boolean => {
   const distanceSquared = dx * dx + dy * dy
 
   // Check if the point is within the outermost layer
-  const outermostRadius = tracks.operational.outer
+  const outermostRadius = tracks.value.operational.outer
   return distanceSquared <= outermostRadius * outermostRadius
 }
 
@@ -172,17 +172,17 @@ const detectLayer = (x: number, y: number): LayerType => {
   const dy = (y - centerY - yOffset) / yScale
 
   // Calculate the elliptical distance for each layer
-  const missionRadius = tracks.mission.outer
+  const missionRadius = tracks.value.mission.outer
   if ((dx * dx) / missionRadius ** 2 + (dy * dy) / missionRadius ** 2 <= 1) {
     return 'mission'
   }
 
-  const strategicRadius = tracks.strategic.outer
+  const strategicRadius = tracks.value.strategic.outer
   if ((dx * dx) / strategicRadius ** 2 + (dy * dy) / strategicRadius ** 2 <= 1) {
     return 'strategic'
   }
 
-  const processRadius = tracks.process.outer
+  const processRadius = tracks.value.process.outer
   if ((dx * dx) / processRadius ** 2 + (dy * dy) / processRadius ** 2 <= 1) {
     return 'process'
   }
@@ -389,21 +389,49 @@ const removeBubble = () => {
   }
 }
 
-// Define track boundaries with inner and outer radii
-const tracks = {
-  mission: { outer: 190, inner: 0 }, // Pink (innermost)
-  strategic: { outer: 350, inner: 190 }, // Green
-  process: { outer: 500, inner: 350 }, // Blue
-  operational: { outer: 650, inner: 500 }, // Orange (outermost)
-}
+// // Define track boundaries with inner and outer radii
+// const tracks = {
+//   mission: { outer: 190, inner: 0 }, // Pink (innermost)
+//   strategic: { outer: 350, inner: 190 }, // Green
+//   process: { outer: 500, inner: 350 }, // Blue
+//   operational: { outer: 650, inner: 500 }, // Orange (outermost)
+// }
 
-// Calculate the middle radius for bubble positioning
-const layerRadii = {
-  mission: (tracks.mission.outer + tracks.mission.inner) / 2,
-  strategic: (tracks.strategic.outer + tracks.strategic.inner) / 2,
-  process: (tracks.process.outer + tracks.process.inner) / 2,
-  operational: (tracks.operational.outer + tracks.operational.inner) / 2,
-}
+// // Calculate the middle radius for bubble positioning
+// const layerRadii = {
+//   mission: (tracks.mission.outer + tracks.mission.inner) / 2,
+//   strategic: (tracks.strategic.outer + tracks.strategic.inner) / 2,
+//   process: (tracks.process.outer + tracks.process.inner) / 2,
+//   operational: (tracks.operational.outer + tracks.operational.inner) / 2,
+// }
+
+const tracks = computed(() => ({
+  mission: {
+    outer: props.data.mapConfig.layerSizes.mission.outer,
+    inner: props.data.mapConfig.layerSizes.mission.inner
+  },
+  strategic: {
+    outer: props.data.mapConfig.layerSizes.strategic.outer,
+    inner: props.data.mapConfig.layerSizes.strategic.inner
+  },
+  process: {
+    outer: props.data.mapConfig.layerSizes.process.outer,
+    inner: props.data.mapConfig.layerSizes.process.inner
+  },
+  operational: {
+    outer: props.data.mapConfig.layerSizes.operational.outer,
+    inner: props.data.mapConfig.layerSizes.operational.inner
+  }
+}));
+
+
+// Update layerRadii to be computed from the tracks
+const layerRadii = computed(() => ({
+  mission: (tracks.value.mission.outer + tracks.value.mission.inner) / 2,
+  strategic: (tracks.value.strategic.outer + tracks.value.strategic.inner) / 2,
+  process: (tracks.value.process.outer + tracks.value.process.inner) / 2,
+  operational: (tracks.value.operational.outer + tracks.value.operational.inner) / 2
+}));
 
 // Layer colors
 // const layerColors = {
@@ -551,12 +579,12 @@ function drawGroupDividers(
         }
 
         // Update line position
-        const startX = centerX + Math.cos(normalizedAngle) * tracks[startLayer].inner
+        const startX = centerX + Math.cos(normalizedAngle) * tracks.value[startLayer].inner
         const startY =
-          centerY + -Math.sin(normalizedAngle) * tracks[startLayer].inner * yScale + yOffset
-        const endX = centerX + Math.cos(normalizedAngle) * tracks.operational.outer
+          centerY + -Math.sin(normalizedAngle) * tracks.value[startLayer].inner * yScale + yOffset
+        const endX = centerX + Math.cos(normalizedAngle) * tracks.value.operational.outer
         const endY =
-          centerY + -Math.sin(normalizedAngle) * tracks.operational.outer * yScale + yOffset
+          centerY + -Math.sin(normalizedAngle) * tracks.value.operational.outer * yScale + yOffset
 
         line.attr('x1', startX).attr('y1', startY).attr('x2', endX).attr('y2', endY)
       }
@@ -581,11 +609,11 @@ function drawGroupDividers(
     )
       return
 
-    const startX = centerX + Math.cos(group.startAngle) * tracks[startLayer].inner
+    const startX = centerX + Math.cos(group.startAngle) * tracks.value[startLayer].inner
     const startY =
-      centerY + -Math.sin(group.startAngle) * tracks[startLayer].inner * yScale + yOffset
-    const endX = centerX + Math.cos(group.startAngle) * tracks.operational.outer
-    const endY = centerY + -Math.sin(group.startAngle) * tracks.operational.outer * yScale + yOffset
+      centerY + -Math.sin(group.startAngle) * tracks.value[startLayer].inner * yScale + yOffset
+    const endX = centerX + Math.cos(group.startAngle) * tracks.value.operational.outer
+    const endY = centerY + -Math.sin(group.startAngle) * tracks.value.operational.outer * yScale + yOffset
 
     dividerGroup
       .append('line')
@@ -663,7 +691,7 @@ function addGroupNames(svg: d3.Selection<SVGGElement, unknown, null, undefined>,
     if (!group.x || !group.y || group.isDragging) {
       console.log('Yesssssssssss', group.name)
       const midAngle = calculateMidAngle(group.startAngle, group.endAngle)
-      const outerRadius = tracks.operational.outer + 20 // Offset outside the outer track
+      const outerRadius = tracks.value.operational.outer + 20 // Offset outside the outer track
       x = centerX + outerRadius * Math.cos(midAngle)
       y = centerY + yOffset + outerRadius * -Math.sin(midAngle) * yScale //  - Math.sin to set the anticlockwise order
 
@@ -916,8 +944,10 @@ const handleLegendExplanationDialogClose = () => {
 }
 
 const drawMap = () => {
-  console.log('Map Data', props.data)
-  if (!svgRef.value) return
+  console.log('Map Data', props.data);
+  console.log('Tracks:', tracks.value); // Debugging: Log tracks to verify correctness
+
+  if (!svgRef.value || !tracks.value) return
 
   // Data saving
   localStorage.setItem('MapData', JSON.stringify(props.data))
@@ -957,7 +987,7 @@ const drawMap = () => {
   console.log('UpdatedGroups--', updatedGroups)
 
   // Draw layers (concentric circles)
-  Object.entries(tracks)
+  Object.entries(tracks.value)
     .reverse()
     .forEach(([layer, radii]) => {
       mapGroup
@@ -1015,31 +1045,32 @@ const drawMap = () => {
         angle = (i * (2 * Math.PI)) / props.data.bubbles.length
       }
     } else {
-      // Handle ungrouped bubbles (unchanged)
+      // Handle ungrouped bubbles
+      const layerRadius = layerRadii.value[bubble.layer as keyof typeof layerRadii.value];
+
       if (bubble.layer === 'mission') {
         const ungroupedMissionBubbles = props.data.bubbles.filter(
-          (b) => !b.groupId && b.layer === 'mission',
-        )
+          (b) => !b.groupId && b.layer === 'mission'
+        );
 
         if (ungroupedMissionBubbles.length === 1) {
-          bubble.x = centerX
-          bubble.y = centerY + yOffset
-          return
+          bubble.x = centerX;
+          bubble.y = centerY + yOffset;
+          return;
         } else {
-          const bubbleIndex = ungroupedMissionBubbles.findIndex((b) => b.id === bubble.id)
-          angle = (bubbleIndex * (2 * Math.PI)) / ungroupedMissionBubbles.length
+          const bubbleIndex = ungroupedMissionBubbles.findIndex((b) => b.id === bubble.id);
+          angle = (bubbleIndex * (2 * Math.PI)) / ungroupedMissionBubbles.length;
         }
       } else {
-        const ungroupedBubbles = props.data.bubbles.filter((b) => !b.groupId)
-        const bubbleIndex = ungroupedBubbles.findIndex((b) => b.id === bubble.id)
-        angle = ((bubbleIndex + 1) * (2 * Math.PI)) / (ungroupedBubbles.length + 1)
+        const ungroupedBubbles = props.data.bubbles.filter((b) => !b.groupId);
+        const bubbleIndex = ungroupedBubbles.findIndex((b) => b.id === bubble.id);
+        angle = ((bubbleIndex + 1) * (2 * Math.PI)) / (ungroupedBubbles.length + 1);
       }
-    }
 
-    // Calculate the bubble's position using its orbit radius
-    const radius = layerRadii[bubble.layer as keyof typeof layerRadii]
-    bubble.x = centerX + radius * Math.cos(angle)
-    bubble.y = centerY + yOffset + radius * -Math.sin(angle) * yScale
+      // Calculate the bubble's position using its orbit radius
+      bubble.x = centerX + layerRadius * Math.cos(angle);
+      bubble.y = centerY + yOffset + layerRadius * -Math.sin(angle) * yScale;
+    }
   })
 
   // Add group names

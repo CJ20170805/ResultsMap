@@ -2,6 +2,11 @@ export type LayerType = 'mission' | 'strategic' | 'process' | 'operational'
 export type RelationType = 'cause-effect' | 'companion' | 'conflict' | 'lead-lag'
 export type ExportType = 'png' | 'pdf' | 'json'
 
+export interface LayerSize {
+  outer: number
+  inner: number
+}
+
 export interface LayerColors {
   mission: string,
   strategic: string,
@@ -17,7 +22,13 @@ export interface MapConfig {
   layerColors: LayerColors,
   date?: string,
   titleX?: number,
-  titleY?: number
+  titleY?: number,
+  layerSizes: {
+    mission: LayerSize
+    strategic: LayerSize
+    process: LayerSize
+    operational: LayerSize
+  }
 }
 
 export interface Group {

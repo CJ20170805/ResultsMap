@@ -363,6 +363,22 @@ const handleVisibilityChange = (node: any, checked: boolean) => {
   // // Update the checkedKeys list
   // updateCheckedKeys();
 }
+
+const updateAdjacentLayer = (currentLayer: string) => {
+  switch (currentLayer) {
+    case 'mission':
+      mapConfig.value.layerSizes.strategic.inner = mapConfig.value.layerSizes.mission.outer
+      break
+    case 'strategic':
+      mapConfig.value.layerSizes.process.inner = mapConfig.value.layerSizes.strategic.outer
+      break
+    case 'process':
+      mapConfig.value.layerSizes.operational.inner = mapConfig.value.layerSizes.process.outer
+
+    default:
+      break
+  }
+}
 </script>
 
 <template>
@@ -468,6 +484,62 @@ const handleVisibilityChange = (node: any, checked: boolean) => {
                     format="DD MMMM YYYY"
                     value-format="YYYY-MM-DD"
                   ></el-date-picker>
+                </el-form-item>
+              </el-form>
+            </div>
+          </el-col>
+        </el-row>
+        <!-- Add Layer Size Controls -->
+        <el-row :gutter="20">
+          <el-col :span="24">
+            <div class="control-section">
+              <h3>Layer Sizes</h3>
+              <el-form>
+                <!-- Mission Layer (innermost) -->
+                <el-form-item label="Mission">
+                  <el-slider
+                    v-model="mapConfig.layerSizes.mission.outer"
+                    :min="0"
+                    :max="1000"
+                    :step="10"
+                    show-input
+                    @change="() => updateAdjacentLayer('mission')"
+                  />
+                </el-form-item>
+
+                <!-- Strategic Layer -->
+                <el-form-item label="Strategic ">
+                  <el-slider
+                    v-model="mapConfig.layerSizes.strategic.outer"
+                    :min="mapConfig.layerSizes.mission.outer"
+                    :step="10"
+                    :max="1000"
+                    show-input
+                    @change="() => updateAdjacentLayer('strategic')"
+                  />
+                </el-form-item>
+
+                <!-- Process Layer -->
+                <el-form-item label="Process">
+                  <el-slider
+                    v-model="mapConfig.layerSizes.process.outer"
+                    :min="mapConfig.layerSizes.strategic.outer"
+                    :step="10"
+                    :max="1000"
+                    show-input
+                    @change="() => updateAdjacentLayer('process')"
+                  />
+                </el-form-item>
+
+                <!-- Operational Layer (outermost) -->
+                <el-form-item label="Operational">
+                  <el-slider
+                    v-model="mapConfig.layerSizes.operational.outer"
+                    :min="mapConfig.layerSizes.process.outer + 10"
+                    :max="1000"
+                    :step="10"
+                    show-input
+                  />
                 </el-form-item>
               </el-form>
             </div>

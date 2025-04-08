@@ -14,6 +14,12 @@ const defaultMapData: ResultsMapData = {
       process: '#bbdefb', // Blue
       operational: '#ffe0b2', // Orange
     },
+    layerSizes: {
+      mission: { outer: 190, inner: 0 },
+      strategic: { outer: 350, inner: 190 },
+      process: { outer: 500, inner: 350 },
+      operational: { outer: 650, inner: 500 }
+    }
   },
   bubbles: [
     // { id: '1', text: 'fires are prevented', layer: 'strategic', groupId: '1', locked: false },
