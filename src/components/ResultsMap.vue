@@ -146,7 +146,8 @@ const handleEmptyPositionRightClick = (event: MouseEvent) => {
         // start a context menu tour
         // messageInstance.close();
         hasSeenTour = localStorage.getItem('hasSeenTour')
-        if (!hasSeenTour && !isFirstBubbleCreated.value && !isFirstGroupCreated.value) {
+        // && !isFirstBubbleCreated.value && !isFirstGroupCreated.value
+        if (!hasSeenTour) {
           startCreationMenuTour()
         }
       }
@@ -2472,22 +2473,40 @@ const startCreateRelationshipTour = () => {
 
 const startUpdateMenuTour = () => {
   hasSeenTour = localStorage.getItem('hasSeenTour')
+  const steps = [
+    // {
+    //   title: 'Bubble Section',
+    //   content:
+    //     'In this section, you can update the text of the bubble or remove it from the map. Use the "Update" button to save changes or the "Remove" button to delete the bubble.',
+    //   target: '#updateBubbles',
+    // },
+    // {
+    //   title: 'Relationship Section',
+    //   content:
+    //     'In this section, you can create new relationships between bubbles or manage existing ones. Use the dropdown to select a relationship type, then click "Create Relationship". For existing relationships, you can update their type or delete them.',
+    //   target: '#manageRelationships',
+    // },
+  ]
+
+  if(!isNewRelationshipCreated.value){
+    steps.push({
+      title: 'Relationship Section',
+      content:
+        'In this section, you can create new relationships between bubbles or manage existing ones. Use the dropdown to select a relationship type, then click "Create Relationship". For existing relationships, you can update their type or delete them.',
+      target: '#manageRelationships',
+    })
+  } else if(isNewRelationshipCreated.value) {
+    steps.push({
+      title: 'Relationship Section',
+      content:
+        'In this section, you can create new relationships between bubbles or manage existing ones. Use the dropdown to select a relationship type, then click "Create Relationship". For existing relationships, you can update their type or delete them.',
+      target: '#manageRelationships',
+    })
+  }
+
   if (tour) {
     tour.setOptions({
-      steps: [
-        {
-          title: 'Bubble Section',
-          content:
-            'In this section, you can update the text of the bubble or remove it from the map. Use the "Update" button to save changes or the "Remove" button to delete the bubble.',
-          target: '#updateBubbles',
-        },
-        {
-          title: 'Relationship Section',
-          content:
-            'In this section, you can create new relationships between bubbles or manage existing ones. Use the dropdown to select a relationship type, then click "Create Relationship". For existing relationships, you can update their type or delete them.',
-          target: '#manageRelationships',
-        },
-      ],
+      steps,
       hidePrev: true,
       backdropClass: 'custom-backdrop-class',
     })
@@ -2520,20 +2539,40 @@ const startUpdateMenuTour = () => {
 const startCreationMenuTour = () => {
   hasSeenTour = localStorage.getItem('hasSeenTour')
   if (tour) {
+    const steps = [
+        // {
+        //   title: 'Create a Bubble',
+        //   content:
+        //     'Use the context menu to create a new bubble by entering text and clicking "Create".',
+        //   target: '#createBubble', // Target the context menu for empty positions
+        // },
+        // {
+        //   title: 'Create or Delete a Group',
+        //   content: 'You can also create or delete a group using the context menu.',
+        //   target: '#createGroup', // Target the context menu for empty positions
+        // },
+    ];
+
+   if(!isNewGroupCreated.value){
+      steps.push({
+        title: 'Create or Delete a Group',
+        content: "You can create or delete a group, and change the group's font size, weight, and color using the context menu.",
+        target: '#createGroup', // Target the context menu for empty positions
+      })
+    }
+
+    if(isNewGroupCreated.value && !isFirstBubbleCreated.value){
+      steps.push({
+        title: 'Create a Bubble',
+        content:
+          'Use the context menu to create a new bubble by entering text and clicking "Create".',
+        target: '#createBubble', // Target the context menu for empty positions
+      })
+    }
+
+
     tour.setOptions({
-      steps: [
-        {
-          title: 'Create a Bubble',
-          content:
-            'Use the context menu to create a new bubble by entering text and clicking "Create".',
-          target: '#createBubble', // Target the context menu for empty positions
-        },
-        {
-          title: 'Create or Delete a Group',
-          content: 'You can also create or delete a group using the context menu.',
-          target: '#createGroup', // Target the context menu for empty positions
-        },
-      ],
+      steps,
       hidePrev: true,
       backdropClass: 'custom-backdrop-class',
     })
