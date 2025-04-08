@@ -2312,7 +2312,7 @@ const startATour = () => {
         {
           title: 'Presentation Mode',
           content:
-            'Click this button to toggle presentation mode, which hides unnecessary controls for a cleaner view.',
+            'Click this button to switch to presentation mode, which hides unnecessary controls for a cleaner view.',
           target: '#presentationModeButton', // Target the presentation mode button
         },
         {
@@ -2335,7 +2335,12 @@ const startATour = () => {
 
       // Show a message box to inform the user about the next steps
       ElMessageBox.confirm(
-        `You can now create groups by right-clicking on the map. <br /> <img style="width: 100%; margin-top: 10px;" src="${createGroupGif}"/>`,
+        `To create a new group:
+          <ol>
+            <li>Right-click on the map.</li>
+            <li>Type the group name.</li>
+            <li>Click the "Create Group" button.</li>
+          </ol> <br /> <img style="width: 100%;" src="${createGroupGif}"/>`,
         'Create Groups',
         {
           //title: 'Next Steps',
@@ -2386,7 +2391,12 @@ const startCreateBubbleTour = () => {
   hasSeenTour = localStorage.getItem('hasSeenTour')
   // Show a message box to inform the user about the next steps
   ElMessageBox.confirm(
-    `You can now create bubbles by right-clicking on the map.  <br /> <img style="width: 100%; margin-top: 10px;" src="${createBubbleGif}"/>`,
+    `To create a new bubble:
+<ol>
+  <li>Right-click on the map.</li>
+  <li>Type the bubble name.</li>
+  <li>Click the "Create Bubble" button.</li>
+</ol>  <br /> <img style="width: 100%;" src="${createBubbleGif}"/>`,
     'Create Bubbles',
     {
       //title: 'Next Steps',
@@ -2422,7 +2432,14 @@ const startCreateRelationshipTour = () => {
   hasSeenTour = localStorage.getItem('hasSeenTour')
   // Show a message box to inform the user about the next steps
   ElMessageBox.confirm(
-    `You can now create relationships by right-clicking the bubble.  <br /> <img style="width: 100%; margin-top: 10px;" src="${createRelationshipGif}"/>`,
+    `To create a relationship between two bubbles:
+<ol>
+  <li>Right-click on the bubble where the relationship begins.</li>
+  <li>Select the type of relationship.</li>
+  <li>Click the "Create Relationship" button.</li>
+  <li>Left-click on the target bubble where the relationship ends.</li>
+</ol>
+  <br /> <img style="width: 100%; margin-top: 10px;" src="${createRelationshipGif}"/>`,
     'Create Relationship',
     {
       //title: 'Next Steps',
@@ -3063,7 +3080,7 @@ defineExpose({
             type="primary"
             style="width: 100%"
             @click="createBubble"
-            >Create</el-button
+            >Create Bubble</el-button
           >
         </el-form-item>
       </el-form>
