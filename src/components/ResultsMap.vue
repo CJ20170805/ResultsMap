@@ -1358,50 +1358,27 @@ const drawMap = () => {
     const endX = target.x - unitX * (targetRadius.rx + OFFSET)
     const endY = target.y - unitY * (targetRadius.ry + OFFSET)
 
-    console.log('UPPPPPP')
-
-    // Use a straight line for close bubbles
     const CLOSE_DISTANCE_THRESHOLD = 500
-    // console.log('distance', distance)
+    let hideHandlerTimeout: ReturnType<typeof setTimeout> | null = null
 
-    if (distance < CLOSE_DISTANCE_THRESHOLD) {
-      const line = linkGroup
-        .append('line')
-        .attr('data-relationship-id', rel.id) // Add a unique identifier
-        .attr('x1', startX)
-        .attr('y1', startY)
-        .attr('x2', endX)
-        .attr('y2', endY)
-        .attr('stroke', '#000')
-        .attr('stroke-width', 1.5)
-        .attr('fill', 'none')
-
-      if (rel.type === 'cause-effect') {
-        line.attr('marker-end', 'url(#arrow)')
-      } else if (rel.type === 'companion') {
-        line.attr('marker-start', 'url(#dot)').attr('marker-end', 'url(#dot)')
-      } else if (rel.type === 'conflict') {
-        line
-          .attr('marker-start', 'url(#start-line-arrow)')
-          .attr('marker-end', 'url(#end-line-arrow)')
-      } else if (rel.type === 'lead-lag') {
-        line.attr('marker-end', 'url(#end-line-arrow)')
-      }
-    } else {
-      // Use existing control points or calculate defaults
-
-      const pointX1 = startX + (endX - startX) / 3 + unitY * 50
-      const pointY1 = startY + (endY - startY) / 3 - unitX * 50
-      const pointX2 = startX + ((endX - startX) * 2) / 3 + unitY * 50
-      const pointY2 = startY + ((endY - startY) * 2) / 3 - unitX * 50
-
-      const controlX1 = rel.controlPoints?.x1 ?? pointX1
-      const controlY1 = rel.controlPoints?.y1 ?? pointY1
-      const controlX2 = rel.controlPoints?.x2 ?? pointX2
-      const controlY2 = rel.controlPoints?.y2 ?? pointY2
-
-      // store position if not already stored
-      if (!rel.controlPoints) {
+    // Initialize control points if they don't exist
+    if (!rel.controlPoints) {
+      if (distance < CLOSE_DISTANCE_THRESHOLD) {
+        // For short distances, start with straight line (midpoint control)
+        const midX = (startX + endX) / 2
+        const midY = (startY + endY) / 2
+        rel.controlPoints = {
+          x1: midX,
+          y1: midY,
+          x2: midX,
+          y2: midY,
+        }
+      } else {
+        // For longer distances, use curved line with default control points
+        const pointX1 = startX + (endX - startX) / 3 + unitY * 50
+        const pointY1 = startY + (endY - startY) / 3 - unitX * 50
+        const pointX2 = startX + ((endX - startX) * 2) / 3 + unitY * 50
+        const pointY2 = startY + ((endY - startY) * 2) / 3 - unitX * 50
         rel.controlPoints = {
           x1: pointX1,
           y1: pointY1,
@@ -1409,160 +1386,136 @@ const drawMap = () => {
           y2: pointY2,
         }
       }
+    }
 
-      // const controlX1 = rel.controlPoints?.x1 ?? startX + (endX - startX) / 3 + unitY * 50
-      // const controlY1 = rel.controlPoints?.y1 ?? startY + (endY - startY) / 3 - unitX * 50
-      // const controlX2 = rel.controlPoints?.x2 ?? startX + ((endX - startX) * 2) / 3 + unitY * 50
-      // const controlY2 = rel.controlPoints?.y2 ?? startY + ((endY - startY) * 2) / 3 - unitX * 50
-
-      let controlX = (startX + endX) / 2 + unitY * 50
-      let controlY = (startY + endY) / 2 - unitX * 50
-
-      // Check for collisions with other bubbles
-      const closestBubble = ref<Bubble | null>(null)
-      let minDistance = Infinity
-
-      props.data.bubbles.forEach((b) => {
-        if (b.id === source.id || b.id === target.id || !b.x || !b.y) return
-
-        const radius = bubbleRadii.get(b.id)
-        if (!radius) return
-
-        if (lineIntersectsEllipse(startX, startY, endX, endY, b.x, b.y, radius.rx, radius.ry)) {
-          const midX = (startX + endX) / 2
-          const midY = (startY + endY) / 2
-          const dx = midX - b.x
-          const dy = midY - b.y
-          const distance = Math.sqrt(dx * dx + dy * dy)
-
-          if (distance < minDistance) {
-            minDistance = distance
-            closestBubble.value = b
-          }
+    // Create the path element
+    const line = linkGroup
+      .append('path')
+      .attr('data-relationship-id', rel.id)
+      .attr('stroke', '#000')
+      .attr('stroke-width', 1.5)
+      .attr('fill', 'none')
+      .on('mouseover', function () {
+        if (hideHandlerTimeout) {
+          clearTimeout(hideHandlerTimeout)
+          hideHandlerTimeout = null
         }
+        d3.selectAll(`circle[data-line-id="${rel.id}"]`).style('display', 'block')
+      })
+      .on('mouseout', function () {
+        hideHandlerTimeout = setTimeout(() => {
+          d3.selectAll(`circle[data-line-id="${rel.id}"]`).style('display', 'none')
+        }, 3000)
       })
 
-      if (closestBubble.value && closestBubble.value.x && closestBubble.value.y) {
-        const perpX = -unitY
-        const perpY = unitX
+    // Set initial path data based on distance
+    if (distance < CLOSE_DISTANCE_THRESHOLD) {
+      // For short distances, use quadratic bezier (single control point)
+      line.attr(
+        'd',
+        `M ${startX} ${startY} Q ${rel.controlPoints.x1} ${rel.controlPoints.y1}, ${endX} ${endY}`,
+      )
+    } else {
+      // For longer distances, use cubic bezier (two control points)
+      line.attr(
+        'd',
+        `M ${startX} ${startY} C ${rel.controlPoints.x1} ${rel.controlPoints.y1}, ${rel.controlPoints.x2} ${rel.controlPoints.y2}, ${endX} ${endY}`,
+      )
+    }
 
-        const lineVecX = endX - startX
-        const lineVecY = endY - startY
-        const cross =
-          (closestBubble.value.x - startX) * lineVecY - (closestBubble.value.y - startY) * lineVecX
-        const sign = cross > 0 ? 1 : -1
+    // Add relationship type markers
+    if (rel.type === 'cause-effect') {
+      line.attr('marker-end', 'url(#arrow)')
+    } else if (rel.type === 'companion') {
+      line.attr('marker-start', 'url(#dot)').attr('marker-end', 'url(#dot)')
+    } else if (rel.type === 'conflict') {
+      line.attr('marker-start', 'url(#start-line-arrow)').attr('marker-end', 'url(#end-line-arrow)')
+    } else if (rel.type === 'lead-lag') {
+      line.attr('marker-end', 'url(#end-line-arrow)')
+    }
 
-        // Get the radius of the closest bubble
-        const closestRadius = bubbleRadii.get(closestBubble.value.id)
-        if (!closestRadius) return
-
-        // Calculate shift distance based on bubble size + padding
-        const shiftX = closestRadius.rx + OFFSET
-        const shiftY = closestRadius.ry + OFFSET
-
-        // Adjust control points proportionally to bubble size
-        controlX += sign * perpX * (shiftX * 1.2) // 1.5x for clearance
-        controlY += sign * perpY * (shiftY * 1.5)
-      }
-
-      let hideHandlerTimeout: ReturnType<typeof setTimeout> | null = null
-
-      const line = linkGroup
-        .append('path')
-        .attr('data-relationship-id', rel.id) // Add a unique identifier
-        .attr(
-          'd',
-          `M ${startX} ${startY} C ${controlX1} ${controlY1}, ${controlX2} ${controlY2}, ${endX} ${endY}`,
-        )
-        .attr('stroke', '#000')
+    // Add draggable control point handlers
+    const addHandler = (
+      cx: number,
+      cy: number,
+      updateCallback: (newX: number, newY: number) => void,
+      isMidpoint = false,
+    ) => {
+      linkGroup
+        .append('circle')
+        .attr('cx', cx)
+        .attr('cy', cy)
+        .attr('r', 10)
+        .attr('fill', '#409eff')
+        .attr('stroke', '#fff')
+        .attr('data-line-id', rel.id)
         .attr('stroke-width', 1.5)
-        .attr('fill', 'none')
-        .on('mouseover', function () {
-          // Clear any existing timeout to prevent hiding
-          if (hideHandlerTimeout) {
-            clearTimeout(hideHandlerTimeout)
-            hideHandlerTimeout = null
-          }
+        .style('cursor', 'move')
+        .style('display', 'none')
+        .call(
+          d3
+            .drag<SVGCircleElement, unknown>()
+            .on('drag', function (event) {
+              const [newX, newY] = d3.pointer(event, svgRef.value)
 
-          // Show handlers for this line
-          d3.selectAll(`circle[data-line-id="${rel.id}"]`).style('display', 'block')
-        })
-        .on('mouseout', function () {
-          // Set a timeout to hide the handlers after 3 seconds
-          hideHandlerTimeout = setTimeout(() => {
-            d3.selectAll(`circle[data-line-id="${rel.id}"]`).style('display', 'none')
-          }, 3000) // 3 seconds
-        })
+              // Update the control point
+              updateCallback(newX, newY)
 
-      if (rel.type === 'cause-effect') {
-        line.attr('marker-end', 'url(#arrow)')
-      } else if (rel.type === 'companion') {
-        line.attr('marker-start', 'url(#dot)').attr('marker-end', 'url(#dot)')
-      } else if (rel.type === 'conflict') {
-        line
-          .attr('marker-start', 'url(#start-line-arrow)')
-          .attr('marker-end', 'url(#end-line-arrow)')
-      } else if (rel.type === 'lead-lag') {
-        line.attr('marker-end', 'url(#end-line-arrow)')
-      }
-
-      // Add draggable handlers for left, middle, and right control points
-      const addHandler = (
-        cx: number,
-        cy: number,
-        updateCallback: (newX: number, newY: number) => void,
-      ) => {
-        linkGroup
-          .append('circle')
-          .attr('cx', cx)
-          .attr('cy', cy)
-          .attr('r', 10)
-          .attr('fill', '#409eff')
-          .attr('stroke', '#fff')
-          .attr('data-line-id', rel.id)
-          .attr('stroke-width', 1.5)
-          .style('cursor', 'move')
-          .style('display', 'none')
-          .call(
-            d3
-              .drag<SVGCircleElement, unknown>()
-              .on('drag', function (event) {
-                const [newX, newY] = d3.pointer(event, svgRef.value)
-
-                // Update the control point
-                updateCallback(newX, newY)
-
-                // Update the path dynamically
+              // Update the path
+              if (distance < CLOSE_DISTANCE_THRESHOLD || isMidpoint) {
+                // For short distances or midpoint handler, use quadratic bezier
                 line.attr(
                   'd',
-                  `M ${startX} ${startY} C ${rel.controlPoints?.x1 ?? startX} ${rel.controlPoints?.y1 ?? startY}, ${rel.controlPoints?.x2 ?? endX} ${rel.controlPoints?.y2 ?? endY}, ${endX} ${endY}`,
+                  `M ${startX} ${startY} Q ${rel.controlPoints!.x1} ${rel.controlPoints!.y1}, ${endX} ${endY}`,
                 )
+              } else {
+                // For longer distances, use cubic bezier
+                line.attr(
+                  'd',
+                  `M ${startX} ${startY} C ${rel.controlPoints!.x1} ${rel.controlPoints!.y1}, ${rel.controlPoints!.x2} ${rel.controlPoints!.y2}, ${endX} ${endY}`,
+                )
+              }
 
-                // Update the handler's position
-                d3.select(this).attr('cx', newX).attr('cy', newY)
-              })
-              .on('end', function () {
-                // Only update data store when dragging ends
-                const relationship = props.data.relationships.find((r) => r.id === rel.id)
-                if (relationship) {
-                  relationship.controlPoints = {
-                    x1: rel.controlPoints?.x1 ?? 0,
-                    y1: rel.controlPoints?.y1 ?? 0,
-                    x2: rel.controlPoints?.x2 ?? 0,
-                    y2: rel.controlPoints?.y2 ?? 0,
-                  }
+              // Update handler position
+              d3.select(this).attr('cx', newX).attr('cy', newY)
+            })
+            .on('end', function () {
+              // Update data store when dragging ends
+              const relationship = props.data.relationships.find((r) => r.id === rel.id)
+              if (relationship) {
+                relationship.controlPoints = {
+                  x1: rel.controlPoints!.x1,
+                  y1: rel.controlPoints!.y1,
+                  x2: rel.controlPoints!.x2,
+                  y2: rel.controlPoints!.y2,
                 }
-              }),
-          )
-      }
+              }
+            }),
+        )
+    }
 
-      // Add handlers for control points
-      addHandler(controlX1, controlY1, (newX, newY) => {
+    // Add handlers based on distance
+    if (distance < CLOSE_DISTANCE_THRESHOLD) {
+      // For short distances, add single midpoint handler
+      addHandler(
+        rel.controlPoints.x1,
+        rel.controlPoints.y1,
+        (newX, newY) => {
+          rel.controlPoints!.x1 = newX
+          rel.controlPoints!.y1 = newY
+          rel.controlPoints!.x2 = newX
+          rel.controlPoints!.y2 = newY
+        },
+        true, // isMidpoint
+      )
+    } else {
+      // For longer distances, add two control point handlers
+      addHandler(rel.controlPoints.x1, rel.controlPoints.y1, (newX, newY) => {
         rel.controlPoints!.x1 = newX
         rel.controlPoints!.y1 = newY
       })
 
-      addHandler(controlX2, controlY2, (newX, newY) => {
+      addHandler(rel.controlPoints.x2, rel.controlPoints.y2, (newX, newY) => {
         rel.controlPoints!.x2 = newX
         rel.controlPoints!.y2 = newY
       })
@@ -2488,14 +2441,14 @@ const startUpdateMenuTour = () => {
     // },
   ]
 
-  if(!isNewRelationshipCreated.value){
+  if (!isNewRelationshipCreated.value) {
     steps.push({
       title: 'Relationship Section',
       content:
         'In this section, you can create new relationships between bubbles or manage existing ones. Use the dropdown to select a relationship type, then click "Create Relationship". For existing relationships, you can update their type or delete them.',
       target: '#manageRelationships',
     })
-  } else if(isNewRelationshipCreated.value) {
+  } else if (isNewRelationshipCreated.value) {
     steps.push({
       title: 'Relationship Section',
       content:
@@ -2540,28 +2493,29 @@ const startCreationMenuTour = () => {
   hasSeenTour = localStorage.getItem('hasSeenTour')
   if (tour) {
     const steps = [
-        // {
-        //   title: 'Create a Bubble',
-        //   content:
-        //     'Use the context menu to create a new bubble by entering text and clicking "Create".',
-        //   target: '#createBubble', // Target the context menu for empty positions
-        // },
-        // {
-        //   title: 'Create or Delete a Group',
-        //   content: 'You can also create or delete a group using the context menu.',
-        //   target: '#createGroup', // Target the context menu for empty positions
-        // },
-    ];
+      // {
+      //   title: 'Create a Bubble',
+      //   content:
+      //     'Use the context menu to create a new bubble by entering text and clicking "Create".',
+      //   target: '#createBubble', // Target the context menu for empty positions
+      // },
+      // {
+      //   title: 'Create or Delete a Group',
+      //   content: 'You can also create or delete a group using the context menu.',
+      //   target: '#createGroup', // Target the context menu for empty positions
+      // },
+    ]
 
-   if(!isNewGroupCreated.value){
+    if (!isNewGroupCreated.value) {
       steps.push({
         title: 'Create or Delete a Group',
-        content: "You can create or delete a group, and change the group's font size, weight, and color using the context menu.",
+        content:
+          "You can create or delete a group, and change the group's font size, weight, and color using the context menu.",
         target: '#createGroup', // Target the context menu for empty positions
       })
     }
 
-    if(isNewGroupCreated.value && !isFirstBubbleCreated.value){
+    if (isNewGroupCreated.value && !isFirstBubbleCreated.value) {
       steps.push({
         title: 'Create a Bubble',
         content:
@@ -2569,7 +2523,6 @@ const startCreationMenuTour = () => {
         target: '#createBubble', // Target the context menu for empty positions
       })
     }
-
 
     tour.setOptions({
       steps,
@@ -2740,17 +2693,15 @@ function wrap(text: d3.Selection<SVGTextElement, Bubble, null, undefined>, maxWi
   let targetLineLength: number = 20 // New parameter with default value
   let topLineMaxLength: number = 18 // Also made this configurable
 
-
   text.each(function (this: SVGTextElement, d: Bubble) {
     const textElement = d3.select<SVGTextElement, Bubble>(this)
     const words: string[] = textElement.text().split(/\s+/)
     const lineHeight: number = 1.1
 
-    if( words.length <= 10){
+    if (words.length <= 10) {
       targetLineLength = 14
       topLineMaxLength = 8
     }
-
 
     // Clear the text
     textElement.text(null)
