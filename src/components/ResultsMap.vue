@@ -2737,13 +2737,20 @@ function wrap_old(
 }
 
 function wrap(text: d3.Selection<SVGTextElement, Bubble, null, undefined>, maxWidth: number): void {
-  const targetLineLength: number = 22 // New parameter with default value
-  const topLineMaxLength: number = 14 // Also made this configurable
+  let targetLineLength: number = 20 // New parameter with default value
+  let topLineMaxLength: number = 18 // Also made this configurable
+
 
   text.each(function (this: SVGTextElement, d: Bubble) {
     const textElement = d3.select<SVGTextElement, Bubble>(this)
     const words: string[] = textElement.text().split(/\s+/)
     const lineHeight: number = 1.1
+
+    if( words.length <= 10){
+      targetLineLength = 14
+      topLineMaxLength = 8
+    }
+
 
     // Clear the text
     textElement.text(null)
