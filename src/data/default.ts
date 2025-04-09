@@ -8,6 +8,8 @@ const defaultMapData: ResultsMapData = {
     titleFontSize: 32,
     titleColor: '#000000',
     titleFontWeight: 'bold',
+    dividerColor: '#000000',
+    dividerWidth: 3,
     layerColors: {
       mission: '#ffcdd2', // Pink
       strategic: '#c8e6c9', // Green

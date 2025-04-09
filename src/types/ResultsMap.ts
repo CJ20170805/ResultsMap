@@ -23,6 +23,8 @@ export interface MapConfig {
   date?: string,
   titleX?: number,
   titleY?: number,
+  dividerColor?: string,
+  dividerWidth?: number,
   layerSizes: {
     mission: LayerSize
     strategic: LayerSize

@@ -578,6 +578,29 @@ const updateAdjacentLayer = (currentLayer: string) => {
             </div>
           </el-col>
         </el-row>
+        <el-row :gutter="20">
+          <el-col :span="24">
+            <div class="control-section">
+              <h3>Divider Settings</h3>
+              <el-form>
+                <!-- Divider Color -->
+                <el-form-item label="Divider Color">
+                  <el-color-picker v-model="mapConfig.dividerColor" />
+                </el-form-item>
+                <!-- Divider Width -->
+                <el-form-item label="Divider Width">
+                  <el-slider
+                    v-model="mapConfig.dividerWidth"
+                    :min="1"
+                    :max="10"
+                    :step="1"
+                    show-input
+                  />
+                </el-form-item>
+              </el-form>
+            </div>
+          </el-col>
+        </el-row>
       </el-tab-pane>
       <el-tab-pane label="Group" v-if="false">
         <el-row :gutter="20">

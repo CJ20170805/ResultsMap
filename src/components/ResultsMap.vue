@@ -621,8 +621,8 @@ function drawGroupDividers(
       .attr('y1', startY)
       .attr('x2', endX)
       .attr('y2', endY)
-      .attr('stroke', 'black')
-      .attr('stroke-width', 3)
+      .attr('stroke', props.data.mapConfig.dividerColor || '#000000') // Use configurable color
+      .attr('stroke-width', props.data.mapConfig.dividerWidth || 3) // Use configurable width
       .attr('cursor', 'ew-resize')
       .datum(group)
       .call(drag)
@@ -1124,6 +1124,8 @@ const drawMap = () => {
       .on('click', () => handleBubbleClick(bubble.id)) // Handle bubble click
 
     if (isPresentationMode.value) {
+      console.log("IsRelated1", isRelated);
+
       g.classed('transparent', !!focusedBubbleId.value && !isRelated) // Apply transparency
         .classed('highlight', focusedBubbleId.value === bubble.id) // Highlight focused bubble
     } else {
@@ -1145,7 +1147,7 @@ const drawMap = () => {
     const textWidth = textBBox.width
     const textHeight = textBBox.height
 
-    console.log('TextWidth: ', textWidth, 'TextHeight: ', textHeight)
+    //console.log('TextWidth: ', textWidth, 'TextHeight: ', textHeight)
 
     // Use stored radii if they exist, otherwise calculate based on text
     let bubbleRadiusX = bubble.rx || textWidth / 2 + BUBBLE_PADDING_X
@@ -2119,6 +2121,7 @@ const handleBubbleClick = (bubbleId: string) => {
       // Set the clicked bubble as the focused bubble
       focusedBubbleId.value = bubbleId
     }
+
   }
 
   drawMap()
@@ -2128,26 +2131,60 @@ const getRelatedBubblesAndRelationships = (bubbleId: string) => {
   const relatedBubbles = new Set<string>()
   const relatedRelationships = new Set<string>()
 
-  const exploreRelationships = (currentBubbleId: string) => {
-    props.data.relationships.forEach((rel) => {
-      if (rel.source === currentBubbleId || rel.target === currentBubbleId) {
-        if (!relatedRelationships.has(rel.id)) {
-          relatedRelationships.add(rel.id)
-
-          const otherBubbleId = rel.source === currentBubbleId ? rel.target : rel.source
-
-          if (!relatedBubbles.has(otherBubbleId)) {
-            relatedBubbles.add(otherBubbleId)
-            exploreRelationships(otherBubbleId) // Recursively explore siblings
-          }
-        }
-      }
-    })
+  // Get the initial bubble
+  const initialBubble = props.data.bubbles.find(b => b.id === bubbleId)
+  if (!initialBubble) {
+    return {
+      relatedBubbles: [],
+      relatedRelationships: []
+    }
   }
 
-  // Start exploration from the initial bubble
+  // If starting from a mission bubble, just return it
+  if (initialBubble.layer === 'mission') {
+    return {
+      relatedBubbles: [bubbleId],
+      relatedRelationships: []
+    }
+  }
+
+  const exploreRelationships = (currentBubbleId: string, direction: 'outward' | 'inward') => {
+    const currentBubble = props.data.bubbles.find(b => b.id === currentBubbleId)
+    if (!currentBubble) return
+
+    // Stop if we've reached a mission bubble
+    if (currentBubble.layer === 'mission') {
+      relatedBubbles.add(currentBubbleId)
+      return
+    }
+
+    // Find relationships based on direction
+    const relationships = direction === 'outward'
+      ? props.data.relationships.filter(rel => rel.source === currentBubbleId)
+      : props.data.relationships.filter(rel => rel.target === currentBubbleId)
+
+    for (const rel of relationships) {
+      if (!relatedRelationships.has(rel.id)) {
+        relatedRelationships.add(rel.id)
+
+        const nextBubbleId = direction === 'outward' ? rel.target : rel.source
+        const nextBubble = props.data.bubbles.find(b => b.id === nextBubbleId)
+
+        if (!nextBubble) continue
+
+        // Only proceed if we haven't seen this bubble before
+        if (!relatedBubbles.has(nextBubbleId)) {
+          relatedBubbles.add(nextBubbleId)
+          exploreRelationships(nextBubbleId, direction)
+        }
+      }
+    }
+  }
+
+  // Start exploration in both directions
   relatedBubbles.add(bubbleId)
-  exploreRelationships(bubbleId)
+  exploreRelationships(bubbleId, 'outward') // Follow relationships where current is source
+  exploreRelationships(bubbleId, 'inward')  // Follow relationships where current is target
 
   return {
     relatedBubbles: Array.from(relatedBubbles),
