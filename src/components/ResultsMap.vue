@@ -2362,13 +2362,13 @@ const startATour = () => {
 
       // Show a message box to inform the user about the next steps
       ElMessageBox.confirm(
-        `To create a new group:
+        `To create a new section:
           <ol>
             <li>Right-click on the map.</li>
-            <li>Type the group name.</li>
-            <li>Click the "Create Group" button.</li>
+            <li>Type the section name.</li>
+            <li>Click the "Create section" button.</li>
           </ol> <br /> <img style="width: 100%;" src="${createGroupGif}"/>`,
-        'Create Groups',
+        'Create Sections',
         {
           //title: 'Next Steps',
           confirmButtonText: 'Continue',
@@ -2385,7 +2385,7 @@ const startATour = () => {
           messageInstance = ElMessage({
             type: 'warning',
             message:
-              'Please right-click the map to create a group, ensuring at least two groups are placed on the map.',
+              'Please right-click the map to create a section, ensuring at least two sections are placed on the map.',
             duration: 0, // Make the message persistent
           })
         })
@@ -2395,7 +2395,7 @@ const startATour = () => {
           ElMessage({
             type: 'warning',
             message:
-              'You can always right-click on the map to create or delete groups and bubbles.',
+              'You can always right-click on the map to create or delete sections and bubbles.',
           })
         })
     })
@@ -2450,7 +2450,7 @@ const startCreateBubbleTour = () => {
       messageInstance?.close()
       ElMessage({
         type: 'warning',
-        message: 'You can always right-click on the map to create or delete groups and bubbles.',
+        message: 'You can always right-click on the map to create or delete sections and bubbles.',
       })
     })
 }
@@ -2492,7 +2492,7 @@ const startCreateRelationshipTour = () => {
       messageInstance?.close()
       ElMessage({
         type: 'warning',
-        message: 'You can always right-click on the map to create or delete groups and bubbles.',
+        message: 'You can always right-click on the map to create or delete sections and bubbles.',
       })
     })
 }
@@ -2581,9 +2581,9 @@ const startCreationMenuTour = () => {
 
     if (!isNewGroupCreated.value) {
       steps.push({
-        title: 'Create or Delete a Group',
+        title: 'Create or Delete a Section',
         content:
-          "You can create or delete a group, and change the group's font size, weight, and color using the context menu.",
+          "You can create or delete a section, and change the section's font size, weight, and color using the context menu.",
         target: '#createGroup', // Target the context menu for empty positions
       })
     }
@@ -2930,7 +2930,7 @@ defineExpose({
           <!-- Group selection dropdown -->
           <el-row>
             <el-col :span="5">
-              <span style="margin: 0 10px 0 0; line-height: 30px">Group: </span>
+              <span style="margin: 0 10px 0 0; line-height: 30px">Sections: </span>
             </el-col>
             <el-col :span="17">
               <!-- <el-select
@@ -2954,7 +2954,7 @@ defineExpose({
                   :key="group.id"
                   :value="group.id"
                 >
-                  {{ group.name || `Group ${index + 1}` }}
+                  {{ group.name || `Section ${index + 1}` }}
                 </option>
               </select>
             </el-col>
@@ -3156,14 +3156,14 @@ defineExpose({
       </el-form>
     </div>
     <div id="createGroup" style="margin-top: 20px">
-      <el-divider> Group </el-divider>
+      <el-divider> Section </el-divider>
       <el-form @submit.prevent="createGroup">
         <el-form-item label="">
-          <el-input v-model="newGroupName" type="text" placeholder="Enter group name" />
+          <el-input v-model="newGroupName" type="text" placeholder="Enter section name" />
         </el-form-item>
         <el-form-item>
           <el-button type="primary" class="margin-top-less" style="width: 100%" @click="createGroup"
-            >Create Group</el-button
+            >Create Section</el-button
           >
         </el-form-item>
 
@@ -3204,7 +3204,7 @@ defineExpose({
         >
           <template #reference>
             <el-button v-if="currentGroup" type="danger" style="width: 100%; margin-top: 0px">
-              Delete Current Group
+              Delete Current Section
             </el-button>
           </template>
         </el-popconfirm>

@@ -117,8 +117,8 @@ const startATour = () => {
         content: `This is the Visibility tab where you can show or hide different parts of the map. <br/><br/>
 <strong>What you can do here:</strong>
 <ul>
-  <li>Use the search filter to quickly find a specific bubble or group by name.</li>
-   <li>Use the checkbox tree list to turn bubbles or groups on or off.</li>
+  <li>Use the search filter to quickly find a specific bubble or section by name.</li>
+   <li>Use the checkbox tree list to turn bubbles or sections on or off.</li>
 </ul>
 `,
         target: '#visibilityTab',
@@ -561,10 +561,10 @@ const updateAdjacentLayer = (currentLayer: string) => {
         <el-row :gutter="20" v-if="false">
           <el-col :span="24">
             <div class="control-section">
-              <h3>Group Divider Level</h3>
+              <h3>Section Divider Level</h3>
               <el-select
                 v-model="groupLevel"
-                placeholder="Select Group Level"
+                placeholder="Select Section Level"
                 @change="handleGroupLayerChange"
               >
                 <el-option label="None" value="None"></el-option>
