@@ -3175,7 +3175,7 @@ defineExpose({
                 v-model="currentGroup.name"
                 style="width: 70%"
                 type="text"
-                placeholder="Enter group name"
+                placeholder="Enter section name"
               />
             </div>
           </el-form-item>
@@ -3199,7 +3199,7 @@ defineExpose({
         </template>
 
         <el-popconfirm
-          :title="`Are you sure you want to delete the group '${currentGroup?.name}'' and all its bubbles?`"
+          :title="`Are you sure you want to delete the section '${currentGroup?.name}'' and all its bubbles?`"
           @confirm="deleteCurrentGroup"
         >
           <template #reference>
