@@ -91,13 +91,12 @@ const startATour = () => {
         content: `This is the Map tab where you can configure map appearance and details. <br/><br/>
 <strong>Map customization options:</strong>
 <ul>
-  <li><strong>Title Input:</strong> Set the title of your map.</li>
+  <li><strong>Map Title:</strong> Set the title of your map.</li>
   <li><strong>Title Font Size:</strong> Adjust the size of the map title text.</li>
   <li><strong>Title Color:</strong> Pick a color for the map title.</li>
   <li><strong>Bold Title:</strong> Toggle bold styling for the title text.</li>
   <li><strong>Map Date:</strong> Choose a date to display on the map.</li>
   <li><strong>Layer Colors:</strong> Assign colors to different map layers for better visual distinction.</li>
-  <li><strong>Group Divider Level:</strong> Set the grouping level for data organization and map rendering.</li>
 </ul>
 `,
         target: '#mapTab',
@@ -496,7 +495,7 @@ const updateAdjacentLayer = (currentLayer: string) => {
               <h3>Layer Sizes</h3>
               <el-form>
                 <!-- Mission Layer (innermost) -->
-                <el-form-item label="Mission">
+                <el-form-item :label="legends.legendBubbles[3].text">
                   <el-slider
                     v-model="mapConfig.layerSizes.mission.outer"
                     :min="0"
@@ -508,7 +507,7 @@ const updateAdjacentLayer = (currentLayer: string) => {
                 </el-form-item>
 
                 <!-- Strategic Layer -->
-                <el-form-item label="Strategic ">
+                <el-form-item :label="legends.legendBubbles[2].text">
                   <el-slider
                     v-model="mapConfig.layerSizes.strategic.outer"
                     :min="mapConfig.layerSizes.mission.outer"
@@ -520,7 +519,7 @@ const updateAdjacentLayer = (currentLayer: string) => {
                 </el-form-item>
 
                 <!-- Process Layer -->
-                <el-form-item label="Process">
+                <el-form-item :label="legends.legendBubbles[1].text">
                   <el-slider
                     v-model="mapConfig.layerSizes.process.outer"
                     :min="mapConfig.layerSizes.strategic.outer"
@@ -532,7 +531,7 @@ const updateAdjacentLayer = (currentLayer: string) => {
                 </el-form-item>
 
                 <!-- Operational Layer (outermost) -->
-                <el-form-item label="Operational">
+                <el-form-item :label="legends.legendBubbles[0].text">
                   <el-slider
                     v-model="mapConfig.layerSizes.operational.outer"
                     :min="mapConfig.layerSizes.process.outer + 10"
@@ -550,15 +549,16 @@ const updateAdjacentLayer = (currentLayer: string) => {
             <div class="control-section">
               <h3>Layer Colors</h3>
               <el-form class="color-form">
-                <el-form-item v-for="(color, layer) in mapConfig.layerColors" :key="layer">
-                  <label class="color-label" :for="layer">{{ layer }}</label>
+                <el-form-item v-for="(color, layer, index) in mapConfig.layerColors" :key="layer">
+                  <!-- <label class="color-label" :for="layer">{{ layer }}</label> -->
+                  <label class="color-label" :for="layer">{{ legends.legendBubbles[legends.legendBubbles.length - 1 - index].text }}</label>
                   <el-color-picker v-model="mapConfig.layerColors[layer]" />
                 </el-form-item>
               </el-form>
             </div>
           </el-col>
         </el-row>
-        <el-row :gutter="20">
+        <el-row :gutter="20" v-if="false">
           <el-col :span="24">
             <div class="control-section">
               <h3>Group Divider Level</h3>

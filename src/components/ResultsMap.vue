@@ -687,9 +687,8 @@ function addGroupNames(svg: d3.Selection<SVGGElement, unknown, null, undefined>,
 
     // console.log("group.isDragging?", group.isDragging);
 
-    // Only calculate the group name position automatically during the initial creation or when dragging the divider.
-    if (!group.x || !group.y || group.isDragging) {
-      console.log('Yesssssssssss', group.name)
+    // Only calculate the group name position automatically during the initial creation
+    if (!group.x || !group.y) {
       const midAngle = calculateMidAngle(group.startAngle, group.endAngle)
       const outerRadius = tracks.value.operational.outer + 20 // Offset outside the outer track
       x = centerX + outerRadius * Math.cos(midAngle)
