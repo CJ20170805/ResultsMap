@@ -1940,6 +1940,10 @@ const isPresentationMode = ref(false)
 const showControls = ref(false)
 
 const currentLayer = computed(() => layers[currentLayerIndex.value])
+const currentLayerLabel = computed(() => {
+  const legend = props.data.legends.legendBubbles.find(item => item.track === currentLayer.value);
+  return legend ? legend.text : ''; 
+});
 
 const togglePresentationMode = () => {
   const hasSeenPresentationMode = localStorage.getItem('hasSeenPresentationMode')
@@ -2323,17 +2327,17 @@ const startATour = () => {
       steps: [
         {
           title: 'Zoom In',
-          content: 'Click this button to zoom in on the map for a closer view.',
+          content: 'Click this button to zoom in on the map for a closer view or use the scroll wheel of your mouse.',
           target: '#zoomInButton', // Target the zoom-in button
         },
         {
           title: 'Zoom Out',
-          content: 'Click this button to zoom out on the map for a wider view.',
+          content: 'Click this button to zoom out on the map for a wider view or use the scroll wheel of your mouse.',
           target: '#zoomOutButton', // Target the zoom-out button
         },
         {
           title: 'Reset Zoom',
-          content: 'Click this button to reset the map zoom to the default level.',
+          content: 'Click this button to reset the map zoom to the default level or use the scroll wheel of your mouse.',
           target: '#resetZoomButton', // Target the reset zoom button
         },
         {
@@ -2923,7 +2927,7 @@ defineExpose({
         <el-col :span="7">
           <span style="margin: 0 10px 0 0">Layer: </span>
           <el-button @click="switchToPreviousLayer" icon="ArrowUp"></el-button>
-          <span class="layer-label">{{ currentLayer }}</span>
+          <span class="layer-label">{{ currentLayerLabel }}</span>
           <el-button @click="switchToNextLayer" icon="ArrowDown"></el-button>
         </el-col>
         <el-col :span="7">

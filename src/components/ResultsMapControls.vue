@@ -103,22 +103,23 @@ const startATour = () => {
       },
       {
         title: 'Legend Tab',
-        content: `This is the Legend tab where you can manage the legend for bubbles and lines. <br/><br/>
+        content: `This is a tab where you can manage the Legend on the Map which identifies what each bubble colour represents. It also enables you to label the relationship type
+         lines between bubbles<br/><br/>
 <strong>Legend customization options:</strong>
 <ul>
-  <li><strong>Bubbles:</strong> Set the display name for each bubble legend.</li>
-  <li><strong>Lines:</strong> Set the name for each line legend and turn their visibility on or off.</li>
+  <li><strong>Bubbles:</strong> Set the name for each bubble colour in the Map. </li>
+  <li><strong>Legend Lines:</strong> Set the name for each relationship line in the Map Legend. Also, turn on or off their visibility. </li>
 </ul>
 `,
         target: '#legendTab',
       },
       {
         title: 'Visibility Tab',
-        content: `This is the Visibility tab where you can show or hide different parts of the map. <br/><br/>
+        content: `This tab enables you to show or hide different parts of a map – entire sections or individual bubbles. As content is added to the map, it automatically is saved in the search filter section of this tab. <br/><br/>
 <strong>What you can do here:</strong>
 <ul>
-  <li>Use the search filter to quickly find a specific bubble or section by name.</li>
-   <li>Use the checkbox tree list to turn bubbles or sections on or off.</li>
+  <li>Use the search filter section to quickly find specific bubbles or map sections by name.</li>
+  <li>Use the checkbox tree list to turn bubbles or sections on or off.</li>
 </ul>
 `,
         target: '#visibilityTab',

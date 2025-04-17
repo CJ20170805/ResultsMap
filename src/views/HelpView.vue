@@ -62,25 +62,25 @@ interface Category {
 // Sample list of categories and questions
 const categories = ref<Category[]>([
   {
-    title: 'Group',
+    title: 'Section',
     questions: [
       {
-        title: 'How do I create a new group?',
+        title: 'How do I create a new section?',
         answer: `
-          To create a new group, right-click on the map and select "Create Group" from the context menu.
+          To create a new section, right-click on the map, type section name(optional) and select "Create Section" from the context menu.
           <br><br>
-          <img src="${createGroupGif}" alt="Create Group GIF" style="max-width: 100%; border-radius: 8px;" />
+          <img src="${createGroupGif}" alt="Create Section GIF" style="max-width: 100%; border-radius: 8px;" />
         `,
       },
       {
-        title: 'How do I delete a group?',
+        title: 'How do I delete a section?',
         answer:
-          'To delete a group, right-click on the group name and select "Delete Group" from the context menu.',
+          'To delete a section, right-click on the section area and select "Delete Current Section" from the context menu.',
       },
       {
-        title: 'How do I rename a group?',
+        title: 'How do I rename a section?',
         answer:
-          'To rename a group, right-click on the group name and select "Rename Group" from the context menu.',
+          'To rename a section, right-click on the section area and rename it in the  "Rename" section from the context menu.',
       },
     ],
   },
@@ -98,7 +98,7 @@ const categories = ref<Category[]>([
       {
         title: 'How do I delete a bubble?',
         answer:
-          'To delete a bubble, right-click on the bubble and select "Remove" from the context menu.',
+          'To delete a bubble, right-click on the bubble and select "Remove current bubble" from the context menu.',
       },
       {
         title: 'How do I move a bubble?',
@@ -139,11 +139,23 @@ const categories = ref<Category[]>([
       {
         title: 'How do I exit presentation mode?',
         answer:
-          'To exit presentation mode, click the "Exit Presentation Mode" button in the controls.',
+          'To exit presentation mode, click the "Presentation Mode" button again in the controls.',
       },
       {
         title: 'How do I navigate layers in presentation mode?',
-        answer: 'Use the layer navigation buttons to switch between layers in presentation mode.',
+        answer: 'To navigate layers, move your mouse to the bottom, then the control bar will show up. Use the layer navigation buttons to switch between layers in presentation mode.',
+      },
+      {
+        title: 'How do I navigate sections in presentation mode?',
+        answer: 'To navigate layers, move your mouse to the bottom, then the control bar will show up. Use the selection box to switch section in presentation mode.',
+      },
+      {
+        title: 'How do I emphasize the bubble with its related bubbles in presentation mode?',
+        answer: 'To emphasize bubble relationships, click on any bubble, then the currrent bubble with its related relationships and bubbles will be highlight.',
+      },
+      {
+        title: 'How do I reset control options in presentation mode?',
+        answer: 'To reset control options, move your mouse to the bottom, then click the reset button',
       },
     ],
   },
@@ -157,7 +169,7 @@ const categories = ref<Category[]>([
       {
         title: 'How do I export the map?',
         answer:
-          'To export the map, click the "Export" button and choose the desired format (PNG, PDF, or JSON).',
+          'To export the map, click the "Export" button and choose the desired format (PNG, PDF, or Source Data).',
       },
       {
         title: 'How do I change the map title?',
