@@ -20,6 +20,9 @@ import createBubbleGif from '@/assets/gif/create-bubble.gif'
 import createRelationshipGif from '@/assets/gif/create-relationship.gif'
 import QuestionSvg from '@/assets/svg/question.svg'
 import logoImage from '@/assets/logo.png'
+import moveMapGif from '@/assets/gif/move-map.gif'
+import adjustLineGif from '@/assets/gif/adjust-line.gif'
+import bubbleOperationsGif from '@/assets/gif/bubble-operations.gif'
 
 const props = defineProps<{
   data: ResultsMapData
@@ -849,39 +852,52 @@ function addArrowsAndTitle(svg: d3.Selection<SVGGElement, unknown, null, undefin
   //   .style('font-size', `${props.data.mapConfig.titleFontSize}px`)
   //   .style('fill', '#000')
   // Add title at the top of the map
-  const titleGroup = svg
-    .append('g')
-    .attr(
-      'transform',
-      `translate(${props.data.mapConfig.titleX || centerX}, ${props.data.mapConfig.titleY || 32})`,
-    )
-    .style('cursor', 'move')
 
-  titleGroup
-    .append('text')
-    .attr('text-anchor', 'middle')
-    .attr('alignment-baseline', 'middle')
-    .text(props.data.mapConfig.title)
-    .style('font-size', `${props.data.mapConfig.titleFontSize}px`)
-    .style('font-weight', props.data.mapConfig.titleFontWeight || 'bold')
-    .style('fill', props.data.mapConfig.titleColor || '#000')
+  const titleGroup = svg.append('g')
+  .style('cursor', 'move')
 
-  // Add drag behavior to the title
-  const titleDrag = d3
-    .drag<SVGGElement, unknown>()
-    .on('start', function () {
-      d3.select(this).raise()
-    })
-    .on('drag', function (event) {
-      const [x, y] = d3.pointer(event, svgRef.value!)
-      d3.select(this).attr('transform', `translate(${x}, ${y})`)
+let initX: number = props.data.mapConfig.titleX || centerX
+let initY: number = props.data.mapConfig.titleY || 32
+let initMouseX: number, initMouseY: number
 
-      // Update the title position in the data
-      mapConfig.value.titleX = x
-      mapConfig.value.titleY = y
-    })
+const titleText = titleGroup.append('text')
+  .attr('x', initX)
+  .attr('y', initY)
+  .attr('text-anchor', 'middle')
+  .attr('dominant-baseline', 'middle')
+  .text(props.data.mapConfig.title)
+  .style('font-size', `${props.data.mapConfig.titleFontSize}px`)
+  .style('font-weight', props.data.mapConfig.titleFontWeight || 'bold')
+  .style('fill', props.data.mapConfig.titleColor || '#000')
 
-  titleGroup.call(titleDrag)
+// Add drag behavior to the title
+const titleDrag = d3.drag<SVGGElement, unknown>()
+  .on('start', function (event) {
+    d3.select(this).raise()
+    const [x, y] = d3.pointer(event, svgRef.value!)
+    initMouseX = x
+    initMouseY = y
+    initX = mapConfig.value.titleX || centerX
+    initY = mapConfig.value.titleY || 32
+  })
+  .on('drag', function (event) {
+    const [x, y] = d3.pointer(event, svgRef.value!)
+    const deltaX = x - initMouseX
+    const deltaY = y - initMouseY
+
+    const newX = initX + deltaX
+    const newY = initY + deltaY
+
+    titleText.attr('x', newX).attr('y', newY)
+
+    // Update the title position in the data
+    mapConfig.value.titleX = newX
+    mapConfig.value.titleY = newY
+  })
+
+titleGroup.call(titleDrag)
+
+
 
   // Add a timestamp at the bottom left corner
   svg
@@ -1942,7 +1958,7 @@ const showControls = ref(false)
 const currentLayer = computed(() => layers[currentLayerIndex.value])
 const currentLayerLabel = computed(() => {
   const legend = props.data.legends.legendBubbles.find(item => item.track === currentLayer.value);
-  return legend ? legend.text : ''; 
+  return legend ? legend.text : '';
 });
 
 const togglePresentationMode = () => {
@@ -2095,9 +2111,129 @@ const handleBubbleClick = (bubbleId: string) => {
     if (!hasSeenTour) {
       isNewRelationshipCreated.value = true
       messageInstance?.close()
+      openAjustRelationshipLineTutorialDialog();
+    }
+  } else if (isPresentationMode.value) {
+    if (focusedBubbleId.value === bubbleId) {
+      // If the same bubble is clicked again, reset the focus
+      focusedBubbleId.value = null
+    } else {
+      // Set the clicked bubble as the focused bubble
+      focusedBubbleId.value = bubbleId
+    }
 
-      // show a finish dialog
+  }
+
+  drawMap()
+}
+
+const openAjustRelationshipLineTutorialDialog = () => {
+      // Show a message box to inform the user about the next steps
       ElMessageBox.confirm(
+        `
+          To adjust the relationship line:
+          <ol>
+            <li>Hover your mouse over the line.</li>
+            <li>Blue control points will appear.</li>
+            <li>Drag the points to adjust the line.</li>
+          </ol>
+          <br />
+          <img style="width: 100%;" src="${adjustLineGif}" alt="Tutorial GIF" />
+        `,
+        'Adjust the Relationship Line',
+        {
+          //title: 'Next Steps',
+          confirmButtonText: 'Continue',
+          cancelButtonText: 'Quit',
+          showClose: false,
+          type: '',
+          customClass: 'custom-message-box-class',
+          dangerouslyUseHTMLString: true,
+        },
+      )
+        .then(() => {
+          openMoveMapOrBubbleTutorialDialog();
+        })
+        .catch(() => {
+          localStorage.setItem('hasSeenTour', 'true')
+          messageInstance?.close()
+        })
+}
+
+const openMoveMapOrBubbleTutorialDialog = () => {
+  // Show a message box to inform the user about the next steps
+  ElMessageBox.confirm(
+    `
+      <p>To move elements on the map, including the map, title, group title, bubbles, dividers, and the entire map:</p>
+      <ol>
+        <li>Left-click on the map, title, group title, bubble, or divider.</li>
+        <li>Drag it to the desired position.</li>
+      </ol>
+      <br />
+      <img style="width: 100%;" src="${moveMapGif}" alt="Move elements on the map tutorial GIF" />
+    `,
+    'Move Elements on the Map',
+    {
+      confirmButtonText: 'Continue',
+      cancelButtonText: 'Quit',
+      showClose: false,
+      type: '',
+      customClass: 'custom-message-box-class',
+      dangerouslyUseHTMLString: true, // Allows HTML for rich content
+    }
+  )
+    .then(() => {
+      // Next step
+      openBubbleOperationsTutorialDialog();
+    })
+    .catch(() => {
+      // Logic to handle cancellation or skipping
+      localStorage.setItem('hasSeenMoveTutorial', 'true');
+      messageInstance?.close();
+    });
+}
+
+const openBubbleOperationsTutorialDialog = () => {
+  // Show a message box to inform the user about adjusting the bubble size and text formatting
+  ElMessageBox.confirm(
+    `
+      <p>To adjust the bubble size:</p>
+      <ol>
+        <li>Hover over the bubble to reveal the blue square.</li>
+        <li>Drag the blue square to resize the bubble.</li>
+      </ol>
+      <p>To adjust the text properties:</p>
+      <ol>
+        <li>Right-click on the bubble.</li>
+        <li>Use the context menu to adjust the text, including font size, bold, and color.</li>
+      </ol>
+      <br />
+      <img style="width: 100%;" src="${bubbleOperationsGif}" alt="Resize bubble tutorial GIF" />
+    `,
+    'Adjust Bubble Size and Text Properties',
+    {
+      confirmButtonText: 'Continue',
+      cancelButtonText: 'Quit',
+      showClose: false,
+      type: '',
+      customClass: 'custom-message-box-class',
+      dangerouslyUseHTMLString: true, // Allows HTML for rich content
+    }
+  )
+    .then(() => {
+      // Next step
+      finishTutorialDialog();
+    })
+    .catch(() => {
+      // Logic to handle cancellation or skipping
+      localStorage.setItem('hasSeenResizeBubbleTutorial', 'true');
+      messageInstance?.close();
+    });
+}
+
+
+const finishTutorialDialog = () => {
+    ElMessageBox.confirm(
         'You have successfully created a relationship. Do you want to create a new map from scratch or continue working on the current one?',
         'Tour finished',
         {
@@ -2115,19 +2251,6 @@ const handleBubbleClick = (bubbleId: string) => {
           localStorage.setItem('hasSeenTour', 'true')
           return
         })
-    }
-  } else if (isPresentationMode.value) {
-    if (focusedBubbleId.value === bubbleId) {
-      // If the same bubble is clicked again, reset the focus
-      focusedBubbleId.value = null
-    } else {
-      // Set the clicked bubble as the focused bubble
-      focusedBubbleId.value = bubbleId
-    }
-
-  }
-
-  drawMap()
 }
 
 const getRelatedBubblesAndRelationships = (bubbleId: string) => {
