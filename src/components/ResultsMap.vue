@@ -23,6 +23,7 @@ import logoImage from '@/assets/logo.png'
 import moveMapGif from '@/assets/gif/move-map.gif'
 import adjustLineGif from '@/assets/gif/adjust-line.gif'
 import bubbleOperationsGif from '@/assets/gif/bubble-operations.gif'
+import presentationModeGif from '@/assets/gif/presentation-mode.gif'
 
 const props = defineProps<{
   data: ResultsMapData
@@ -1968,22 +1969,36 @@ const togglePresentationMode = () => {
   if (isPresentationMode.value) {
     if (!hasSeenPresentationMode) {
       ElMessageBox.confirm(
-        'Tip: In presentation mode, move your mouse to the bottom to show the control bar',
+        `
+          <p><strong>Tips for Presentation Mode:</strong></p>
+          <p>In presentation mode, move your mouse to the bottom to show the control bar.</p>
+          <ol>
+            <li>To navigate layers, use the layer navigation buttons to switch between layers.</li>
+            <li>To navigate sections, use the selection box to switch sections.</li>
+            <li>To emphasize bubble relationships, click on any bubble. The current bubble and its related relationships and bubbles will be highlighted.</li>
+            <li>To reset control options, click the reset button.</li>
+          </ol>
+           <br />
+          <img style="width: 100%; height: 54vh;" src="${presentationModeGif}" alt="Presentation mode tips GIF" />
+        `,
         'Presentation Mode',
         {
           confirmButtonText: 'Ok',
           showCancelButton: false,
-          type: 'warning',
-        },
+          customClass: 'custom-message-box-class',
+          //type: 'warning',
+          dangerouslyUseHTMLString: true, // Enables rich content
+        }
       )
         .then(() => {
-          localStorage.setItem('hasSeenPresentationMode', 'true')
-          enterFullscreen()
+          localStorage.setItem('hasSeenPresentationMode', 'true');
+          enterFullscreen();
         })
         .catch(() => {
-          return
-        })
-    } else {
+          // Handle cancellation if needed (currently does nothing)
+        });
+    }
+    else {
       enterFullscreen()
     }
   } else {

@@ -71,7 +71,7 @@ const startATour = () => {
   if (tour) {
     // restart the tour
     localStorage.removeItem('hasSeenTour')
-
+    localStorage.removeItem('hasSeenPresentationMode')
     const steps = [
       {
         title: 'File Tab',
