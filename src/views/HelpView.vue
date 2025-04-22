@@ -41,6 +41,8 @@ import { Search } from '@element-plus/icons-vue';
 import createGroupGif from '@/assets/gif/create-group.gif';
 import createBubbleGif from '@/assets/gif/create-bubble.gif';
 import createRelationshipGif from '@/assets/gif/create-relationship.gif';
+import moveMapGif from '@/assets/gif/move-map.gif'
+import adjustLineGif from '@/assets/gif/adjust-line.gif'
 
 
 onMounted(() => {
@@ -104,6 +106,21 @@ const categories = ref<Category[]>([
         title: 'How do I move a bubble?',
         answer: 'To move a bubble, click and drag the bubble to the desired location.',
       },
+      {
+        title: 'How do I adjust bubble size or text formatting?',
+        answer: `
+          To adjust the bubble size:
+          <ol>
+            <li>Hover over the bubble.</li>
+            <li>Drag the blue square to resize it.</li>
+          </ol>
+          To adjust text formatting:
+          <ol>
+            <li>Right-click on the bubble to open the context menu.</li>
+            <li>Change the text, font size, boldness, or color as needed.</li>
+          </ol>
+        `,
+      },
     ],
   },
   {
@@ -126,6 +143,19 @@ const categories = ref<Category[]>([
         title: 'How do I change the type of a relationship?',
         answer:
           'To change the type of a relationship, right-click on the relationship line and select "Change Type" from the context menu.',
+      },
+      {
+        title: 'How do I adjust the relationship line?',
+        answer: `
+          To adjust the relationship line:
+          <ol>
+            <li>Hover your mouse over the relationship line.</li>
+            <li>Blue control points will appear.</li>
+            <li>Drag the control points to adjust the line as needed.</li>
+          </ol>
+          <br><br>
+          <img src="${adjustLineGif}" alt="Adjust Relationship Line GIF" style="max-width: 100%; border-radius: 8px;" />
+        `,
       },
     ],
   },
@@ -160,21 +190,24 @@ const categories = ref<Category[]>([
     ],
   },
   {
-    title: 'Other Settings',
+    title: 'Map',
     questions: [
       {
-        title: 'How do I reset the map?',
-        answer: 'To reset the map, click the "Reset" button in the presentation controls.',
+        title: 'How do I move elements on the map?',
+        answer: `
+          To move elements on the map, including the map, title, group title, bubbles, dividers, and the entire map:
+          <ol>
+            <li>Left-click on the map, title, group title, bubble, or divider.</li>
+            <li>Drag it to the desired position.</li>
+          </ol>
+          <br>
+          <img style="width: 100%;" src="${moveMapGif}" alt="Move elements on the map tutorial GIF" />
+        `,
       },
       {
         title: 'How do I export the map?',
         answer:
           'To export the map, click the "Export" button and choose the desired format (PNG, PDF, or Source Data).',
-      },
-      {
-        title: 'How do I change the map title?',
-        answer:
-          'To change the map title, click the "Settings" button and update the title in the settings menu.',
       },
     ],
   },
