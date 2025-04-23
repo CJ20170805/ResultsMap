@@ -103,8 +103,6 @@ onMounted(async () => {
 
   // Set the session flag to indicate the tab is open
   sessionStorage.setItem('isSameTab', 'true')
-
-
   checkUpdates();
 })
 
@@ -289,28 +287,8 @@ const exportMap = async (type: ExportType) => {
 
 const importMap = () => {
   console.log('importMap')
-
-  // const reader = new FileReader()
-  // reader.onload = (e) => {
-  //   const result = e.target?.result
-  //   if (typeof result === 'string') {
-  //     mapData.value = JSON.parse(result)
-  //     localStorage.setItem('MapData', JSON.stringify(mapData.value))
-  //   }
-  // }
-  // reader.readAsText(file)
   importMapFromFile()
 }
-
-// Generate the dialog message dynamically
-// const getDialogMessage = () => {
-//   const fileName = localStorage.getItem('fileHandleName')
-//   if (fileName) {
-//     return `Do you want to continue working on ${fileName}?`
-//   } else {
-//     return 'Do you want to load an existing file or create a new one?'
-//   }
-// }
 
 // Handle "Continue Working" or "Load File" button click
 const handleLoadFile = async () => {
@@ -323,11 +301,6 @@ const handleCreateNewFile = async () => {
   showFileDialog.value = false // Close the dialog
   await createNewMap() // Call the createNewMap function
 }
-
-// Handle dialog close
-// const handleDialogClose = () => {
-//   showFileDialog.value = false
-// }
 
 // Handle "Continue Working" button click
 const handleContinueWorking = async () => {
@@ -381,7 +354,6 @@ const handleContinueWorking = async () => {
 }
 
 // Create a new map
-
 const currentFileHandle = ref<FileSystemFileHandle | null>(null)
 
 // Save the file name to localStorage
@@ -596,46 +568,6 @@ const importMapFromFile = async () => {
   }
 }
 
-// const promptUserForFile = async () => {
-//   ElMessageBox.confirm(
-//     'No map file found. Do you want to create a new file or import an existing one?',
-//     'Map File Not Found',
-//     {
-//       confirmButtonText: 'Create New',
-//       cancelButtonText: 'Import',
-//       distinguishCancelAndClose: true,
-//     },
-//   )
-//     .then(async () => {
-//       await createNewMap()
-//     })
-//     .catch(async () => {
-//       await importMapFromFile()
-//     })
-// }
-
-// const getFileHandleFromLocalStorage = async () => {
-//   const fileName = localStorage.getItem('fileHandleName')
-//   if (!fileName) return null
-
-//   try {
-//     // Prompt the user to select the file again
-//     const [fileHandle] = await window.showOpenFilePicker({
-//       types: [
-//         {
-//           description: 'Results Map',
-//           accept: { 'application/json': ['.json'] },
-//         },
-//       ],
-//       suggestedName: fileName, // Suggest the file name
-//     })
-//     return fileHandle
-//   } catch (error) {
-//     console.error('Error reacquiring file handle:', error)
-//     return null
-//   }
-// }
-
 const resetDataToDefault = () => {
   saveMapDataToFile(true)
   console.log('resetDataToDefault', mapData.value, defaultMapData)
@@ -685,15 +617,6 @@ const checkUpdates = () => {
 
 <template>
   <div class="home-container">
-    <!-- Navigation Bar -->
-    <!-- <el-header>
-      <el-row>
-        <el-col :span="20">
-          <h1 style="color: white; margin-left: 16px">Results Map</h1>
-        </el-col>
-      </el-row>
-    </el-header> -->
-
     <el-container class="main-container" v-if="mapData">
       <el-aside v-show="showAside" width="400px">
         <div class="aside-container">
@@ -776,8 +699,6 @@ const checkUpdates = () => {
 .main-container {
   flex: 1;
   overflow: hidden;
-}
-.aside-container {
 }
 .toggle-button {
   padding: 10px;

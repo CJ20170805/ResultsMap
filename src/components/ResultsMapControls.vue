@@ -9,7 +9,6 @@ import type {
   ResultsMapData,
   ExportType,
 } from '@/types/ResultsMap'
-//import { mapActions } from 'pinia';
 import type { TourGuideClient } from '@sjmc11/tourguidejs/src/Tour'
 import { ElTreeV2 } from 'element-plus'
 
@@ -295,10 +294,6 @@ const updateCheckedKeys = () => {
 
   treeRef.value!.setCheckedKeys(checkedKeys.value)
 
-  // setTimeout(() => {
-  //   treeRef.value!.setExpandedKeys(groupData.value.map((group) => group.id))
-  // }, 500)
-
   // If new group is added, expand it
   if (groupData.value.length > expandedKeys.length) {
     const newGroupIds = visibleGroupIds.filter((id) => !expandedKeys.includes(id))
@@ -342,26 +337,21 @@ const handleVisibilityChange = (node: any, checked: boolean) => {
     const group = groupData.value.find((g) => g.id === node.id)
     if (group) {
       props.onUpdateGroup({ ...group, visible: checked })
-      //group.visible = checked;
     }
 
     // Update bubble visibility
     const bubbles = bubbleData.value.filter((b) => b.groupId === node.id)
     bubbles.forEach((bubble) => {
       props.onUpdateBubble({ ...bubble, visible: checked })
-      //bubble.visible = checked;
     })
   } else if (node.type === 'bubble') {
     // Update bubble visibility
     const bubble = bubbleData.value.find((b) => b.id === node.id)
     if (bubble) {
       props.onUpdateBubble({ ...bubble, visible: checked })
-      // bubble.visible = checked;
     }
   }
 
-  // // Update the checkedKeys list
-  // updateCheckedKeys();
 }
 
 const updateAdjacentLayer = (currentLayer: string) => {
@@ -444,14 +434,6 @@ const updateAdjacentLayer = (currentLayer: string) => {
                 </el-form-item>
                 <el-form-item>
                   <label style="margin: 0 14px 0 0">Title Font Size: </label>
-                  <!-- <el-input-number
-                    v-model="mapConfig.titleFontSize"
-                    :min="10"
-                    :max="200"
-                    style="width: 220px"
-                    label="Font Size"
-                  ></el-input-number> -->
-
                   <el-slider
                     style="width: 220px"
                     v-model="mapConfig.titleFontSize"
@@ -819,23 +801,6 @@ const updateAdjacentLayer = (currentLayer: string) => {
         </el-row>
       </el-tab-pane>
     </el-tabs>
-
-    <!-- Tour Dialogue -->
-    <!-- <el-tour
-      v-model="showTour"
-      :z-index="2005"
-      @finish="handleTourFinish"
-      @change="handleTourChange"
-    >
-      <el-tour-step
-        v-for="(step, index) in tourSteps"
-        :key="index"
-        :target="step.target"
-        :title="step.title"
-        :description="step.description"
-        @close="handleStepClose"
-      />
-    </el-tour> -->
   </div>
 </template>
 

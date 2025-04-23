@@ -77,8 +77,6 @@ const zoom = d3
     }
   })
 
-// Attach zoom behavior to the SVG
-// const svg = d3.select(svgRef.value).call(zoom);
 
 // Handle empty right-click
 const handleEmptyPositionRightClick = (event: MouseEvent) => {
@@ -269,7 +267,6 @@ const createBubble = () => {
   }
 
   mapBubbles.value.push(newBubble)
-  //drawMap()
 
   // Reset form and hide context menu
   newBubbleText.value = ''
@@ -365,9 +362,7 @@ const updateBubbleText = () => {
 }
 
 const confirmRemoveBubble = () => {
-  //if (confirm('Are you sure you want to remove this bubble?')) {
   removeBubble()
-  //}
 }
 
 const removeBubble = () => {
@@ -393,22 +388,7 @@ const removeBubble = () => {
   }
 }
 
-// // Define track boundaries with inner and outer radii
-// const tracks = {
-//   mission: { outer: 190, inner: 0 }, // Pink (innermost)
-//   strategic: { outer: 350, inner: 190 }, // Green
-//   process: { outer: 500, inner: 350 }, // Blue
-//   operational: { outer: 650, inner: 500 }, // Orange (outermost)
-// }
-
-// // Calculate the middle radius for bubble positioning
-// const layerRadii = {
-//   mission: (tracks.mission.outer + tracks.mission.inner) / 2,
-//   strategic: (tracks.strategic.outer + tracks.strategic.inner) / 2,
-//   process: (tracks.process.outer + tracks.process.inner) / 2,
-//   operational: (tracks.operational.outer + tracks.operational.inner) / 2,
-// }
-
+// Get the tracks config from the file
 const tracks = computed(() => ({
   mission: {
     outer: props.data.mapConfig.layerSizes.mission.outer,
@@ -436,43 +416,15 @@ const layerRadii = computed(() => ({
   operational: (tracks.value.operational.outer + tracks.value.operational.inner) / 2,
 }))
 
-// Layer colors
-// const layerColors = {
-//   mission: '#ffcdd2', // Pink
-//   strategic: '#c8e6c9', // Green
-//   process: '#bbdefb', // Blue
-//   operational: '#ffe0b2', // Orange
-// }
 
 // Add function to calculate group angles
 function calculateGroupAngles(groups: Group[]) {
-  //, bubbles: Bubble[]
-  // const totalAngle = 2 * Math.PI
-  // const groupedBubbles = bubbles.filter((b) => b.groupId !== '')
 
-  // // Calculate angles for groups
-  // let currentAngle = 0
-  // groups.forEach((group) => {
-  //   const groupBubbles = groupedBubbles.filter((b) => b.groupId === group.id)
-  //   const angleShare = (groupBubbles.length / bubbles.length) * totalAngle
-  //   group.startAngle = currentAngle
-  //   group.endAngle = currentAngle + angleShare
-  //   currentAngle += angleShare
-  // })
   const visibleGroups = groups.filter((group) => group.visible)
   const angleIncrement = (2 * Math.PI) / visibleGroups.length
 
   visibleGroups.forEach((group, index) => {
-    console.log(
-      'GroupAngle000--',
-      angleIncrement,
-      group.name,
-      index,
-      'ANgles:',
-      group.startAngle,
-      group.endAngle,
-    )
-
+    // Check if the group is not locked before calculating angles
     if (!group.locked) {
       group.startAngle = index * angleIncrement
       group.endAngle = (index + 1) * angleIncrement
@@ -635,7 +587,6 @@ function drawGroupDividers(
 
 // Function to add group names
 function addGroupNames(svg: d3.Selection<SVGGElement, unknown, null, undefined>, groups: Group[]) {
-  console.log('GroupName00--', groups)
 
   let initX: number, initY: number
   let initMouseX: number, initialMouseY: number
@@ -664,7 +615,6 @@ function addGroupNames(svg: d3.Selection<SVGGElement, unknown, null, undefined>,
         event: d3.D3DragEvent<SVGTextElement, unknown, unknown>,
         d: Group,
       ) {
-        console.log('DDD', d)
 
         const [x, y] = d3.pointer(event, svgRef.value!)
 
@@ -689,8 +639,6 @@ function addGroupNames(svg: d3.Selection<SVGGElement, unknown, null, undefined>,
 
     let x: number, y: number
 
-    // console.log("group.isDragging?", group.isDragging);
-
     // Only calculate the group name position automatically during the initial creation
     if (!group.x || !group.y) {
       const midAngle = calculateMidAngle(group.startAngle, group.endAngle)
@@ -698,8 +646,7 @@ function addGroupNames(svg: d3.Selection<SVGGElement, unknown, null, undefined>,
       x = centerX + outerRadius * Math.cos(midAngle)
       y = centerY + yOffset + outerRadius * -Math.sin(midAngle) * yScale //  - Math.sin to set the anticlockwise order
 
-      //console.log("AddGroupName--", midAngle, centerY, yOffset, outerRadius, Math.sin(midAngle) * yScale,group.name, group.x, group.y, "===", x, y);
-
+      // Adjust y position for scaling and offset
       group.x = x
       group.y = y
     } else {
@@ -841,19 +788,8 @@ function addArrowsAndTitle(svg: d3.Selection<SVGGElement, unknown, null, undefin
     .attr('stroke', '#000')
     .attr('stroke-width', 1.5)
 
-  // Add title at the top of the map
-  // svg
-  //   .append('text')
-  //   .attr('x', centerX)
-  //   .attr('y', 32)
-  //   .attr('text-anchor', 'middle')
-  //   .attr('alignment-baseline', 'middle')
-  //   .text(props.data.mapConfig.title)
-  //   .style('font-weight', 'bold')
-  //   .style('font-size', `${props.data.mapConfig.titleFontSize}px`)
-  //   .style('fill', '#000')
-  // Add title at the top of the map
 
+  // Add title at the top of the map
   const titleGroup = svg.append('g')
   .style('cursor', 'move')
 
@@ -968,8 +904,6 @@ const drawMap = () => {
   // Data saving
   localStorage.setItem('MapData', JSON.stringify(props.data))
 
-  // const currentTransform = d3.zoomTransform(mapGroup.node());
-
   const svg = d3.select(svgRef.value).call(zoom)
   svg.selectAll('*').remove()
 
@@ -991,13 +925,9 @@ const drawMap = () => {
     )
   }
 
-  // Apply scale transformation
-  //svg.attr('transform', `scale(${scale.value})`)
-
-
   // Calculate group angles
   const updatedGroups = calculateGroupAngles(props.data.groups)
-  //, props.data.bubbles
+
   console.log('UpdatedGroups--', updatedGroups)
 
   // Draw layers (concentric circles)
@@ -1099,11 +1029,7 @@ const drawMap = () => {
   addGroupNames(mapGroup, updatedGroups)
 
   // Constants for bubble sizing
-  // let BUBBLE_RADIUS = 15
-  // const BUBBLE_RADIUS_X = 55
-  // const BUBBLE_RADIUS_Y = 45
   const OFFSET = 4 // Adjust this value to control how far outside the bubbles the lines should start/end
-  const TEXT_WIDTH = 160
   const BUBBLE_PADDING_X = 10 // Horizontal padding around the text inside the bubble
   const BUBBLE_PADDING_Y = 15
   const MIN_BUBBLE_RADIUS_X = 70 // Minimum horizontal radius
@@ -1170,7 +1096,6 @@ const drawMap = () => {
     let bubbleRadiusY = bubble.ry || textHeight / 2 + BUBBLE_PADDING_Y
 
     // Ensure the bubble has a minimum size and maintains the fixed aspect ratio
-
     // Scale the bubble to maintain the aspect ratio while respecting the minimum dimensions
     bubbleRadiusX = Math.max(bubbleRadiusX, MIN_BUBBLE_RADIUS_X)
     bubbleRadiusY = Math.max(bubbleRadiusY, MIN_BUBBLE_RADIUS_Y)
@@ -1325,7 +1250,6 @@ const drawMap = () => {
   ) {
     console.log('StartDrag: ', event.x, event.y)
     hideContextMenu()
-    //handleBubbleClick(d.id) // Set the target bubble
 
     // Check if the click is on the isCreatingRelationship mode, then create a relationship
     if (isCreatingRelationship.value) {
@@ -1346,15 +1270,12 @@ const drawMap = () => {
 
     isDragging = true
 
-    // d3.select(this).raise().classed('active', true)
     d3.select(this).raise().attr('stroke', 'black')
   }
 
   function dragged(event: d3.D3DragEvent<SVGTextElement, unknown, unknown>, d: Bubble) {
     console.log('Dragged: ', event, d)
     const [x, y] = d3.pointer(event, svgRef.value!)
-
-    // d3.select(this).attr('transform', `translate(${event.x},${event.y})`)
 
     const deltaX = x - initMouseX
     const deltaY = y - initialMouseY
@@ -1364,13 +1285,8 @@ const drawMap = () => {
     if (bubble) {
       bubble.x = initX + deltaX
       bubble.y = initY + deltaY
-      bubble.locked = true
-
-      //d3.select(this).attr('transform', `translate(${bubble.x},${bubble.y})`)
+      bubble.locked = true // Lock the bubble position during drag
     }
-
-    // Update the paths dynamically
-    //updateRelationships();
   }
 
   function dragended(this: SVGGElement) {
@@ -1979,13 +1895,13 @@ const togglePresentationMode = () => {
             <li>To reset control options, click the reset button.</li>
           </ol>
            <br />
-          <img style="width: 100%; height: 54vh;" src="${presentationModeGif}" alt="Presentation mode tips GIF" />
+          <img style="width: 90%; height: 54vh;margin: 0 20px 0 0;" src="${presentationModeGif}" alt="Presentation mode tips GIF" />
         `,
         'Presentation Mode',
         {
           confirmButtonText: 'Ok',
           showCancelButton: false,
-          customClass: 'custom-message-box-class',
+          customClass: 'custom-message-box-class2',
           //type: 'warning',
           dangerouslyUseHTMLString: true, // Enables rich content
         }
@@ -2016,10 +1932,6 @@ const handlePresentationMouseLeave = () => {
     showControls.value = false
   }
 }
-
-// const toggleLayerControls = () => {
-//   showLayerControls.value = !showLayerControls.value;
-// };
 
 const switchToNextLayer = () => {
   currentLayerIndex.value = (currentLayerIndex.value + 1) % layers.length
@@ -2641,20 +2553,7 @@ const startCreateRelationshipTour = () => {
 
 const startUpdateMenuTour = () => {
   hasSeenTour = localStorage.getItem('hasSeenTour')
-  const steps = [
-    // {
-    //   title: 'Bubble Section',
-    //   content:
-    //     'In this section, you can update the text of the bubble or remove it from the map. Use the "Update" button to save changes or the "Remove" button to delete the bubble.',
-    //   target: '#updateBubbles',
-    // },
-    // {
-    //   title: 'Relationship Section',
-    //   content:
-    //     'In this section, you can create new relationships between bubbles or manage existing ones. Use the dropdown to select a relationship type, then click "Create Relationship". For existing relationships, you can update their type or delete them.',
-    //   target: '#manageRelationships',
-    // },
-  ]
+  const steps = []
 
   if (!isNewRelationshipCreated.value) {
     steps.push({
@@ -2707,19 +2606,7 @@ const startUpdateMenuTour = () => {
 const startCreationMenuTour = () => {
   hasSeenTour = localStorage.getItem('hasSeenTour')
   if (tour) {
-    const steps = [
-      // {
-      //   title: 'Create a Bubble',
-      //   content:
-      //     'Use the context menu to create a new bubble by entering text and clicking "Create".',
-      //   target: '#createBubble', // Target the context menu for empty positions
-      // },
-      // {
-      //   title: 'Create or Delete a Group',
-      //   content: 'You can also create or delete a group using the context menu.',
-      //   target: '#createGroup', // Target the context menu for empty positions
-      // },
-    ]
+    const steps = []
 
     if (!isNewGroupCreated.value) {
       steps.push({
@@ -2786,124 +2673,6 @@ onBeforeUnmount(() => {
 watch(() => props.data, drawMap, { deep: true })
 
 // Helper function to wrap text with proper typing
-function wrap_old(
-  text: d3.Selection<SVGTextElement, Bubble, null, undefined>,
-  maxWidth: number,
-): void {
-  text.each(function (this: SVGTextElement, d: Bubble) {
-    const textElement = d3.select<SVGTextElement, Bubble>(this)
-    const words: string[] = textElement.text().split(/\s+/) // Split text into words
-    const lineHeight: number = 1.1 // Line height in ems
-
-    // Dynamic word distribution rules
-    let maxMiddleWords: number, topLineWords: number
-    if (words.length <= 10) {
-      maxMiddleWords = 2 // Middle line max words for very short text
-      topLineWords = 2 // Top line words for very short text
-    } else if (words.length <= 20 && words.length > 10) {
-      maxMiddleWords = 3
-      topLineWords = 2
-    } else if (words.length <= 30 && words.length > 20) {
-      maxMiddleWords = 3
-      topLineWords = 3
-    } else if (words.length <= 80 && words.length > 30) {
-      maxMiddleWords = 4
-      topLineWords = 3
-    } else if (words.length > 80) {
-      maxMiddleWords = 6
-      topLineWords = 4
-    } else {
-      maxMiddleWords = 5
-      topLineWords = 3
-    }
-
-    if (words.length <= 3) {
-      // If 3 or fewer words, keep the text as a single line in the middle
-      textElement.text(words.join(' '))
-      return
-    }
-
-    // Clear the text
-    textElement.text(null)
-
-    // Function to calculate the total letters in the first `topLineWords`
-    const getTotalLetters = (startIndex: number, wordCount: number): number => {
-      return words.slice(startIndex, startIndex + wordCount).join('').length
-    }
-
-    // Adjust the first top line if the total letters are less than 10
-    const firstTopLineLetters: number = getTotalLetters(0, topLineWords)
-
-    console.log('firstTopLineLetters- 0', firstTopLineLetters, topLineWords)
-
-    const firstTopLineWordCount: number =
-      firstTopLineLetters < 10 && topLineWords > 2 ? topLineWords + 1 : topLineWords
-
-    console.log('firstTopLineLetters', firstTopLineLetters, firstTopLineWordCount)
-
-    // Distribute words into lines in an ellipse-like shape
-    const lines: string[] = []
-    let currentIndex: number = 0
-
-    // Function to add a line with a specific number of words
-    const addLine = (wordCount: number): void => {
-      if (currentIndex < words.length) {
-        lines.push(words.slice(currentIndex, currentIndex + wordCount).join(' '))
-        currentIndex += wordCount
-      }
-    }
-
-    // Top lines: gradually increase word count
-    addLine(firstTopLineWordCount) // First top line
-    //addLine(topLineWords + 1); // Second top line
-
-    let maxMWords = maxMiddleWords
-
-    // Middle lines: maximum words
-    while (currentIndex < words.length) {
-      if (getTotalLetters(currentIndex, maxMiddleWords) < 14) {
-        maxMWords += Math.floor(topLineWords / 2) // Middle line
-      } else {
-        if (maxMWords > maxMiddleWords) {
-          maxMWords -= Math.floor(topLineWords / 2) // Middle line
-        }
-      }
-      addLine(maxMWords) // Middle line
-      maxMWords = maxMiddleWords
-    }
-
-    // if(getTotalLetters(currentIndex, topLineWords) < 15){
-    //   topLineWords += Math.floor(topLineWords/2); // Middle line
-    // } else {
-    //   topLineWords -= Math.floor(topLineWords/2); // Middle line
-    // }
-
-    // Bottom lines: gradually decrease word count
-    // addLine(topLineWords); // First bottom line
-    // addLine(topLineWords); // Second bottom line
-    //if (words.length >= 30) addLine(1); // Last bottom line for long text
-
-    // Calculate the total height of the text
-    const totalHeight: number = lines.length * lineHeight // Total height in ems
-
-    // Add a small offset to move the text down slightly
-    const offset: number = 0.8 // Adjust this value to move the text down (e.g., 0.5em)
-
-    // Add the lines to the text element
-    lines.forEach((line: string, i: number) => {
-      textElement
-        .append('tspan')
-        .attr('x', 0)
-        .attr('dy', i === 0 ? `-${totalHeight / 2 - offset}em` : `${lineHeight}em`) // Adjust vertical spacing
-        .attr('text-anchor', 'middle') // Center-align each line
-        .attr('fill', d.fontColor || '#000')
-        .attr('font-size', `${d.fontSize || 16}px`)
-        .style('font-weight', d.fontWeight || 'normal')
-        .text(line)
-    })
-  })
-}
-
 function wrap(text: d3.Selection<SVGTextElement, Bubble, null, undefined>, maxWidth: number): void {
   let targetLineLength: number = 20 // New parameter with default value
   let topLineMaxLength: number = 18 // Also made this configurable
@@ -3005,34 +2774,6 @@ function wrap(text: d3.Selection<SVGTextElement, Bubble, null, undefined>, maxWi
   })
 }
 
-// Helper: Check if line intersects an ellipse
-function lineIntersectsEllipse(
-  x1: number,
-  y1: number,
-  x2: number,
-  y2: number,
-  h: number,
-  k: number,
-  rx: number,
-  ry: number,
-): boolean {
-  const dx = x2 - x1
-  const dy = y2 - y1
-
-  // Quadratic equation coefficients
-  const A = (dx * dx) / (rx * rx) + (dy * dy) / (ry * ry)
-  const B = 2 * ((dx * (x1 - h)) / (rx * rx) + (dy * (y1 - k)) / (ry * ry))
-  const C = (x1 - h) ** 2 / (rx * rx) + (y1 - k) ** 2 / (ry * ry) - 1
-
-  const discriminant = B * B - 4 * A * C
-  if (discriminant < 0) return false
-
-  const sqrtDisc = Math.sqrt(discriminant)
-  const t1 = (-B + sqrtDisc) / (2 * A)
-  const t2 = (-B - sqrtDisc) / (2 * A)
-
-  return (t1 >= 0 && t1 <= 1) || (t2 >= 0 && t2 <= 1)
-}
 
 defineExpose({
   resetZoom,
@@ -3075,20 +2816,6 @@ defineExpose({
               <span style="margin: 0 10px 0 0; line-height: 30px">Sections: </span>
             </el-col>
             <el-col :span="17">
-              <!-- <el-select
-                v-model="selectedGroup"
-                placeholder="Select Group"
-                @change="updateGroupVisibility"
-                popper-append-to-body
-              >
-                <el-option label="All" value="all"></el-option>
-                <el-option
-                  v-for="group in props.data.groups"
-                  :key="group.id"
-                  :label="group.name"
-                  :value="group.id"
-                ></el-option>
-              </el-select> -->
               <select v-model="selectedGroup" @change="updateGroupVisibility" class="custom-select">
                 <option value="all">All</option>
                 <option
@@ -3215,15 +2942,6 @@ defineExpose({
       >
 
       <div class="relationship-list" v-if="selectedBubble">
-        <!-- <h4
-        v-if="
-          props.data.relationships.filter(
-            (rel) => rel.source === selectedBubble?.id || rel.target === selectedBubble?.id,
-          ).length
-        "
-      >
-       &nbsp;  Relationships
-      </h4> -->
         <ul>
           <li
             v-for="relationship in props.data.relationships

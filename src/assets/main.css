@@ -29,6 +29,11 @@
   --el-messagebox-width: 50%!important;
 }
 
+.custom-message-box-class2{
+  margin-top: -60px;
+  --el-messagebox-width: 60%!important;
+}
+
 .el-collapse{
   border-bottom: none!important;
 }

@@ -23,22 +23,9 @@ const defaultMapData: ResultsMapData = {
       operational: { outer: 650, inner: 500 }
     }
   },
-  bubbles: [
-    // { id: '1', text: 'fires are prevented', layer: 'strategic', groupId: '1', locked: false },
-    // { id: '2', text: 'less injury from fire incidents', layer: 'mission', groupId: '1', locked: false },
-    // { id: '3', text: 'crews arrive at emergencies quickly', layer: 'process', groupId: '2', locked: false },
-    // { id: '4', text: 'transit without bottlenecks', layer: 'operational', groupId: '3', locked: false },
-  ],
-  relationships: [
-    // { id: '1', source: '1', target: '2', type: 'cause-effect' },
-    // { id: '2', source: '3', target: '4', type: 'companion' },
-    // { id: '3', source: '1', target: '4', type: 'conflict' },
-  ],
-  groups: [
-    // { id: '1', name: 'G1', startAngle: 0, endAngle: 2 },
-    // { id: '2', name: 'G2', startAngle: 2, endAngle: 4 },
-    // { id: '3', name: 'GROUP3 WITH A LONG NAME', startAngle: 4, endAngle: 6 },
-  ],
+  bubbles: [],
+  relationships: [],
+  groups: [],
   groupLevel: 'strategic',
   legends: {
     legendBubbles: [
