@@ -2132,7 +2132,7 @@ const openBubbleOperationsTutorialDialog = () => {
       <p>To adjust the text properties:</p>
       <ol>
         <li>Right-click on the bubble.</li>
-        <li>Use the context menu to adjust the text, including font size, bold, and color.</li>
+        <li>Use the context menu to adjust the text, including font size, bold, and colour.</li>
       </ol>
       <br />
       <img style="width: 100%;" src="${bubbleOperationsGif}" alt="Resize bubble tutorial GIF" />
@@ -2402,7 +2402,7 @@ const startATour = () => {
           target: '#helpCenterButton', // Target the help center button
         },
       ],
-      hidePrev: true,
+      hidePrev: false,
       backdropClass: 'custom-backdrop-class',
     })
 
@@ -2474,7 +2474,7 @@ const startCreateBubbleTour = () => {
   ElMessageBox.confirm(
     `To create a new bubble:
 <ol>
-  <li>Right-click on the map.</li>
+  <li>Right-click on the map layer of the colour that you want your bubble colour to be .</li>
   <li>Type the bubble name.</li>
   <li>Click the "Create Bubble" button.</li>
 </ol>  <br /> <img style="width: 100%;" src="${createBubbleGif}"/>`,
@@ -2612,7 +2612,7 @@ const startCreationMenuTour = () => {
       steps.push({
         title: 'Create or Delete a Section',
         content:
-          "You can create or delete a section, and change the section's font size, weight, and color using the context menu.",
+          "You can create or delete a section, and change the section's font size, weight, and colour using the context menu.",
         target: '#createGroup', // Target the context menu for empty positions
       })
     }
@@ -2892,7 +2892,7 @@ defineExpose({
 
         <template v-if="selectedBubble">
           <!-- Add color picker -->
-          <el-form-item label="Color">
+          <el-form-item label="Colour">
             <el-color-picker v-model="selectedBubble.fontColor" ref="colorPicker" />
           </el-form-item>
 
@@ -3041,7 +3041,7 @@ defineExpose({
           </el-form-item>
 
           <!-- Add font controls for the group -->
-          <el-form-item label="Text Color">
+          <el-form-item label="Text Colour">
             <el-color-picker v-model="currentGroup.fontColor" ref="colorPicker" />
           </el-form-item>
 

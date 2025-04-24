@@ -77,9 +77,9 @@ const startATour = () => {
         content: `This is the File tab where you can create, import, and export maps. <br/><br/>
 <strong>Available actions:</strong>
 <ul>
-  <li><strong>Create:</strong> Start a new map from scratch.</li>
-  <li><strong>Import:</strong> Upload a previously saved map file.</li>
-  <li><strong>Export:</strong> Download the current map as a file.</li>
+  <li><strong>Create:</strong> Clicking this button will bring up a new map.</li>
+  <li><strong>Import:</strong> Clicking this button will open the folder containing your saved map.</li>
+  <li><strong>Export:</strong> Clicking this button will enable you to download your map in three forms: PNG (image format for map), PDF (printable document format), Source Data (a map data file).</li>
   <li><strong>Start Tour:</strong> Begin a guided walkthrough of the app features.</li>
 </ul>
 `,
@@ -92,17 +92,17 @@ const startATour = () => {
 <ul>
   <li><strong>Map Title:</strong> Set the title of your map.</li>
   <li><strong>Title Font Size:</strong> Adjust the size of the map title text.</li>
-  <li><strong>Title Color:</strong> Pick a color for the map title.</li>
+  <li><strong>Title Colour:</strong> Pick a colour for the map title.</li>
   <li><strong>Bold Title:</strong> Toggle bold styling for the title text.</li>
   <li><strong>Map Date:</strong> Choose a date to display on the map.</li>
-  <li><strong>Layer Colors:</strong> Assign colors to different map layers for better visual distinction.</li>
+  <li><strong>Layer Colours:</strong> Assign colours to different map layers for better visual distinction.</li>
 </ul>
 `,
         target: '#mapTab',
       },
       {
         title: 'Legend Tab',
-        content: `This is a tab where you can manage the Legend on the Map which identifies what each bubble colour represents. It also enables you to label the relationship type
+        content: `This tab let’s you manage the legend for bubbles and lines. It also enables you to label the relationship type
          lines between bubbles<br/><br/>
 <strong>Legend customization options:</strong>
 <ul>
@@ -425,10 +425,10 @@ const updateAdjacentLayer = (currentLayer: string) => {
               <!-- <h3>Map Config</h3> -->
               <el-form style="margin: 5px 0 0 0">
                 <el-form-item>
-                  <label style="margin: 0 14px 0 0">Title: </label>
+                  <label style="margin: 0 14px 0 0">Map Title: </label>
                   <el-input
                     v-model="mapConfig.title"
-                    style="width: 80%"
+                    style="width: 70%"
                     placeholder="Map Title"
                   ></el-input>
                 </el-form-item>
@@ -444,7 +444,7 @@ const updateAdjacentLayer = (currentLayer: string) => {
                 </el-form-item>
                 <!-- Add title color picker -->
                 <el-form-item>
-                  <label style="margin: 0 14px 0 0">Title Color: </label>
+                  <label style="margin: 0 14px 0 0">Title Colour: </label>
                   <el-color-picker v-model="mapConfig.titleColor" />
                 </el-form-item>
                 <!-- Add title weight toggle -->
@@ -530,7 +530,7 @@ const updateAdjacentLayer = (currentLayer: string) => {
         <el-row :gutter="20">
           <el-col :span="24">
             <div class="control-section">
-              <h3>Layer Colors</h3>
+              <h3>Layer Colours</h3>
               <el-form class="color-form">
                 <el-form-item v-for="(color, layer, index) in mapConfig.layerColors" :key="layer">
                   <!-- <label class="color-label" :for="layer">{{ layer }}</label> -->
@@ -567,7 +567,7 @@ const updateAdjacentLayer = (currentLayer: string) => {
               <h3>Divider Settings</h3>
               <el-form>
                 <!-- Divider Color -->
-                <el-form-item label="Divider Color">
+                <el-form-item label="Divider Colours">
                   <el-color-picker v-model="mapConfig.dividerColor" />
                 </el-form-item>
                 <!-- Divider Width -->

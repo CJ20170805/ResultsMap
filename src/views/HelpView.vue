@@ -117,7 +117,7 @@ const categories = ref<Category[]>([
           To adjust text formatting:
           <ol>
             <li>Right-click on the bubble to open the context menu.</li>
-            <li>Change the text, font size, boldness, or color as needed.</li>
+            <li>Change the text, font size, boldness, or colour as needed.</li>
           </ol>
         `,
       },
