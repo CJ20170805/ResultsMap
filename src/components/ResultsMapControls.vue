@@ -127,8 +127,8 @@ const startATour = () => {
 
     tour.setOptions({ steps, finishLabel: 'Continue' })
 
-    let currentStep = 0 // Track the current step
-    let previousStep = null // Track the previous step (for back-button detection)
+    let currentStep: number | null = 0 // Track the current step
+    let previousStep: number | null = null // Track the previous step (for back-button detection)
 
     // Before step changes, set the correct tab
     tour.onBeforeStepChange(() => {
@@ -171,7 +171,7 @@ const startATour = () => {
       currentStep = tour.activeStep // Update current step
       console.log(`[After] Step changed. Now at: ${currentStep}, Previous: ${previousStep}`)
 
-      if (currentStep <= previousStep) {
+      if (previousStep !== null && currentStep <= previousStep) {
         switch (previousStep) {
           case 0:
             currentTab.value = 'Visibility'
