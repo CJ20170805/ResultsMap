@@ -127,23 +127,82 @@ const startATour = () => {
 
     tour.setOptions({ steps, finishLabel: 'Continue' })
 
+    let currentStep = 0 // Track the current step
+    let previousStep = null // Track the previous step (for back-button detection)
+
+    // Before step changes, set the correct tab
     tour.onBeforeStepChange(() => {
-      console.log(`Before Changing to step: ${tour.activeStep}`)
+      const nextStep = tour.activeStep
+      console.log(`[Before] Changing to step: ${nextStep}, Previous step: ${previousStep}`)
+
       if (!isFinished.value) {
-        switch (tour.activeStep) {
+        // Detect if we're going BACKWARDS (back button clicked)
+        const isGoingBack = previousStep !== null && nextStep < previousStep
+
+        // Switch tab based on the TARGET step
+        if (isGoingBack) {
+          console.log('↩️ Going backward to step:', nextStep)
+        } else {
+          console.log('↪️ Going forward to step:', nextStep)
+        }
+
+        // Update the current tab based on the target step
+        switch (nextStep) {
           case 0:
-            currentTab.value = 'Map'
+            currentTab.value = isGoingBack ? 'Visibility' : 'Map'
             break
           case 1:
-            currentTab.value = 'Legend'
+            currentTab.value = isGoingBack ? 'File' : 'Legend'
             break
           case 2:
-            currentTab.value = 'Visibility'
+            currentTab.value = isGoingBack ? 'Map' : 'Visibility'
             break
           case 3:
-            currentTab.value = 'File'
+            currentTab.value = isGoingBack ? 'Legend' : 'File'
             break
         }
+      }
+    })
+
+    // After step changes, update `previousStep` and `currentStep`
+    tour.onAfterStepChange(() => {
+      if(isFinished.value) return // Skip if the tour is finished
+      previousStep = currentStep // Store the last step
+      currentStep = tour.activeStep // Update current step
+      console.log(`[After] Step changed. Now at: ${currentStep}, Previous: ${previousStep}`)
+
+      if (currentStep <= previousStep) {
+        switch (previousStep) {
+          case 0:
+            currentTab.value = 'Visibility'
+            break
+          case 1:
+            currentTab.value = 'File'
+            break
+          case 2:
+            currentTab.value = 'Map'
+            break
+          case 3:
+            currentTab.value = 'Legend'
+            break
+        }
+        tour.refreshDialog()
+      } else {
+        switch (currentStep) {
+          case 0:
+            currentTab.value = 'File'
+            break
+          case 1:
+            currentTab.value = 'Map'
+            break
+          case 2:
+            currentTab.value = 'Legend'
+            break
+          case 3:
+            currentTab.value = 'Visibility'
+            break
+        }
+        tour.refreshDialog()
       }
     })
 
@@ -154,6 +213,9 @@ const startATour = () => {
 
       isFinished.value = true
       props.onContinueTour()
+
+      currentStep = null
+      previousStep = null
     })
 
     tour.onBeforeExit(() => {
@@ -162,6 +224,8 @@ const startATour = () => {
         localStorage.setItem('hasSeenTour', 'true')
         currentTab.value = 'File'
       }
+      currentStep = null
+      previousStep = null
     })
 
     tour.start()
@@ -351,7 +415,6 @@ const handleVisibilityChange = (node: any, checked: boolean) => {
       props.onUpdateBubble({ ...bubble, visible: checked })
     }
   }
-
 }
 
 const updateAdjacentLayer = (currentLayer: string) => {
@@ -527,16 +590,26 @@ const updateAdjacentLayer = (currentLayer: string) => {
             </div>
           </el-col>
         </el-row>
-        <el-row :gutter="20">
+        <el-row :gutter="20" style="margin: 0">
           <el-col :span="24">
             <div class="control-section">
               <h3>Layer Colours</h3>
               <el-form class="color-form">
-                <el-form-item v-for="(color, layer, index) in mapConfig.layerColors" :key="layer">
-                  <!-- <label class="color-label" :for="layer">{{ layer }}</label> -->
-                  <label class="color-label" :for="layer">{{ legends.legendBubbles[legends.legendBubbles.length - 1 - index].text }}</label>
-                  <el-color-picker v-model="mapConfig.layerColors[layer]" />
-                </el-form-item>
+                <!-- Wrap every 2 items in a new el-row -->
+                <el-row :gutter="20">
+                  <el-col
+                    :span="12"
+                    v-for="(color, layer, index) in mapConfig.layerColors"
+                    :key="layer"
+                  >
+                    <el-form-item>
+                      <label class="color-label" :for="layer">
+                        {{ legends.legendBubbles[legends.legendBubbles.length - 1 - index].text }}
+                      </label>
+                      <el-color-picker v-model="mapConfig.layerColors[layer]" />
+                    </el-form-item>
+                  </el-col>
+                </el-row>
               </el-form>
             </div>
           </el-col>

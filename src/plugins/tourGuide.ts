@@ -10,7 +10,7 @@ export default {
     if (!tour) {
       tour = new TourGuideClient({
         steps: [],
-        hidePrev: true,
+        hidePrev: false,
         backdropClass: "custom-backdrop-class",
         dialogZ: 3000,
       })
